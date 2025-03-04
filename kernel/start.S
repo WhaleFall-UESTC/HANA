@@ -4,27 +4,24 @@
 .section .text
 .global _start
 _start:
-    li sp, 0xffffffff
-    
+    la sp, init_stack_top
+
     # keep each CPU's hartid in its tp
-    csrr a0, mhartid
-    mv tp, a0
+    csrr tp, mhartid
     
     # set mstatus.MPP to 0x01
     # after mret will enter S mode
-    csrr a0, mstatus
-    li t0, ~0x1800
-    and a0, a0, t0
-    li t0, 0x800
-    or a0, a0, t0
-    csrw mstatus, a0
+    li a0, 0x1000
+    csrrc x0, mstatus, a0
+    srli a0, a0, 1
+    csrrs x0, mstatus, a0
 
     # set mepc to main
     la a0, main
     csrw mepc, a0
 
     # forbid pagetable
-    csrw satp, zero
+    csrw satp, x0
 
     # delegate all interrupts and exceptions to S mode
     li t0, 0xffff
@@ -32,22 +29,21 @@ _start:
     csrw mideleg, t0
 
     # enable interrupts in S mode
-    csrr a0, sie 
-    ori a0, a0, 0x222 
-    csrw sie, a0
+    li a0, 0x222
+    csrrs x0, sie, a0
 
     # jal ra, timerinit
 
     # allow S mode to access all physical memory
-    csrwi pmpcfg0, 0x0
-    li t0, 0x3fffffffffffffff
+    csrwi pmpcfg0, 0xf
+    li t0, 0x3fffffffffffff
     csrw pmpaddr0, t0
 
     # enter S mode and jump to main
     mret
   
-spin:
-    j spin
+# spin:
+#     j spin
 
 
 # timerinit:
