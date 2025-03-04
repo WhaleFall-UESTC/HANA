@@ -16,5 +16,6 @@ main()
     uart_init();
     puts("Initialize uart0\n");
     test_printf();
+    test_string();
     return 0;
 }

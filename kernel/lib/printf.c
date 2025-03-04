@@ -93,7 +93,7 @@ number(char *str, int num, int size, int precision, int type)
     }
 
     if (!(type & LEFT)) {
-        while (size--)
+        while (size-- > 0)
             *str++ = c;
     }
 
@@ -191,9 +191,8 @@ vsnprintf(char *out, size_t n, const char* fmt, va_list ap)
                 break;
 
             case 'd':
-            case 'i':
                 flags |= SIGN;
-            case 'u': 
+            case 'u':
                 str = number(str, va_arg(ap, unsigned long), field_width, precision, flags);
                 break;
 

@@ -32,11 +32,12 @@ run: $(KERNEL)
 gdb: $(KERNEL) .gdbinit
 	$(QEMU) $(QEMUOPTS) -S -gdb tcp::1234
 
-build: $(KERNEL)
-	@echo "Kernel built successfully."
+build: $(OBJS) # $K/kernel.ld
+	$(LD) $(LDFLAGS) -Ttext 0x80000000 -o $(KERNEL) $(OBJS) && \
+	$(OBJDUMP) -S -l -D $(KERNEL) > $K/kernel.objdump
 
-$(KERNEL): $(OBJS) $K/kernel.ld
-	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $(KERNEL) $(OBJS) && \
+$(KERNEL): $(OBJS) # $K/kernel.ld
+	$(LD) $(LDFLAGS) -Ttext 0x80000000 -o $(KERNEL) $(OBJS) && \
 	$(OBJDUMP) -S -l -D $(KERNEL) > $K/kernel.objdump
 
 $K/start.o: $K/start.S
@@ -47,5 +48,5 @@ $K/start.o: $K/start.S
 
 
 clean:
-	rm -f $(OBJS) $(KERNEL)
+	rm -f $(OBJS) $(KERNEL) 
 
