@@ -1,5 +1,5 @@
-#include "platform.h"
-#include "common.h"
+#include <platform.h>
+#include <common.h>
 
 #define RHR 0       // receive holding register
 #define THR 0       // transmit holding register

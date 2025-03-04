@@ -1,20 +1,20 @@
-#include "riscv.h"
-#include "platform.h"
-#include "defs.h"
+// #include "include/riscv.h"
+// #include "include/platform.h"
+// #include "include/defs.h"
+#include <riscv.h>
+#include <platform.h>
+#include <defs.h>
+
+#include <testdefs.h>
 
 char init_stack[PGSIZE] __attribute__((aligned(PGSIZE)));
 char *init_stack_top = &init_stack[PGSIZE];
-
-char s[] = "Hello, World!\n";
 
 int 
 main()
 {
     uart_init();
-    
-    for (int i = 0; i < 14; i++)
-    {
-        uart_putc(s[i]);
-    }
-    
+    puts("Initialize uart0\n");
+    test_printf();
+    return 0;
 }
