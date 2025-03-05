@@ -1,3 +1,4 @@
 *.o
-*.objdump
 */kernel
+
+kernel/kernel.objdump
