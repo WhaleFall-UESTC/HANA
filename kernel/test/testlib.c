@@ -59,7 +59,7 @@ test_memset()
     assert(memcmp(buf, "AABBBAAAA", 9) == 0);
 }
 
-static inline void 
+static inline void
 test_memcpy() 
 {
     char src[] = "123456789";
@@ -69,7 +69,10 @@ test_memcpy()
     assert(memcmp(dest, "12345", 5) == 0);
     
     char nums[10] = {0,1,2,3,4,5,6,7,8,9};
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wrestrict"
     memcpy(nums+2, nums, 3);
+    #pragma GCC diagnostic pop
     char nums_after[10] = {0,1,0,1,2,5,6,7,8,9};
     assert(memcmp(nums, nums_after, 10) == 0);
 }

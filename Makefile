@@ -6,8 +6,9 @@ LD := $(TOOLPREFIX)ld
 OBJCOPY := $(TOOLPREFIX)objcopy
 OBJDUMP := $(TOOLPREFIX)objdump
 
-CFLAGS = -Wall -Werror -O0 -fno-omit-frame-pointer -ggdb
+CFLAGS = -Wall -Werror -O -fno-omit-frame-pointer -ggdb
 CFLAGS +=  -mcmodel=medany
+CFLAGS += -fno-jump-tables	# without this, vsnprintf switch may jump to .rodata
 CFLAGS += -I $K/include
 LDFLAGS = -z max-page-size=4096
 
@@ -32,12 +33,20 @@ run: $(KERNEL)
 gdb: $(KERNEL) .gdbinit
 	$(QEMU) $(QEMUOPTS) -S -gdb tcp::1234
 
-build: $(OBJS) # $K/kernel.ld
-	$(LD) $(LDFLAGS) -Ttext 0x80000000 -o $(KERNEL) $(OBJS) && \
+# build: $(OBJS) # $K/kernel.ld
+# 	$(LD) $(LDFLAGS) -Ttext 0x80000000 -o $(KERNEL) $(OBJS) && \
+# 	$(OBJDUMP) -S -l -D $(KERNEL) > $K/kernel.objdump
+
+# $(KERNEL): $(OBJS) # $K/kernel.ld
+# 	$(LD) $(LDFLAGS) -Ttext 0x80000000 -o $(KERNEL) $(OBJS) && \
+# 	$(OBJDUMP) -S -l -D $(KERNEL) > $K/kernel.objdump
+
+build: $(OBJS) $K/kernel.ld
+	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $(KERNEL) $(OBJS) && \
 	$(OBJDUMP) -S -l -D $(KERNEL) > $K/kernel.objdump
 
-$(KERNEL): $(OBJS) # $K/kernel.ld
-	$(LD) $(LDFLAGS) -Ttext 0x80000000 -o $(KERNEL) $(OBJS) && \
+$(KERNEL): $(OBJS) $K/kernel.ld
+	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $(KERNEL) $(OBJS) && \
 	$(OBJDUMP) -S -l -D $(KERNEL) > $K/kernel.objdump
 
 $K/start.o: $K/start.S

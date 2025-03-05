@@ -105,7 +105,7 @@ number(char *str, int num, int size, int precision, int type)
 }
 
 
-int 
+int
 vsnprintf(char *out, size_t n, const char* fmt, va_list ap)
 {
     int cnt = 0;
