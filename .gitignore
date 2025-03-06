@@ -1,4 +1,6 @@
 *.o
-*/kernel
 
+kernel/kernel
 kernel/kernel.objdump
+
+references/*

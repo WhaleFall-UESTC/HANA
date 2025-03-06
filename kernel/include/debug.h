@@ -4,9 +4,6 @@
 
 #define ANSI_FMT(str, fmt) fmt str ANSI_RESET
 
-#define Log(color, format, ...) \
-    printf(ANSI_FMT("[%s:%d %s] " format, color) "\n", \
-        __FILE__, __LINE__, __func__, ## __VA_ARGS__)
 
 #define log(info, ...) \
   printf(ANSI_FMT("[%s:%d %s] " info, ANSI_FG_RED) "\n", \

@@ -1,6 +1,3 @@
-// #include "include/riscv.h"
-// #include "include/platform.h"
-// #include "include/defs.h"
 #include <riscv.h>
 #include <platform.h>
 #include <defs.h>
@@ -15,6 +12,6 @@ main()
 {
     uart_init();
     puts("Initialize uart0\n");
-    test_printf();
+    
     return 0;
 }

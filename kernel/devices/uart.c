@@ -16,7 +16,7 @@
 
 #define LSR_TX_IDLE (1 << 5)
 
-#define UART_REG(reg) ((volatile uint8 *)(UART0 + reg))
+#define UART_REG(reg) ((volatile uint8 *)(VIRT_UART0 + reg))
 #define uart_read_reg(reg) (*UART_REG(reg))
 #define uart_write_reg(reg, v) (*UART_REG(reg) = v)
 

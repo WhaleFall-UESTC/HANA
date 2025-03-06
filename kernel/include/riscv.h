@@ -1,5 +1,32 @@
 #include "common.h"
 
+#define PTE_V  (1L << 0)
+#define PTE_R  (1L << 1)
+#define PTE_W  (1L << 2)
+#define PTE_X  (1L << 3)
+#define PTE_U  (1L << 4)
+#define PTE_SHARED (1L << 5)
+#define PTE_EXECUTE_ONLY (1L << 6)
+#define PTE_DONT_ALLOCATE (1L << 7)
+#define PTE_READ_ONLY (1L << 8)
+
+#define PA2PTE(pa) ((((uint64)pa) >> 12) << 10)
+#define PTE2PA(pte) (((pte) >> 10) << 12)
+#define PTE_FLAGS(pte) ((pte) & 0x3FF)
+
+// #define MAXVA (1L << (9 + 9 + 9 + 12 - 1))
+#define MAXVA 0x4000000000L
+
+typedef uint64 pte_t;
+typedef uint64* pagetable_t;
+
+static inline void 
+sfence_vma()
+{
+  asm volatile ("sfence.vma");
+}
+
+
 // CSR_MSTATUS
 #define MSTATUS_SIE = (1L << 1)
 #define MSTATUS_MIE = (1L << 3)
