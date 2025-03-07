@@ -21,6 +21,8 @@
   do { \
     if (!(cond)) { \
       log("Assertion failed"); \
+      for (;;) \
+        ; \
     } \
   } while (0)
 

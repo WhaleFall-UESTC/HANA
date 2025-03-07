@@ -8,6 +8,7 @@
 
 #define PGROUNDUP(sz)  (((sz)+PGSIZE-1) & ~(PGSIZE-1))
 #define PGROUNDDOWN(a) (((a)) & ~(PGSIZE-1))
+#define IS_PGALIGNED(a) ((a) & 0xfff)
 
 #define NULL 0
 
