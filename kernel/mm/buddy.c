@@ -1,7 +1,6 @@
 #include <defs.h>
-#include <common.h>
 #include <debug.h>
-#include "buddy.h"
+#include <buddy.h>
 
 #define BLOCK_SIZE(order) (PGSIZE << (order))
 #define BLOCK_NPAGES(order) (1 << (order))
@@ -31,9 +30,9 @@ add_first(uint64 addr, int order)
 
     struct block* first_block = zone.free_area[order].free_list.next;
     zone.free_area[order].free_list.next = new_block;
-    new_block->prev = zone.free_area[order].free_list;
+    new_block->prev = &zone.free_area[order].free_list;
     new_block->next = first_block;
-    first_block.prev = new_block;
+    first_block->prev = new_block;
 
     zone.free_area[order].nr_free++;
 }
@@ -48,9 +47,9 @@ add_last(uint64 addr, int order)
 
     struct block* last_block = zone.free_area[order].free_list.prev;
     zone.free_area[order].free_list.prev = new_block;
-    new_block->next = zone.free_area[order].free_list;
+    new_block->next = &zone.free_area[order].free_list;
     new_block->prev = last_block;
-    last_block.next = new_block;
+    last_block->next = new_block;
 
     zone.free_area[order].nr_free++;
 }
@@ -66,6 +65,9 @@ remove(struct block* remove_block)
     // nop, you should not do this
     // buddy_free(remove_block, remove_block->order);
     zone.free_area[remove_block->order].nr_free--;
+    // need to clear this block
+    // once allocated but not used, buddy_free will free it
+    remove_block->order = -1;
 }
 
 
@@ -77,38 +79,49 @@ buddy_init(uint64 start, uint64 end)
     uint64 e = PGROUNDDOWN(end);
     uint npages = ((e - s) >> PGSHIFT);
 
+    log("npages: %u, size is: %#x", npages, npages << PGSHIFT);
+
     memset(&zone, 0, sizeof(struct zone));
+
+    log("Get s %p, e %p", (void*)s, (void*)e);
+    assert(s <= e);
+    log("compute the number of init blocks for each free_area");
 
     // compute the number of init blocks for each free_area
     uint square_npages = (MAX_ORDER * BLOCK_NPAGES(MAX_ORDER - 1));
     if (npages > square_npages) {
         npages -= square_npages;
-        for (int i = 0; i < MAX_ORDER; i++) 
+        for (int i = 0; i < MAX_ORDER; i++) {
             zone.free_area[i].nr_free = (1 << (MAX_ORDER - 1 - i));
+        }
     }
 
     for (int i = MAX_ORDER - 1; i >= 0; i--) {
-        uint current_block_npages = BLOCK_NPAGES(i);
-        uint64 nr_init_blocks = npages / current_block_npages;
-        zone.free_area[i].nr_free += nr_init_blocks;
-        npages -= nr_init_blocks * current_block_npages;
+        zone.free_area[i].nr_free += (npages >> i);
+        npages &= ((1 << i) - 1);
 
         // init link list
         zone.free_area[i].free_list.prev = &zone.free_area[i].free_list;
         zone.free_area[i].free_list.next = &zone.free_area[i].free_list;
     }
 
+    assert(npages == 0);
+    log("allocate blocks");
+
     // allocate blocks
     for (int i = 0; i < MAX_ORDER; i++) {
         uint64 current_block_size = BLOCK_SIZE(i);
-        int nr_alloc = free_area[i].nr_free;
+        int nr_alloc = zone.free_area[i].nr_free;
+        zone.free_area[i].nr_free = 0;
+        // log("order %d get %d block, each block %d pages, start at %p", i, nr_alloc, (int)(current_block_size >> PGSHIFT), (void*)s);
         for (int j = 0; j < nr_alloc; j++) {
+            // log("alloc %p", (void*) s);
             add_last(s, i);
             s += current_block_size;
         }
     }
 
-    assert(s <= e);
+    assert(s == e);
 }
 
 
@@ -162,12 +175,13 @@ void
 buddy_free(void* addr, int order)
 {
     struct block* buddy = (struct block*) BUDDY_BLOCK(addr, order);
-    if (buddy->order != order) {
-        add_last((uint64) addr, order);
-    } else {
+    if (buddy->order == order && buddy->prev && buddy->next) {
         remove(buddy);
-        memset((void*) BUDDY_HIGH(addr, order), 0, sizeof(struct block));
+        // memset((void*) BUDDY_HIGH(addr, order), 0, sizeof(struct block));
         buddy_free((void*) BUDDY_LOW(addr, order), order + 1);
+    }
+    else {
+        add_last((uint64) addr, order);
     }
 }
 

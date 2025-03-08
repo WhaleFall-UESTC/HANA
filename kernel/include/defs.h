@@ -1,5 +1,6 @@
 #include <stddef.h>
 #include <stdarg.h>
+#include <common.h>
 
 /* devices/uart.c */
 void            uart_init(void);
@@ -25,5 +26,12 @@ int             vsnprintf(char *out, size_t n, const char* fmt, va_list ap);
 // int             sprintf(char *out, const char *fmt, ...);
 int             printf(const char* fmt, ...);
 int             puts(char* buf);
+
+
+/* mm/buddy.c */
+void            buddy_init(uint64 start, uint64 end);
+void*           buddy_alloc(uint64 sz);
+void            buddy_free(void* addr, int order);
+
 
 
