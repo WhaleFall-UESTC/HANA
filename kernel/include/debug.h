@@ -30,3 +30,4 @@
 #define TODO() panic("please implement me")
 
 #define PASS(info, ...) Log(ANSI_FG_GREEN, info, ## __VA_ARGS__)
+#define out(info, ...)  Log(ANSI_FG_CYAN, info, ## __VA_ARGS__)

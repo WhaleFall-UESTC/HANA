@@ -2,12 +2,6 @@
 #include <debug.h>
 #include <buddy.h>
 
-#define BLOCK_SIZE(order) (PGSIZE << (order))
-#define BLOCK_NPAGES(order) (1 << (order))
-#define BUDDY_BLOCK(addr, order) (((uint64) (addr)) ^ (PGSIZE << (order)))
-#define BUDDY_LOW(addr, order) (((uint64) (addr)) & ~(((uint64) PGSIZE) << (order)))
-#define BUDDY_HIGH(addr, order) (((uint64) (addr)) | (PGSIZE << (order)))
-
 struct zone zone;
 
 static inline int 
@@ -79,13 +73,11 @@ buddy_init(uint64 start, uint64 end)
     uint64 e = PGROUNDDOWN(end);
     uint npages = ((e - s) >> PGSHIFT);
 
+    log("start at %p, end at %p", (void*)s, (void*)e);
     log("npages: %u, size is: %#x", npages, npages << PGSHIFT);
-
     memset(&zone, 0, sizeof(struct zone));
-
-    log("Get s %p, e %p", (void*)s, (void*)e);
     assert(s <= e);
-    log("compute the number of init blocks for each free_area");
+    // log("compute the number of init blocks for each free_area");
 
     // compute the number of init blocks for each free_area
     uint square_npages = (MAX_ORDER * BLOCK_NPAGES(MAX_ORDER - 1));
@@ -106,7 +98,7 @@ buddy_init(uint64 start, uint64 end)
     }
 
     assert(npages == 0);
-    log("allocate blocks");
+    // log("allocate blocks");
 
     // allocate blocks
     for (int i = 0; i < MAX_ORDER; i++) {

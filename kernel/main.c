@@ -2,6 +2,7 @@
 #include <platform.h>
 #include <memlayout.h>
 #include <defs.h>
+#include <debug.h>
 
 #include <testdefs.h>
 
@@ -14,10 +15,10 @@ int
 main()
 {
     uart_init();
-    puts("Initialize uart0\n");
+    out("Initialize uart0");
     buddy_init((uint64) end, KERNELTOP);
-    puts("Initialize buddy system\n");
-    test_buddy();
+    out("Initialize buddy system");
+    slab_init();
     
     return 0;
 }

@@ -1,5 +1,6 @@
 #include <defs.h>
 #include <buddy.h>
+#include <memlayout.h>
 #include <debug.h>
 
 extern struct zone zone;
@@ -47,4 +48,21 @@ test_buddy()
     assert(zone.free_area[1].nr_free == nr_free_1 + 1);
 
     PASS("pass alloc & free test");
+
+
+    // test for recursive merge
+    for (int i = 6; i < MAX_ORDER - 1; i++) {
+        int nr_free_n = zone.free_area[i].nr_free;
+        while (nr_free_n-- > 0)
+            buddy_alloc(BLOCK_SIZE(i));
+    }
+    buddy_alloc(BLOCK_SIZE(6));
+
+    for (int i = MAX_ORDER - 2; i >= 6; i--)
+        assert(zone.free_area[i].nr_free == 1);
+
+    PASS("buddy test");
+
+    memset((void*)PGROUNDUP(end), 0, KERNELTOP - PGROUNDUP(end));
+    buddy_init((uint64)end, KERNELTOP);
 }
