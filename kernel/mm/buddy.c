@@ -143,6 +143,7 @@ require(int order)
 void*
 buddy_alloc(uint64 sz)
 {
+    assert(sz > 0);
     uint64 size = PGROUNDUP(sz);
     int order = get_order(size);
 

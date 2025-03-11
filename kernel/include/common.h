@@ -15,8 +15,8 @@
 
 #define GET_LOW32(a) ((uint64)(a) & 0xffffffffL)
 #define GET_HIGH32(a) GET_LOW32(a >> 32)
-#define ROUNDUP(sz, SIZE)  (((uint64)(sz)+SIZE-1) & ~(SIZE-1))
-#define ROUNDDOWN(a, SIZE) (((uint64)(a)) & ~(SIZE-1))
+#define ROUNDUP(sz, align_size)  (((uint64)(sz)+align_size-1) & ~(align_size-1))
+#define ROUNDDOWN(a, align_size) (((uint64)(a)) & ~(align_size-1))
 
 // typedefs
 typedef unsigned long uint64;

@@ -19,6 +19,7 @@ main()
     buddy_init((uint64) end, KERNELTOP);
     out("Initialize buddy system");
     slab_init();
+    test_slab();
     
     return 0;
 }

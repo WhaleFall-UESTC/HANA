@@ -8,14 +8,6 @@ struct slab* partial;
 uint partial_len = 0;
 
 static inline void
-set_object_entry(struct object_entry* entry, uint8 size, int8 prev, int8 next)
-{
-    entry->size = size;
-    entry->prev = prev;
-    entry->next = next;
-}
-
-static inline void
 init_slab(void* addr)
 {
     struct slab* ret = (struct slab*) addr;
@@ -30,34 +22,46 @@ void
 slab_init()
 {
     assert(sizeof(struct slab) == PGSIZE);
-    struct slab* partial = buddy_alloc(4 * PGSIZE);
+    partial = buddy_alloc(4 * PGSIZE);
     for (int i = 0; i < 4; i++)
         init_slab(partial + i);
-    SLAB_SET_NEXT(partial, partial + 1);
-    SLAB_SET_NEXT(partial + 1, partial + 2);
+    set_slab_next(partial, partial + 1);
+    set_slab_next(partial + 1, partial + 2);
     current = partial + 3;
     partial_len = 3;
 }
 
 
-static inline void*
+static void*
 alloc_objs(struct slab* slab, uint8 nr_objs)
 {
-    if (NR_FREE_OBJS(slab) < nr_objs)
+    if (nr_free_objs(slab) < nr_objs)
         return NULL;
 
-    for (int idx = 0; idx != OBJECT_SENTINEL; idx = slab->objs[idx].next) {
+    for (int idx = slab->sentinel.next; idx != OBJECT_SENTINEL; idx = slab->objs[idx].next) {
         if (slab->objs[idx].size >= nr_objs) {
             // set old end zero
             set_object_entry(&slab->objs[idx - 1 + slab->objs[idx].size], 0, 0, 0);
             // reduce the size
             slab->objs[idx].size -= nr_objs;
             slab->sentinel.size -= nr_objs;
-            // set new end
-            struct object_entry* end = &slab->objs[idx - 1 + slab->objs[idx].size];
-            set_object_entry(end, slab->objs[idx].size, E, D);
-            // return result
-            return (void*)(&end[1]);
+
+            if (slab->objs[idx].size == 0) {
+                // just remove these objs from list
+                list_remove(slab, idx);
+                set_object_entry(&slab->objs[idx], 0, 0, 0);
+                return (void*) &slab->objects[idx];
+            }
+            else {
+                // set new end
+                int end_idx = idx - 1 + slab->objs[idx].size;
+                // while, I forget the case that size only left 1
+                int8 p = (slab->objs[idx].size == 1 ? slab->objs[idx].prev : E);
+                int8 n = (slab->objs[idx].size == 1 ? slab->objs[idx].next : D);
+                set_object_entry(&slab->objs[end_idx], slab->objs[idx].size, p, n);
+                // return result
+                return (void*) &slab->objects[end_idx + 1];
+            }
         }
     }
 
@@ -68,18 +72,19 @@ alloc_objs(struct slab* slab, uint8 nr_objs)
 void*
 slab_alloc(uint64 sz)
 {
-    assert(sz <= (NR_OBJS * OBJECT_SIZE));
-    uint8 nr_objs = ROUNDUP(sz, OBJECT_SIZE);
+    assert(sz <= (NR_OBJS * OBJECT_SIZE) && sz > 0);
+    uint8 nr_objs = ROUNDUP(sz, OBJECT_SIZE) >> OBJECT_SHIFT;
     void* current_alloc = alloc_objs(current, nr_objs);
     if (current_alloc)
         return current_alloc;
 
-    struct slab *ptr_pre = partial, *ptr = SLAB_NEXT(partial);
+    struct slab* ptr_pre = partial;
+    struct slab* ptr = get_slab_next(partial);
     // if the head of partial can alloc objs
     if (ptr_pre->sentinel.size >= nr_objs) {
         // swap current and partial head
-        SLAB_SET_NEXT(current, ptr);
-        SLAB_SET_NEXT(partial, 0);
+        set_slab_next(current, ptr);
+        set_slab_next(partial, NULL);
         struct slab* tmp = current;
         current = partial;
         partial = tmp;
@@ -88,21 +93,21 @@ slab_alloc(uint64 sz)
     }
 
     // find valid slab in partial
-    while (ptr->next != 0) {
+    while (ptr != NULL) {
         if (ptr->sentinel.size >= nr_objs) {
-            struct slab* ptr_next = SLAB_NEXT(ptr);
-            SLAB_SET_NEXT(current, ptr_next);
-            SLAB_SET_NEXT(ptr_pre, current);
+            struct slab* ptr_next = get_slab_next(ptr);
+            set_slab_next(current, ptr_next);
+            set_slab_next(ptr_pre, current);
             current = ptr;
             return alloc_objs(current, nr_objs);
         }
         ptr_pre = ptr;
-        ptr = SLAB_NEXT(ptr);
+        ptr = get_slab_next(ptr);
     }
 
     // if there is none, ask for buddy system
     // add current to the partial list
-    SLAB_SET_NEXT(current, partial);
+    set_slab_next(current, partial);
     partial = current;
     partial_len++;
     current = (struct slab*) buddy_alloc(PGSIZE);
@@ -115,24 +120,28 @@ slab_alloc(uint64 sz)
 static inline void 
 merge_high(struct slab* slab, int idx, uint8 nr_free)
 {
-    struct object_entry below = slab->objs[idx + nr_free];
+    struct object_entry high = slab->objs[idx + nr_free];
     // set objs[idx]
-    set_object_entry(&slab->objs[idx], nr_free + below.size, below.prev, below.next);
+    set_object_entry(&slab->objs[idx], nr_free + high.size, high.prev, high.next);
     // set prev object_entry and reset its next
-    slab->objs[(int)below.prev].next = idx;
+    slab->objs[(high.prev == OBJECT_SENTINEL ? OBJECT_SENTINEL : (int) high.prev)].next = idx;
     // reset end
-    slab->objs[idx + nr_free + below.size - 1].size += nr_free;
-    // clean below object_entry
+    slab->objs[idx + nr_free + high.size - 1].size += nr_free;
+    // clean high object_entry
     set_object_entry(&slab->objs[idx + nr_free], 0, 0, 0);
 }
 
 static inline void 
 merge_low(struct slab* slab, int idx, uint8 nr_free)
 {
-    struct object_entry* upper = &slab->objs[idx - slab->objs[idx - 1].size];
-    upper->size += nr_free;
-    set_object_entry(&slab->objs[idx - 1], 0, 0, 0);
-    set_object_entry(&slab->objs[idx - 1 + (int)nr_free], upper->size, E, D);
+    struct object_entry* lower = &slab->objs[idx - slab->objs[idx - 1].size];
+    // change lower size
+    lower->size += nr_free;
+    // remove idx's area from list
+    list_remove(slab, idx);
+    set_object_entry(&slab->objs[idx], 0, 0, 0);
+    // set new end
+    lower[lower->size - 1].size = lower->size;
 }
 
 
@@ -141,28 +150,31 @@ slab_free(void* addr, uint8 nr_free)
 {
     struct slab* slab = SLAB(addr);
     slab->sentinel.size += nr_free;
+    assert(slab->sentinel.size <= NR_OBJS);
     if (slab->sentinel.size == NR_OBJS && partial_len > MIN_PARTIAL) {
-        buddy_free(addr, 0);
+        buddy_free((void*) slab, 0);
         partial_len--;
         return;
     }
     int idx = OBJECT_IDX(addr);
-    bool merge_h = false, merge_l = false;
+    bool merge_h = idx < NR_OBJS - 1 && slab->objs[idx + nr_free].size != 0;
+    bool merge_l = idx > 0 && slab->objs[idx - 1].prev == E && slab->objs[idx - 1].next == D;
 
-    if (slab->objs[idx + nr_free].size != 0) {
+    if (merge_h) {
         merge_high(slab, idx, nr_free);
-        merge_h = true;
     }
 
-    if (slab->objs[idx - 1].prev == E && slab->objs[idx - 1].next == D) {
+    if (merge_l) {
         merge_low(slab, idx, nr_free);
-        merge_l = true;
     }
 
     if (!merge_h && !merge_l) {
+        // if not merge, create an single area and add it to the end of the list
         int8 last = slab->sentinel.prev;
-        slab->objs[(int)last].next = idx;
+        struct object_entry* last_entry = (last == OBJECT_SENTINEL ? &slab->sentinel : &slab->objs[(int)last]);
+        last_entry->next = idx;
         slab->sentinel.prev = idx;
         set_object_entry(&slab->objs[idx], nr_free, last, OBJECT_SENTINEL);
+        set_object_entry(&slab->objs[idx - 1 + nr_free], nr_free, E, D);
     }
 }

@@ -2,17 +2,13 @@
 #define OBJECT_SHIFT 6
 #define SLAB_META_DATA_NR_OBJS 3
 #define NR_OBJS ((PGSIZE >> OBJECT_SHIFT) - SLAB_META_DATA_NR_OBJS)
-#define OBJECT_SENTINEL -1
+#define OBJECT_SENTINEL (uint8)-1
 #define E 0x45
 #define D 0x44
 #define MIN_PARTIAL 3
 
 #define SLAB(addr) ((struct slab*) PGROUNDDOWN(addr))
-#define SLAB_NEXT(slab_addr) ((struct slab*)(((uint64)(slab_addr) & (((1L << 32) - 1L) << 32)) | ((struct slab*)(slab_addr))->next))
-#define SLAB_SET_NEXT(slab_pre, slab_next) ((struct slab*)(slab_pre))->next = GET_LOW32(slab_next)
-#define OBJECT_IDX(addr) (((uint64)(addr) >> OBJECT_SHIFT) - SLAB_META_DATA_NR_OBJS)
-#define NR_FREE_OBJS(slab_addr) (((struct slab*)(slab_addr))->sentinel.size)
-
+#define OBJECT_IDX(addr) ((((uint64)(addr) - PGROUNDDOWN(addr)) >> OBJECT_SHIFT) - SLAB_META_DATA_NR_OBJS)
 
 
 #pragma pack(push, 1) 
@@ -37,5 +33,44 @@ struct slab {
 
 #pragma pack(pop) 
 
+static inline struct slab*
+get_slab_next(struct slab* s) 
+{
+    uint64 slab_addr = (uint64) s;
+    slab_addr &= 0xffffffff00000000L;
+    slab_addr |= s->next;
+    return (struct slab*) slab_addr;
+}
+
+static inline void 
+set_slab_next(struct slab* prev, struct slab* next)
+{
+    prev->next = (uint32)((uint64)next & 0xffffffffL);
+}
+
+static inline uint8
+nr_free_objs(struct slab* s)
+{
+    return s->sentinel.size;
+}
+
+static inline void
+set_object_entry(struct object_entry* entry, uint8 size, int8 prev, int8 next)
+{
+    entry->size = size;
+    entry->prev = prev;
+    entry->next = next;
+}
+
+static inline void 
+list_remove(struct slab* slab, int idx)
+{
+    int8 idx_prev = slab->objs[idx].prev;
+    int8 idx_next = slab->objs[idx].next;
+    struct object_entry* prev_entry = (idx_prev == OBJECT_SENTINEL ? &slab->sentinel : &slab->objs[(int)idx_prev]);
+    struct object_entry* next_entry = (idx_next == OBJECT_SENTINEL ? &slab->sentinel : &slab->objs[(int)idx_next]);
+    prev_entry->next = idx_next;
+    next_entry->prev = idx_prev;
+}
 
 

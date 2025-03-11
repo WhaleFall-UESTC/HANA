@@ -36,8 +36,8 @@ void            buddy_free(void* addr, int order);
 
 /* mm/slab.c */
 void            slab_init();
-
-
+void*           slab_alloc(uint64 sz);
+void            slab_free(void* addr, uint8 nr_free);
 
 
 
