@@ -20,7 +20,7 @@ test_slab()
         origin[i] = get_slab_next(origin[i - 1]);
     }
     for (int i = 0; i <= MIN_PARTIAL; i++) {
-        log("alloc slab %d", i);
+        // log("alloc slab %d", i);
         tmp[i] = slab_alloc(NR_OBJS * OBJECT_SIZE);
         assert(current == origin[i]);
     }
@@ -34,15 +34,15 @@ test_slab()
     assert(s->objs[0].prev == OBJECT_SENTINEL);
     assert(s->objs[0].next == OBJECT_SENTINEL);
     assert(s->objs[0].size = NR_OBJS - size_mod_3);
-    log("Alloc fragment0, this time sentinel: size: %d, prev: %d, next: %d", s->sentinel.size, s->sentinel.prev, s->sentinel.next);
+    // log("Alloc fragment0, this time sentinel: size: %d, prev: %d, next: %d", (int)s->sentinel.size, (int)s->sentinel.prev, (int)s->sentinel.next);
     void* fragment1 = slab_alloc(size_div_3 * OBJECT_SIZE);
-    log("Alloc fragment1, this time sentinel: size: %d, prev: %d, next: %d", s->sentinel.size, s->sentinel.prev, s->sentinel.next);
+    // log("Alloc fragment1, this time sentinel: size: %d, prev: %d, next: %d", (int)s->sentinel.size, (int)s->sentinel.prev, (int)s->sentinel.next);
     // slab will call buddy_alloc
     assert(partial_len == MIN_PARTIAL + 1);
     void* fragment2 = slab_alloc(size_div_3 * OBJECT_SIZE);
-    log("Alloc fragment2, this time sentinel: size: %d, prev: %d, next: %d", s->sentinel.size, s->sentinel.prev, s->sentinel.next);
+    // log("Alloc fragment2, this time sentinel: size: %d, prev: %d, next: %d", (int)s->sentinel.size, (int)s->sentinel.prev, (int)s->sentinel.next);
     void* fragment3 = slab_alloc(size_div_3 * OBJECT_SIZE);
-    log("Alloc all slab, this time sentinel: size: %d, prev: %d, next: %d", s->sentinel.size, s->sentinel.prev, s->sentinel.next);
+    // log("Alloc all slab, this time sentinel: size: %d, prev: %d, next: %d", (int)s->sentinel.size, (int)s->sentinel.prev, (int)s->sentinel.next);
     assert(s->sentinel.prev == OBJECT_SENTINEL);
     assert(s->sentinel.next == OBJECT_SENTINEL);
 
@@ -64,25 +64,87 @@ test_slab()
 
     PASS("pass slab alloc test");
 
-    log("before free, this time sentinel: size: %d, prev: %d, next: %d", s->sentinel.size, s->sentinel.prev, s->sentinel.next);
+    // log("before free, this time sentinel: size: %d, prev: %d, next: %d", (int)s->sentinel.size, (int)s->sentinel.prev, (int)s->sentinel.next);
     slab_free(fragment1, size_div_3);
-    log("free fragment1, this time sentinel: size: %d, prev: %d, next: %d", s->sentinel.size, s->sentinel.prev, s->sentinel.next);
+    // log("free fragment1, this time sentinel: size: %d, prev: %d, next: %d", (int)s->sentinel.size, (int)s->sentinel.prev, (int)s->sentinel.next);
     assert(s->sentinel.prev == 2 * size_div_3);
+    assert(s->objs[2 * size_div_3].prev == OBJECT_SENTINEL);
+    assert(s->objs[2 * size_div_3].next == OBJECT_SENTINEL);
+    assert(s->objs[3 * size_div_3 - 1].size == size_div_3);
+    assert(s->objs[3 * size_div_3 - 1].prev == E);
+    assert(s->objs[3 * size_div_3 - 1].next == D);
+
     slab_free(fragment3, size_div_3);
-    log("free fragment3, this time sentinel: size: %d, prev: %d, next: %d", s->sentinel.size, s->sentinel.prev, s->sentinel.next);
+    // log("free fragment3, this time sentinel: size: %d, prev: %d, next: %d", (int)s->sentinel.size, (int)s->sentinel.prev, (int)s->sentinel.next);
     assert(s->sentinel.prev == 0);
     assert(s->sentinel.next == 2 * size_div_3);
     assert(nr_free_objs(s) == 2 * size_div_3);
+    assert(s->objs[0].prev == 2 * size_div_3);
+    assert(s->objs[0].next == OBJECT_SENTINEL);
+    assert(s->objs[size_div_3 - 1].size == size_div_3);
+    assert(s->objs[size_div_3 - 1].prev == E);
+    assert(s->objs[size_div_3 - 1].next == D);
 
     slab_free(fragment2, size_div_3);
-    log("free fragment2, this time sentinel: size: %d, prev: %d, next: %d", s->sentinel.size, s->sentinel.prev, s->sentinel.next);
+    // log("free fragment2, this time sentinel: size: %d, prev: %d, next: %d", (int)s->sentinel.size, (int)s->sentinel.prev, (int)s->sentinel.next);
     assert(s->sentinel.prev == 0);
     assert(s->sentinel.next == 0);
     assert(nr_free_objs(s) == NR_OBJS - size_mod_3);
+    assert(s->objs[0].size == NR_OBJS - size_mod_3);
+    assert(s->objs[0].prev == OBJECT_SENTINEL);
+    assert(s->objs[0].next == OBJECT_SENTINEL);
+    // // log("objs[0].size: %d", (int)s->objs[0].size);
+    for (int i = 1; i < NR_OBJS - 2; i++) {
+        assert(s->objs[i].size == 0);
+    }
+    assert(s->objs[NR_OBJS - size_mod_3 - 1].size == NR_OBJS - size_mod_3);
+    assert(s->objs[NR_OBJS - size_mod_3 - 1].prev == E);
+    assert(s->objs[NR_OBJS - size_mod_3 - 1].next == D);
 
     slab_free(fragment0, size_mod_3);
     assert(nr_free_objs(s) == NR_OBJS);
-    log("free fragment1, this time sentinel: size: %d, prev: %d, next: %d", s->sentinel.size, s->sentinel.prev, s->sentinel.next);
+    // log("free fragment0, this time sentinel: size: %d, prev: %d, next: %d", (int)s->sentinel.size, (int)s->sentinel.prev, (int)s->sentinel.next);
 
+    assert(nr_free_objs(s) == NR_OBJS);
+    assert(s->sentinel.prev == 0);
+    assert(s->sentinel.next == 0);
+    assert(s->objs[0].size == NR_OBJS);
+    assert(s->objs[0].prev == OBJECT_SENTINEL);
+    assert(s->objs[0].next == OBJECT_SENTINEL);
+    assert(s->objs[NR_OBJS - 1].size == NR_OBJS);
+    assert(s->objs[NR_OBJS - 1].prev == E);
     PASS("pass slab free test");
+
+    void* fragment_4 = slab_alloc(4 * OBJECT_SIZE);
+    void* fragment_1 = slab_alloc(OBJECT_SIZE);
+    void* fragment_1_ = slab_alloc(OBJECT_SIZE);
+    void* fragment_2 = slab_alloc(2 * OBJECT_SIZE);
+
+    slab_free(fragment_1, 1);
+    int idx_1 = OBJECT_IDX(fragment_1);
+    struct slab* s1 = SLAB(fragment_1);
+    assert(s1->objs[idx_1].size == 1);
+    assert(s1->objs[idx_1].prev == 0);
+    assert(s1->objs[idx_1].next == OBJECT_SENTINEL);
+    assert(s1 == SLAB(fragment_4));
+
+    slab_free(fragment_4, 4);
+    assert(s1->objs[idx_1].size == 4 + 1);
+    assert(s1->objs[idx_1 + 4].size == 4 + 1);
+    assert(s1->objs[idx_1 + 4].prev == E && s1->objs[idx_1 - 4].next == D);
+
+    int idx_2 = OBJECT_IDX(fragment_2);
+    slab_free(fragment_2, 2);
+    assert(s1->objs[idx_2 + 1].prev == E && s1->objs[idx_2 + 1].next == D);
+    assert(s1->objs[idx_2 + 1].size == NR_OBJS - 1 - 1 - 4);
+
+    slab_free(fragment_1_, 1);
+    assert(s1->objs[0].prev == OBJECT_SENTINEL && s1->objs[0].next == OBJECT_SENTINEL);
+    assert(s1->objs[0].size == NR_OBJS);
+    for (int i = 1; i < NR_OBJS - 1; i++)
+        assert(s1->objs[i].size == 0 && s1->objs[i].prev == 0 && s1->objs[i].next == 0);
+    assert(s1->objs[NR_OBJS - 1].size == NR_OBJS);
+
+    PASS("pass slab free one object test");
+
 }

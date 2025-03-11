@@ -124,23 +124,27 @@ merge_high(struct slab* slab, int idx, uint8 nr_free)
     // set objs[idx]
     set_object_entry(&slab->objs[idx], nr_free + high.size, high.prev, high.next);
     // set prev object_entry and reset its next
-    slab->objs[(high.prev == OBJECT_SENTINEL ? OBJECT_SENTINEL : (int) high.prev)].next = idx;
-    // reset end
+    struct object_entry* high_prev = (high.prev == OBJECT_SENTINEL ? &slab->sentinel : &slab->objs[(int)high.prev]);
+    high_prev->next = idx;
+    // set next object_entry and reset its prev
+    struct object_entry* high_next = (high.next == OBJECT_SENTINEL ? &slab->sentinel : &slab->objs[(int)high.next]);
+    high_next->prev = idx;
     slab->objs[idx + nr_free + high.size - 1].size += nr_free;
     // clean high object_entry
     set_object_entry(&slab->objs[idx + nr_free], 0, 0, 0);
 }
 
 static inline void 
-merge_low(struct slab* slab, int idx, uint8 nr_free)
+merge_low(struct slab* slab, int idx)
 {
     struct object_entry* lower = &slab->objs[idx - slab->objs[idx - 1].size];
     // change lower size
-    lower->size += nr_free;
+    lower->size += slab->objs[idx].size;
     // remove idx's area from list
     list_remove(slab, idx);
     set_object_entry(&slab->objs[idx], 0, 0, 0);
-    // set new end
+    // clear old end and set new end
+    set_object_entry(&slab->objs[idx - 1], 0, 0, 0);
     lower[lower->size - 1].size = lower->size;
 }
 
@@ -151,6 +155,8 @@ slab_free(void* addr, uint8 nr_free)
     struct slab* slab = SLAB(addr);
     slab->sentinel.size += nr_free;
     assert(slab->sentinel.size <= NR_OBJS);
+    // if after free these object, the slab is free, and partial has enough slab
+    // ret it to buddy system
     if (slab->sentinel.size == NR_OBJS && partial_len > MIN_PARTIAL) {
         buddy_free((void*) slab, 0);
         partial_len--;
@@ -158,23 +164,32 @@ slab_free(void* addr, uint8 nr_free)
     }
     int idx = OBJECT_IDX(addr);
     bool merge_h = idx < NR_OBJS - 1 && slab->objs[idx + nr_free].size != 0;
-    bool merge_l = idx > 0 && slab->objs[idx - 1].prev == E && slab->objs[idx - 1].next == D;
-
-    if (merge_h) {
-        merge_high(slab, idx, nr_free);
-    }
-
-    if (merge_l) {
-        merge_low(slab, idx, nr_free);
-    }
-
+    bool merge_l = idx > 0 \
+                && ((slab->objs[idx - 1].prev == E && slab->objs[idx - 1].next == D) \
+                || slab->objs[idx - 1].size == 1);
+    
     if (!merge_h && !merge_l) {
         // if not merge, create an single area and add it to the end of the list
         int8 last = slab->sentinel.prev;
         struct object_entry* last_entry = (last == OBJECT_SENTINEL ? &slab->sentinel : &slab->objs[(int)last]);
         last_entry->next = idx;
         slab->sentinel.prev = idx;
-        set_object_entry(&slab->objs[idx], nr_free, last, OBJECT_SENTINEL);
         set_object_entry(&slab->objs[idx - 1 + nr_free], nr_free, E, D);
+        set_object_entry(&slab->objs[idx], nr_free, last, OBJECT_SENTINEL);
+    } 
+    else if (merge_h) {
+        // if there is a higher area to merge, merge it
+        merge_high(slab, idx, nr_free);
+        // if there is a lower area to merge too, merge again
+        if (merge_l) 
+            merge_low(slab, idx);
+    }
+    else {      // the last case is: only need to merge lower block
+        struct object_entry* lower = &slab->objs[idx - slab->objs[idx - 1].size];
+        // clear old end and set new end
+        if (lower->size > 1) 
+            set_object_entry(&slab->objs[idx - 1], 0, 0, 0);
+        lower->size += nr_free;
+        set_object_entry(&slab->objs[idx + nr_free - 1], lower->size, E, D);
     }
 }

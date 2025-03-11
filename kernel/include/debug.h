@@ -11,8 +11,8 @@
 #define ANSI_FMT(str, fmt) fmt str ANSI_RESET
 
 #define Log(color, info, ...) \
-    printf(ANSI_FMT("[%s:%d %s] " info, color) "\n", \
-        __FILE__, __LINE__, __func__, ## __VA_ARGS__)
+    printf(ANSI_FMT("[%s:%d] " info, color) "\n", \
+        __FILE__, __LINE__, ## __VA_ARGS__)
 
 #define log(info, ...)  Log(ANSI_FG_BLUE, info, ## __VA_ARGS__)
 
