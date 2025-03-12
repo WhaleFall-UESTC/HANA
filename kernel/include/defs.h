@@ -43,6 +43,7 @@ void            slab_free(void* addr, uint8 nr_free);
 /* mm/kalloc.c */
 void            kinit();
 void*           kalloc(uint64 sz);
+void            kfree(void *addr);
 
 
 

@@ -10,3 +10,6 @@ void        test_buddy();
 
 /* test_slab.c */
 void        test_slab();
+
+/* test_kalloc.c */
+void        test_kalloc();

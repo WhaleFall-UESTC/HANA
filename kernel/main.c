@@ -19,5 +19,7 @@ main()
     kinit((uint64) end, KERNELTOP);
     test_buddy();
     test_slab();
+    test_kalloc();
+    log("main finish");
     return 0;
 }

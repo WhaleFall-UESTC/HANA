@@ -36,7 +36,7 @@ kfree(void *addr)
         buddy_free(addr, GET_PAGE_ORDER(addr, pages));
     } else {
         struct slab* s = SLAB(addr);
-        int idx = OBJECT_IDX(s);
+        int idx = OBJECT_IDX(addr);
         slab_free(addr, s->objs[idx].size);
     }
 }

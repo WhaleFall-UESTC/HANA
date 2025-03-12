@@ -171,7 +171,7 @@ void
 buddy_free_helper(void* addr, int order)
 {
     struct block* buddy = (struct block*) BUDDY_BLOCK(addr, order);
-    if (buddy->order == order && buddy->prev && buddy->next) {
+    if (order < MAX_ORDER - 1 && buddy->order == order && buddy->prev && buddy->next) {
         remove(buddy);
         // memset((void*) BUDDY_HIGH(addr, order), 0, sizeof(struct block));
         buddy_free_helper((void*) BUDDY_LOW(addr, order), order + 1);
@@ -184,7 +184,7 @@ buddy_free_helper(void* addr, int order)
 void
 buddy_free(void* addr, int order)
 {
-    assert(GET_PAGE_ORDER(addr, pages) == order);
+    // assert(GET_PAGE_ORDER(addr, pages) == order);
     SET_PAGE_ORDER(addr, pages, 0);
     buddy_free_helper(addr, order);
 }

@@ -1,18 +1,22 @@
-#define ANSI_RESET "\x1b[0m"
-#define ANSI_BOLD "\x1b[1m"
-#define ANSI_FG_BLACK "\x1b[30m"
-#define ANSI_FG_RED "\x1b[31m"
-#define ANSI_FG_GREEN "\x1b[32m"
-#define ANSI_FG_YELLOW "\x1b[33m"
-#define ANSI_FG_BLUE "\x1b[34m"
-#define ANSI_FG_MAGENTA "\x1b[35m"
-#define ANSI_FG_CYAN "\x1b[36m"
-#define ANSI_FG_WHITE "\x1b[37m"
+#define ANSI_RESET      "\033[0m"
+#define ANSI_BOLD       "\033[1m"
+#define ANSI_FG_BLACK   "\033[30m"
+#define ANSI_FG_RED     "\033[31m"
+#define ANSI_FG_GREEN   "\033[32m"
+#define ANSI_FG_YELLOW  "\033[33m"
+#define ANSI_FG_BLUE    "\033[34m"
+#define ANSI_FG_MAGENTA "\033[35m"
+#define ANSI_FG_CYAN    "\033[36m"
+#define ANSI_FG_WHITE   "\033[37m"
 
 
 #define Log(color, info, ...) \
     printf(color "[%s:%d] " info ANSI_RESET "\n", \
         __FILE__, __LINE__, ## __VA_ARGS__)
+
+// #define Log(color, info, ...) 
+//     printf("[%s:%d] " info "\n", 
+//         __FILE__, __LINE__, ## __VA_ARGS__)
 
 #define log(info, ...)  Log(ANSI_FG_BLUE, info, ## __VA_ARGS__)
 
@@ -20,6 +24,8 @@
     do { \
         if (!(cond)) { \
             Log(ANSI_FG_RED, format, ## __VA_ARGS__); \
+            for (;;)    \
+                ;   \
         } \
     } while (0)
 
