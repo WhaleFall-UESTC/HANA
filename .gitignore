@@ -2,5 +2,6 @@
 
 kernel/kernel
 kernel/kernel.objdump
+kernel.ld.copy
 
 references/*

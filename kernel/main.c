@@ -16,10 +16,8 @@ main()
 {
     uart_init();
     out("Initialize uart0");
-    buddy_init((uint64) end, KERNELTOP);
-    out("Initialize buddy system");
-    slab_init();
+    kinit((uint64) end, KERNELTOP);
+    test_buddy();
     test_slab();
-    
     return 0;
 }

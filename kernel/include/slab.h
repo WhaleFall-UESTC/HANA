@@ -5,6 +5,8 @@
 #define OBJECT_SENTINEL (uint8)-1
 #define E 0x45
 #define D 0x44
+#define A 0x41
+#define L 0x4c
 #define MIN_PARTIAL 3
 
 #define SLAB(addr) ((struct slab*) PGROUNDDOWN(addr))

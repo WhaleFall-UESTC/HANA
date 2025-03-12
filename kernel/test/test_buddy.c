@@ -62,7 +62,4 @@ test_buddy()
         assert(zone.free_area[i].nr_free == 1);
 
     PASS("pass buddy test");
-
-    memset((void*)PGROUNDUP(end), 0, KERNELTOP - PGROUNDUP(end));
-    buddy_init((uint64)end, KERNELTOP);
 }

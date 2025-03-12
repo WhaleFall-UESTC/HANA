@@ -2,6 +2,7 @@
 #include <debug.h>
 #include <buddy.h>
 
+extern struct page* pages;
 struct zone zone;
 
 static inline int 
@@ -66,7 +67,7 @@ remove(struct block* remove_block)
 
 
 // end should be page-aligned
-void 
+void
 buddy_init(uint64 start, uint64 end)
 {
     uint64 s = PGROUNDUP(start);
@@ -74,7 +75,7 @@ buddy_init(uint64 start, uint64 end)
     uint npages = ((e - s) >> PGSHIFT);
 
     log("start at %p, end at %p", (void*)s, (void*)e);
-    log("npages: %u, size is: %#x", npages, npages << PGSHIFT);
+    log("npages: %d, size is: %#x", (int)npages, npages << PGSHIFT);
     memset(&zone, 0, sizeof(struct zone));
     assert(s <= e);
     // log("compute the number of init blocks for each free_area");
@@ -150,13 +151,15 @@ buddy_alloc(uint64 sz)
     if (zone.free_area[order].nr_free) {
         struct block* free_block = zone.free_area[order].free_list.prev;
         remove(free_block);
+        SET_PAGE_ORDER(free_block, pages, order);
         return (void*) free_block;
     }
     else {
         void* require_result = require(order);
-        if (require_result != NULL)
+        if (require_result != NULL) {
+            SET_PAGE_ORDER(require_result, pages, order);
             return require_result;
-        else TODO();    // allocator
+        } else TODO();    // allocator
         panic("Memory is out");
     }
 
@@ -165,17 +168,23 @@ buddy_alloc(uint64 sz)
 
 
 void
-buddy_free(void* addr, int order)
+buddy_free_helper(void* addr, int order)
 {
     struct block* buddy = (struct block*) BUDDY_BLOCK(addr, order);
     if (buddy->order == order && buddy->prev && buddy->next) {
         remove(buddy);
         // memset((void*) BUDDY_HIGH(addr, order), 0, sizeof(struct block));
-        buddy_free((void*) BUDDY_LOW(addr, order), order + 1);
+        buddy_free_helper((void*) BUDDY_LOW(addr, order), order + 1);
     }
     else {
         add_last((uint64) addr, order);
     }
 }
 
-
+void
+buddy_free(void* addr, int order)
+{
+    assert(GET_PAGE_ORDER(addr, pages) == order);
+    SET_PAGE_ORDER(addr, pages, 0);
+    buddy_free_helper(addr, order);
+}

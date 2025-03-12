@@ -10,7 +10,7 @@
 
 #define PGROUNDUP(sz)  (((uint64)(sz)+PGSIZE-1) & ~(PGSIZE-1))
 #define PGROUNDDOWN(a) (((uint64)(a)) & ~(PGSIZE-1))
-#define IS_PGALIGNED(a) (!((a) & 0xfff))
+#define IS_PGALIGNED(a) (!((uint64)(a) & 0xfff))
 #define PGOFFSET(a)    (((uint64)(a)) & (PGSIZE - 1))
 
 #define GET_LOW32(a) ((uint64)(a) & 0xffffffffL)
