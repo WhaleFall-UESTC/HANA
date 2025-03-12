@@ -17,8 +17,8 @@
 #define fill_left() if (!(flags & LEFT)) { while (field_width-- > 0) { *str++ = ' '; } }
 #define fill_right() while (field_width-- > 0) { *str++ = ' '; }
 
-static const char* digits_low = "0123456789abcdefghijklmnopqrstuvwxyz";
-static const char* digits_high = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+// const char* digits_low = "0123456789abcdefghijklmnopqrstuvwxyz";
+// const char* digits_high = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 // string convert to number
 static inline int
@@ -37,15 +37,22 @@ write(char *buf, size_t n)
         uart_putc(buf[i]);
 }
 
+static inline char
+digits(unsigned num)
+{
+    return (char)((num >= 10 ? 87 : 48) + num);
+}
+
 
 // number convert to formatted string
+// actually unsupport upper character
 static char* 
 number(char *str, int num, int size, int precision, int type)
 {
     char c = 0, sign = 0, num_str[36];
     int i = 0;
     unsigned base = ((type & BIN) ? BIN : ((type & OCT) ? OCT : ((type & HEX) ? HEX : 10)));
-    const char* digits = (type & SMALL) ? digits_low : digits_high;
+    // const char* digits = (type & SMALL) ? digits_low : digits_high;
 
     // left align forbid zeropad
     if (type & LEFT) type &= ~ZEROPAD;
@@ -68,7 +75,7 @@ number(char *str, int num, int size, int precision, int type)
     else {
         unsigned unum = num;
         do {
-            num_str[i++] = digits[unum % base];
+            num_str[i++] = digits(unum % base);
             unum /= base;
         } while (unum != 0);
     }
@@ -87,9 +94,9 @@ number(char *str, int num, int size, int precision, int type)
     if (type & PREFIX) {
         *str++ = '0';
         if (type & BIN)
-            *str++ = digits[11];
+            *str++ = 'b';
         if (type & HEX)
-            *str++ = digits[33];
+            *str++ = 'x';
     }
 
     if (!(type & LEFT)) {
