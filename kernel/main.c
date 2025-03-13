@@ -1,4 +1,3 @@
-#include <riscv.h>
 #include <platform.h>
 #include <memlayout.h>
 #include <defs.h>
@@ -17,9 +16,9 @@ main()
     uart_init();
     out("Initialize uart0");
     kinit((uint64) end, PHYSTOP);
-    test_buddy();
-    test_slab();
-    test_kalloc();
-    log("main finish");
+    kvminit();
+    out("Initialize vm");
+    kvminithart();
+    out("Enable paging");
     return 0;
 }

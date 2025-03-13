@@ -23,6 +23,7 @@ kinit(uint64 start, uint64 end)
 void*
 kalloc(uint64 sz)
 {
+    assert(sz > 0);
     if (sz > NR_OBJS * OBJECT_SIZE)
         return buddy_alloc(sz);
     else

@@ -30,12 +30,6 @@ slab_init()
     }
     current = buddy_alloc(PGSIZE);
     init_slab(current);
-    // partial = buddy_alloc(4 * PGSIZE);
-    // for (int i = 0; i < 4; i++)
-    //     init_slab(partial + i);
-    // set_slab_next(partial, partial + 1);
-    // set_slab_next(partial + 1, partial + 2);
-    // current = partial + 3;
     partial_len = 3;
 }
 
@@ -101,7 +95,7 @@ slab_alloc(uint64 sz)
         return alloc_objs(current, nr_objs);
     }
 
-    // find valid slab in partial
+    // find available slab in partial
     while (ptr != NULL) {
         if (ptr->sentinel.size >= nr_objs) {
             struct slab* ptr_next = get_slab_next(ptr);
@@ -114,7 +108,7 @@ slab_alloc(uint64 sz)
         ptr = get_slab_next(ptr);
     }
 
-    // if there is none, ask for buddy system
+    // if one of slab is available, ask for buddy system
     // add current to the partial list
     set_slab_next(current, partial);
     partial = current;

@@ -17,6 +17,7 @@ SECTIONS {
         PROVIDE(etext = .);
     } :text
 
+
     .rodata : {
         . = ALIGN(16);
         *(.srodata .srodata.*)

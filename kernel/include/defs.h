@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <stdarg.h>
 #include <common.h>
+#include <riscv.h>
 
 /* devices/uart.c */
 void            uart_init(void);
@@ -46,5 +47,11 @@ void*           kalloc(uint64 sz);
 void            kfree(void *addr);
 
 
+/* mm/vm.c */
+pte_t*          walk(pagetable_t pgtbl, uint64 va, int alloc);
+void            mappages(pagetable_t pgtbl, uint64 va, uint64 pa, uint64 sz, int flag);
+pagetable_t     kvmmake();
+void            kvminit();
+void            kvminithart();
 
 
