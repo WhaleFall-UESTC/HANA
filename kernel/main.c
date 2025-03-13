@@ -16,7 +16,7 @@ main()
 {
     uart_init();
     out("Initialize uart0");
-    kinit((uint64) end, KERNELTOP);
+    kinit((uint64) end, PHYSTOP);
     test_buddy();
     test_slab();
     test_kalloc();

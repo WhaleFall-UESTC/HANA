@@ -1,6 +1,6 @@
 /* kernel va and pa will ba the same */
 #define KERNELBASE  0x80000000L
-#define KERNELTOP   0x86400000L
+#define PHYSTOP   0x86400000L
 
 #define TRAMPOLINE  (MAXVA - PGSIZE)
 #define TRAPFRAM    (TRAMPOLINE - PGSIZE)
