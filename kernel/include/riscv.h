@@ -354,3 +354,6 @@ sfence_vma()
   // the zero, zero means flush all TLB entries.
   asm volatile("sfence.vma zero, zero");
 }
+
+#define read_reg(REG, res) asm volatile("mv %0, " #REG : "=r" (res) )
+#define write_reg(REG, value) asm volatile("mv " #REG ", %0" : : "r" (value));

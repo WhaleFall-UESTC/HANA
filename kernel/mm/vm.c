@@ -33,6 +33,9 @@ kvminithart()
 {
     w_satp(MAKE_SATP(kernel_pagetable));
     sfence_vma();
+
+    // init_stack is in rodata
+    // which va mapped to the same pa
 }
 
 
