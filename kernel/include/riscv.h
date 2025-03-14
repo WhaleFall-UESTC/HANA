@@ -13,7 +13,7 @@
 #define PTE2PA(pte) (((pte) >> 10) << 12)
 #define PTE_FLAGS(pte) ((pte) & 0x3ff)
 
-#define PX(i, va) (((va >> 12) >> (9 * i)) & 0x1ff)
+#define PX(i, va) (((va) >> (9 * i + 12)) & 0x1ff)
 
 // #define MAXVA (1L << (9 + 9 + 9 + 12 - 1))
 #define MAXVA 0x4000000000L

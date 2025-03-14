@@ -11,7 +11,8 @@
 #define SMALL   64
 #define PREFIX  128
 
-#define BUFMAX 1024
+// if buf too large will make stack overflow
+#define BUFMAX 128
 
 #define is_digit(c) ((c) >= '0' && (c) <= '9')
 #define fill_left() if (!(flags & LEFT)) { while (field_width-- > 0) { *str++ = ' '; } }

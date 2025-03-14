@@ -67,16 +67,15 @@ pte_t*
 walk(pagetable_t pgtbl, uint64 va, int alloc)
 {
     va >>= 12;
-    for (int level = 2; level > 0; level--) {
-        int idx = va & 0x1ff;
+    for (int shift = 18; shift > 0; shift -= 9) {
+        int idx = (va >> shift) & 0x1ff;
         pte_t* pte = pgtbl + idx;
         if ((*pte & PTE_V) == 0) {
-            if (alloc && (*pte = PA2PTE(alloc_pagetable()) != 0))
+            if (alloc && (*pte = PA2PTE(alloc_pagetable())) != 0)
                 *pte |= PTE_V;
             else return NULL;
         } 
         pgtbl = (pagetable_t) PTE2PA(*pte);
-        va >>= 9;
     }
 
     return (pgtbl + (va & 0x1ff));
@@ -87,7 +86,7 @@ mappages(pagetable_t pgtbl, uint64 va, uint64 pa, uint64 sz, int flags)
 {
     uint64 start_va = PGROUNDDOWN(va);
     uint64 end_va = PGROUNDUP(va + sz - 1);
-    int npages = (start_va - end_va) >> PGSHIFT;
+    int npages = (end_va - start_va) >> PGSHIFT;
     pte_t *pte = walk(pgtbl, va, ALLOC);
     assert(pte);
     int nr_mapped = 0;

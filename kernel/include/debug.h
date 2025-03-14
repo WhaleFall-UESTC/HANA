@@ -11,8 +11,8 @@
 
 
 #define Log(color, info, ...) \
-    printf(color "[%s:%d] " info ANSI_RESET "\n", \
-        __FILE__, __LINE__, ## __VA_ARGS__)
+    printf(color "[%s:%d %s] " info ANSI_RESET "\n", \
+        __FILE__, __LINE__, __func__, ## __VA_ARGS__)
 
 // #define Log(color, info, ...) 
 //     printf("[%s:%d] " info "\n", 
