@@ -1,0 +1,50 @@
+# WhaleOS
+WhaleOS 是个暂时的名字，在将仓库移到 gitlab 之前会改
+<br><br>
+## Get Start
+### riscv-gnu-toolchains
+按照[官方文档](https://github.com/riscv-collab/riscv-gnu-toolchain)安装即可
+
+```bash
+sudo apt-get install autoconf automake autotools-dev curl python3 python3-pip python3-tomli libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev ninja-build git cmake libglib2.0-dev libslirp-dev
+
+git clone --recursive https://github.com/riscv-collab/riscv-gnu-toolchain.git
+cd riscv-gnu-toolchain
+
+./configure --prefix=/opt/riscv
+make -j8
+```
+然后将 `/opt/riscv/bin` 添加到 `$PATH`
+<br><br>
+亦可以选择从[中科院软件所 ISCAS 提供的镜像](https://mirror.iscas.ac.cn/riscv-toolchains/release/riscv-collab/riscv-gnu-toolchain/LatestRelease/)获取 riscv-gnu-toolchain 的夜间版本，选择 `[riscv64-elf-ubuntu-[version]-gcc-nightly-[date]-nightly.tar.xz` 一项下载然后将其 `tar -Jxvf` 到 `/opt` 下
+<br><br>
+
+### qemu-system-riscv64
+```bash
+git clone https://gitlab.com/qemu-project/qemu.git
+cd qemu
+
+sudo apt update
+sudo apt install build-essential libglib2.0-dev libpixman-1-dev python3 python3-pip ninja-build
+
+./configure --target-list=riscv64-softmmu,riscv64-linux-user
+make -j$(nproc)
+sudo make install
+```
+<br><br>
+
+## Run & Debug
+```bash
+cd /path/to/WhaleOS
+make run
+```
+使用 `Ctrl + a` 再按下 `x` 可以退出 qemu
+<br><br>
+若要调试，可以在项目目录下运行 `make gdb`，然后打开另一个终端输入：
+```bash
+cd /path/to/WhaleOS
+riscv64-unknown-elf-gdb -x .gdbinit
+```
+建议在 `.*rc` 里面设置 `alias` 或 `function` 方便调试
+<br><br>
+注意，如果你的 riscv-gnu-toolchain 使用的是编译镜像，这里可能需要使用 `gdb-multiarch`
