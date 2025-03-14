@@ -15,3 +15,15 @@
 区分的方式是，伙伴系统分配而返回的指针一定是 PGALIGNED 的，而 slab 的顶部放的是元数据，而 object 的起始地址在元数据之后，所以返回的地址并不页对齐
 <br><br>
 对于伙伴系统，在内存中存放着 page 结构体的数组，管理内存中每个页的状态，其中的 order 指定了伙伴系统分配空间的大小（PGSIZE << order）；SLAB 分配的大小可以通过元数据知晓
+<br><br>
+
+## vm.c
+### pte_t* walk(pagetable_t pgtbl, uint64 va, int alloc);
+这个函数传入页表（L2）的地址，一个虚拟地址，以及一个是否分配的标志，返回此虚拟地址在页表中的 PTE 的地址。当选择 alloc 的时候，如果此虚拟地址在页表中尚未记录，则会自动完善页表，若此时 alloc 为 0, 那么 walk 会返回 NULL
+<br><br>
+pte_t 的本质是 uint64，pagetable_t 的本质是 pte_t 的数组（uint64*）。这个系统采用 Sv39，一张页表的大小为 PGSIZE，共有 512 条 PTE
+若此时 alloc 为 0, 那么 walk 会返回 NULL
+<br><br>
+
+### void mappages(pagetable_t pgtbl, uint64 va, uint64 pa, uint64 sz, int flag);
+功能如其名：在给定的页表中分配 va 与 pa 的映射关系，并设定所分配页的权限
