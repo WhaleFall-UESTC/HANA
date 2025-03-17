@@ -20,6 +20,6 @@ main()
     out("Initialize vm");
     kvminithart();
     out("Enable paging");
-    proc_init();
+    // proc_init();
     return 0;
 }

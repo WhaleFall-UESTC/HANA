@@ -31,6 +31,12 @@ proc_init()
     strcpy(p->name, "initcode");
 }
 
+static int 
+alloc_pid()
+{
+    return next_pid++;
+}
+
 // alloc a new process and initialize it
 // return the new process, 
 // which runs in kernel mode first and then jumps to user mode
@@ -49,19 +55,13 @@ alloc_proc()
     // make pagetable for the new process
     uvmmake(p);
 
-    p->context.ra = (uint64) usertrapret;
+    // p->context.ra = (uint64) usertrapret; TODO()
     p->context.sp = (uint64) init_stack_top;
 
     p->pid = alloc_pid();
     p->state = INIT;
 
     return p;
-}
-
-static int 
-alloc_pid()
-{
-    return next_pid++;
 }
 
 

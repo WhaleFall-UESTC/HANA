@@ -1,7 +1,6 @@
 #include <memlayout.h>
 #include <platform.h>
 #include <defs.h>
-#include <proc.h>
 #include <debug.h>
 
 #define ALLOC   1
@@ -115,7 +114,8 @@ uvmmake(struct proc* p)
     pagetable_t upgtbl = alloc_pagetable();
     Assert(upgtbl, "Memory allocation failed");
 
-    mappages(upgtbl, TRAMPOLINE, (uint64)trampoline, PGSIZE, PTE_R | PTE_X);
+    // TODO: map trampoline
+    // mappages(upgtbl, TRAMPOLINE, (uint64)trampoline, PGSIZE, PTE_R | PTE_X);
     mappages(upgtbl, TRAPFRAME, (uint64)p->trapframe, PGSIZE, PTE_R | PTE_W);
 
     p->pagetable = upgtbl;

@@ -25,7 +25,11 @@ CSRCS := $(shell find -type f -name *.c)
 
 COBJS := $(CSRCS:.c=.o)
 
-OBJS = $K/start.o $(COBJS) 
+SSRCS := $(shell find -type f -name *.S | grep -v start.S)
+
+SOBJS := $(SSRCS:.S=.o)
+
+OBJS =  $K/start.o $(COBJS) $(SOBJS)
 
 run: $(KERNEL)
 	$(QEMU) $(QEMUOPTS)
@@ -52,7 +56,7 @@ $(KERNEL): $(OBJS) $K/kernel.ld
 $K/start.o: $K/start.S
 	$(CC) $(CFLAGS) -c $< -o $@
 
-%.o : %.c
+%.o : %.c %.S
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 
