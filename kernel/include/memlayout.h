@@ -5,7 +5,7 @@
 #define PHYSTOP   0x86400000L
 
 #define TRAMPOLINE  (MAXVA - PGSIZE)
-#define TRAPFRAM    (TRAMPOLINE - PGSIZE)
+#define TRAPFRAME   (TRAMPOLINE - PGSIZE)
 
 #define KSTACK(n)   (TRAPFRAM- (2 * (n) + 1) * PGSIZE)
 

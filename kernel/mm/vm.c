@@ -1,12 +1,14 @@
 #include <memlayout.h>
 #include <platform.h>
 #include <defs.h>
+#include <proc.h>
 #include <debug.h>
 
 #define ALLOC   1
 #define NOALLOC 0
 
 extern char etext[];
+extern char trampoline[];
 extern char *init_stack_top;
 
 pagetable_t kernel_pagetable;
@@ -24,7 +26,7 @@ void
 kvminit()
 {
     kernel_pagetable = kvmmake();
-    mappages(kernel_pagetable, KSTACK(0), (uint64)init_stack_top, PGSIZE, PTE_R | PTE_W);
+    // mappages(kernel_pagetable, KSTACK(0), (uint64)init_stack_top, PGSIZE, PTE_R | PTE_W);
 }
 
 // set pagetable and enable paging
@@ -84,6 +86,7 @@ walk(pagetable_t pgtbl, uint64 va, int alloc)
     return (pgtbl + (va & 0x1ff));
 }
 
+
 void
 mappages(pagetable_t pgtbl, uint64 va, uint64 pa, uint64 sz, int flags)
 {
@@ -103,4 +106,28 @@ mappages(pagetable_t pgtbl, uint64 va, uint64 pa, uint64 sz, int flags)
             assert(pte);
         }
     }
+}
+
+
+void
+uvmmake(struct proc* p)
+{
+    pagetable_t upgtbl = alloc_pagetable();
+    Assert(upgtbl, "Memory allocation failed");
+
+    mappages(upgtbl, TRAMPOLINE, (uint64)trampoline, PGSIZE, PTE_R | PTE_X);
+    mappages(upgtbl, TRAPFRAME, (uint64)p->trapframe, PGSIZE, PTE_R | PTE_W);
+
+    p->pagetable = upgtbl;
+}
+
+
+void 
+uvminit(pagetable_t pgtbl, char* src, uint64 sz)
+{
+    assert(sz <= PGSIZE);
+    char* mem=  kalloc(PGSIZE);
+    memset(mem, 0, PGSIZE);
+    mappages(pgtbl, 0, (uint64)mem, PGSIZE, PTE_R | PTE_W);
+    memmove(mem, src, sz);
 }
