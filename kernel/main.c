@@ -20,7 +20,6 @@ main()
     out("Initialize vm");
     kvminithart();
     out("Enable paging");
-    
     log("main return successfully");
     return 0;
 }

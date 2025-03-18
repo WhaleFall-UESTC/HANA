@@ -7,4 +7,3 @@ set riscv use-compressed-breakpoints yes
 
 layout split
 b main
-c
