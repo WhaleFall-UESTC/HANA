@@ -107,27 +107,3 @@ mappages(pagetable_t pgtbl, uint64 va, uint64 pa, uint64 sz, int flags)
     }
 }
 
-
-void
-uvmmake(struct proc* p)
-{
-    pagetable_t upgtbl = alloc_pagetable();
-    Assert(upgtbl, "Memory allocation failed");
-
-    // TODO: map trampoline
-    // mappages(upgtbl, TRAMPOLINE, (uint64)trampoline, PGSIZE, PTE_R | PTE_X);
-    mappages(upgtbl, TRAPFRAME, (uint64)p->trapframe, PGSIZE, PTE_R | PTE_W);
-
-    p->pagetable = upgtbl;
-}
-
-
-void 
-uvminit(pagetable_t pgtbl, char* src, uint64 sz)
-{
-    assert(sz <= PGSIZE);
-    char* mem=  kalloc(PGSIZE);
-    memset(mem, 0, PGSIZE);
-    mappages(pgtbl, 0, (uint64)mem, PGSIZE, PTE_R | PTE_W);
-    memmove(mem, src, sz);
-}

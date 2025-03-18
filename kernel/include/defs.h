@@ -54,16 +54,4 @@ void            mappages(pagetable_t pgtbl, uint64 va, uint64 pa, uint64 sz, int
 pagetable_t     kvmmake();
 void            kvminit();
 void            kvminithart();
-void            uvmmake(struct proc* p);
-void            uvminit(pagetable_t pgtbl, char* src, uint64 sz);
 
-
-/* proc/proc.c */
-void            proc_init();
-struct proc*    alloc_proc();
-struct cpu*     mycpu();
-void            scheduler();
-
-
-/* proc/swtch.S */
-void            swtch(struct context* old, struct context* new);

@@ -28,7 +28,7 @@ sudo apt update
 sudo apt install build-essential libglib2.0-dev libpixman-1-dev python3 python3-pip ninja-build
 
 ./configure --target-list=riscv64-softmmu,riscv64-linux-user
-make -j$(nproc)
+make -j
 sudo make install
 ```
 <br><br>
