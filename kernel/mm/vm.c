@@ -51,6 +51,9 @@ kvmmake()
     // virtio
     mappages(kpgtbl, VIRTIO0, VIRTIO0, VIRT_VIRTIO_SIZE, PTE_R | PTE_W);
 
+    // CLINT
+    mappages(kpgtbl, CLINT, CLINT, VIRT_CLINT_SIZE, PTE_R | PTE_W);
+
     // PLIC
     mappages(kpgtbl, PLIC, PLIC, VIRT_PLIC_SIZE, PTE_R | PTE_W);
 

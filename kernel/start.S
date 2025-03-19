@@ -1,8 +1,5 @@
 # qemu -kernel will load kernel at 0x80000000
 # and causes each CPU to jump there
-
-.extern timer_init
-
 .section .text
 .global _start
 _start:
@@ -31,7 +28,7 @@ _start:
     csrw mideleg, t0
 
     # enable interrupts in S mode
-    li a0, 0x222
+    li a0, 0x222    # SIE_SEIE | SIE_STIE | SIE_SSIE
     csrrs x0, sie, a0
 
     # allow S mode to access all physical memory

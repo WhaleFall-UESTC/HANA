@@ -8,6 +8,8 @@
 #define PGSIZE 4096
 #define PGSHIFT 12
 
+#define KSTACK_SIZE PGSIZE*2
+
 #define PGROUNDUP(sz)  (((uint64)(sz)+PGSIZE-1) & ~(PGSIZE-1))
 #define PGROUNDDOWN(a) (((uint64)(a)) & ~(PGSIZE-1))
 #define IS_PGALIGNED(a) (!((uint64)(a) & 0xfff))

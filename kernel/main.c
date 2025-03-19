@@ -5,8 +5,8 @@
 
 #include <testdefs.h>
 
-char init_stack[PGSIZE] __attribute__((aligned(PGSIZE)));
-char *init_stack_top = &init_stack[PGSIZE];
+char init_stack[KSTACK_SIZE] __attribute__((aligned(PGSIZE)));
+char *init_stack_top = &init_stack[KSTACK_SIZE];
 
 extern char end[];
 
@@ -20,6 +20,17 @@ main()
     out("Initialize vm");
     kvminithart();
     out("Enable paging");
+
+    trap_init_hart();
+    
+    w_sstatus(r_sstatus() | SSTATUS_SIE);
+
+    log("sstatus: %p", (void*)r_sstatus());
+    log("sie: %p", (void*)r_sie());
+    log("stvec: %p", (void*)r_stvec());
+
+    for (;;) ;
+
     log("main return successfully");
     return 0;
 }

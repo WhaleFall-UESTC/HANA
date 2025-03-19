@@ -55,3 +55,13 @@ pagetable_t     kvmmake();
 void            kvminit();
 void            kvminithart();
 
+
+/* devices/timer.c */
+void            timer_init();
+void            timervec();
+
+
+/* trap/trap.c */
+void            trap_init_hart();
+void            kernel_trap();
+

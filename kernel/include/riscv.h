@@ -205,6 +205,14 @@ w_mtvec(uint64 x)
   asm volatile("csrw mtvec, %0" : : "r" (x));
 }
 
+static inline uint64
+r_mtvec()
+{
+  uint64 x;
+  asm volatile("csrr %0, mtvec" : "=r" (x) );
+  return x;
+}
+
 static inline void
 w_pmpcfg0(uint64 x)
 {
