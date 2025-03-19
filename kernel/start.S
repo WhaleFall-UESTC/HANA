@@ -3,7 +3,7 @@
 .section .text
 .global _start
 _start:
-    la sp, init_stack_top
+    la sp, init_stack + 8096
 
     # keep each CPU's hartid in its tp
     csrr tp, mhartid
