@@ -17,9 +17,14 @@ timervec:
     addi a1, a1, %lo(CLINT_MTIMECMP)
     li t0, INTERVAL
 
+    // add mtimecmp
     ld a0, 0(a0)  
     add a0, t0, a0
     sd a0, 0(a1)
+
+    // raise software interrupt
+    csrrwi x0, sip, 2
+    // will cause scause = 0x8000000000000001
 
     ld a0, 16(sp)
     ld a1, 8(sp)
