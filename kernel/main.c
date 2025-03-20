@@ -20,14 +20,10 @@ main()
     out("Initialize vm");
     kvminithart();
     out("Enable paging");
-
     trap_init_hart();
-    
+    out("Initialize trap");
     w_sstatus(r_sstatus() | SSTATUS_SIE);
-
-    log("sstatus: %p", (void*)r_sstatus());
-    log("sie: %p", (void*)r_sie());
-    log("stvec: %p", (void*)r_stvec());
+    out("Enable interrupt");
 
     for (;;) ;
 
