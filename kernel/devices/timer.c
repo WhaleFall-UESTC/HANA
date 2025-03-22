@@ -30,4 +30,13 @@ timer_init()
     log("mie: %p", (void*)r_mie());
     log("mtvec: %p", (void*)r_mtvec());
     log("mideleg: %p", (void*)r_mideleg());
+    log("medeleg: %p", (void*)r_medeleg());
+}
+
+void
+timer_interrupt_handler()
+{
+    log("receive timer interrupt");
+    // clear timer interrupt
+    w_sip(r_sip() & ~(1 << SUPERVISOR_SOFTWARE_INTERRUPT));
 }

@@ -58,10 +58,15 @@ void            kvminithart();
 
 /* devices/timer.c */
 void            timer_init();
+void            timer_interrupt_handler();
+
+
+/* trap/timervec.S */
 void            timervec();
 
 
 /* trap/trap.c */
+void            trap_init();
 void            trap_init_hart();
 void            kernel_trap();
-
+void            register_trap_handler(int interrupt, int code, void* function);

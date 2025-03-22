@@ -23,8 +23,9 @@ timervec:
     sd a0, 0(a1)
 
     // raise software interrupt
-    csrrwi x0, sip, 2
-    // will cause scause = 0x8000000000000001
+    li t0, 2
+    csrrs x0, sip, t0
+    
 
     ld a0, 16(sp)
     ld a1, 8(sp)

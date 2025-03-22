@@ -3,9 +3,6 @@
 #include <defs.h>
 #include <debug.h>
 
-#define ALLOC   1
-#define NOALLOC 0
-
 extern char etext[];
 extern char trampoline[];
 extern char *init_stack_top;
@@ -67,9 +64,10 @@ kvmmake()
 }
 
 
-// find the pte of given va
+// find the pte's address of given va
 // when pte in L2, L1 is NULL and alloc is set
 // walk will alloc pagetable
+// if alloc == 0 or kalloc failed, return NULL
 pte_t*
 walk(pagetable_t pgtbl, uint64 va, int alloc)
 {
@@ -80,7 +78,7 @@ walk(pagetable_t pgtbl, uint64 va, int alloc)
         if ((*pte & PTE_V) == 0) {
             if (alloc && (*pte = PA2PTE(alloc_pagetable())) != 0)
                 *pte |= PTE_V;
-            else return NULL;
+            else return 0;
         } 
         pgtbl = (pagetable_t) PTE2PA(*pte);
     }
@@ -95,7 +93,7 @@ mappages(pagetable_t pgtbl, uint64 va, uint64 pa, uint64 sz, int flags)
     uint64 start_va = PGROUNDDOWN(va);
     uint64 end_va = PGROUNDUP(va + sz - 1);
     int npages = (end_va - start_va) >> PGSHIFT;
-    pte_t *pte = walk(pgtbl, va, ALLOC);
+    pte_t *pte = walk(pgtbl, va, WALK_ALLOC);
     assert(pte);
     int nr_mapped = 0;
 
@@ -104,9 +102,26 @@ mappages(pagetable_t pgtbl, uint64 va, uint64 pa, uint64 sz, int flags)
         pa += PGSIZE;
         // if this is the last pte in L0 pgtbl, start from another pgtbl
         if (IS_PGALIGNED(pte)) {
-            pte = walk(pgtbl, va + nr_mapped * PGSIZE, ALLOC);
+            pte = walk(pgtbl, va + nr_mapped * PGSIZE, WALK_ALLOC);
             assert(pte);
         }
     }
 }
 
+
+// Look up va in given pgtbl
+// return its pa or NULL if not mapped
+uint64
+walkaddr(pagetable_t pgtbl, uint64 va)
+{
+    if (va >= MAXVA)
+        return 0;
+
+    pte_t* pte = walk(pgtbl, va, WALK_NOALLOC);
+
+    // if (!CHECK_PTE(pte, PTE_V | PTE_U))
+    if (!CHECK_PTE(pte, PTE_V))
+        return 0;
+
+    return (uint64) PTE2PA(*pte);
+}
