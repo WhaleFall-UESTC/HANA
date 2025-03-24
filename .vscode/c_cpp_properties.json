@@ -10,7 +10,7 @@
                 "${workspaceFolder}/kernel/test/include/"
             ],
             "defines": ["ARCH_RISCV"],
-            "compilerPath": "/usr/bin/clang",
+            "compilerPath": "/opt/riscv/bin/riscv64-unknown-elf-gcc",
             "cStandard": "c17",
             "cppStandard": "c++17",
             "intelliSenseMode": "linux-clang-x64"

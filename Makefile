@@ -1,35 +1,87 @@
-TOOLPREFIX := riscv64-unknown-elf-
+ARCH ?= riscv
+KERNEL = kernel-$(ARCH)
+BUILD_DIR = build/$(ARCH)
 
-CC := $(TOOLPREFIX)gcc
-AS := $(TOOLPREFIX)as
-LD := $(TOOLPREFIX)ld
-OBJCOPY := $(TOOLPREFIX)objcopy
-OBJDUMP := $(TOOLPREFIX)objdump
+ifeq ($(ARCH), riscv)
+TOOLPREFIX ?= riscv64-unknown-elf-
+RISCV_CFLAGS = -mcmodel=medany -march=rv64imafd -mabi=lp64
+QEMU ?= qemu-system-riscv64
+else ifeq ($(ARCH), loongarch)
+TOOLPREFIX ?= loongarch64-linux-gnu-
+LOONGARCH_CFLAGS = -march=loongarch64 -mabi=lp64
+QEMU ?= qemu-system-loongarch64
+else
+$(error Unsupported ARCH $(ARCH))
+endif
 
-CFLAGS = -Wall -Werror -O -fno-omit-frame-pointer -ggdb
-CFLAGS +=  -mcmodel=medany
-CFLAGS += -fno-jump-tables	# without this, vsnprintf switch may jump to .rodata
-CFLAGS += -I $K/include
-LDFLAGS = -z max-page-size=4096
+
+CC = $(TOOLPREFIX)gcc
+AS = $(TOOLPREFIX)as
+LD = $(TOOLPREFIX)ld
+OBJCOPY = $(TOOLPREFIX)objcopy
 
 
-K=kernel
-KERNEL = $K/kernel
+KERNEL_SRC = kernel
+ARCH_SRC = $(KERNEL_SRC)/arch/$(ARCH)
 
-QEMU := qemu-system-riscv64
+
+CFLAGS = -Wall -Werror -O -fno-omit-frame-pointer -ggdb 
+CFLAGS += $(if $(RISCV_CFLAGS),$(RISCV_CFLAGS),$(LOONGARCH_CFLAGS)) 
+CFLAGS += -I $(KERNEL_SRC)/include -I $(ARCH_SRC)/include
+CFLAGS += -MD -MP -MF $(BUILD_DIR)/$(@F).d
+
+ASFLAGS = $(CFLAGS) -D__ASSEMBLY__
+LDFLAGS = -nostdlib -T $(KERNEL_SRC)/kernel.ld
+
+
+SRC_S := $(shell find $(ARCH_SRC) -type f -name *.S)
+
+SRC_C := $(shell find kernel -type f -name '*.c' \
+			-not -path 'kernel/test/*' \
+			-not -path 'kernel/arch/*') \
+		$(shell find $(ARCH_SRC) -type f -name *.c)
+
+OBJS = $(addprefix $(BUILD_DIR)/, $(SRC_C:.c=.o) $(SRC_S:.S=.o))
+
+
+
+all: $(KERNEL)
+
+$(KERNEL): $(OBJS)
+	$(LD) $(LDFLAGS) -o $@ $<
+	@echo "[$(LD)] Linked kernel image: $@"
+
+$(BUILD_DIR)/%.o: %.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c -o $@ $<
+	@echo "[$(CC)] Compiled $<"
+
+$(BUILD_DIR)/%.o: %.S
+	@mkdir -p $(dir $@)
+	$(AS) $(ASFLAGS) -c -o $@ $<
+	@echo "[$(AS)] Assembled $<"
+
+-include $(OBJS:.o=.d)
+
+clean:
+	rm -rf build
+
+distclean: clean
+	rm -f $(KERNEL)
+
+
 MEMORY := 128M
 SMP := 1
-QEMUOPTS = -machine virt -bios none -kernel $(KERNEL) -m $(MEMORY) -smp $(SMP) -nographic -no-reboot
+QEMUOPTS = 	-machine virt \
+			-bios none \
+			-kernel $(KERNEL) \
+			-m $(MEMORY) \
+			-smp $(SMP) \
+			-nographic \
+			-no-reboot
 
-CSRCS := $(shell find -type f -name *.c)
-
-COBJS := $(CSRCS:.c=.o)
-
-SSRCS := $(shell find -type f -name *.S | grep -v start.S)
-
-SOBJS := $(SSRCS:.S=.o)
-
-OBJS =  $K/start.o $(COBJS) $(SOBJS)
+build: $(KERNEL)
+	@echo "Build kernel image: $(KERNEL)"
 
 run: $(KERNEL)
 	$(QEMU) $(QEMUOPTS)
@@ -37,29 +89,6 @@ run: $(KERNEL)
 gdb: $(KERNEL) .gdbinit
 	$(QEMU) $(QEMUOPTS) -S -gdb tcp::1234
 
-# build: $(OBJS) # $K/kernel.ld
-# 	$(LD) $(LDFLAGS) -Ttext 0x80000000 -o $(KERNEL) $(OBJS) && \
-# 	$(OBJDUMP) -S -l -D $(KERNEL) > $K/kernel.objdump
-
-# $(KERNEL): $(OBJS) # $K/kernel.ld
-# 	$(LD) $(LDFLAGS) -Ttext 0x80000000 -o $(KERNEL) $(OBJS) && \
-# 	$(OBJDUMP) -S -l -D $(KERNEL) > $K/kernel.objdump
-
-build: $(OBJS) $K/kernel.ld
-	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $(KERNEL) $(OBJS) && \
-	$(OBJDUMP) -S -l -D $(KERNEL) > $K/kernel.objdump
-
-$(KERNEL): $(OBJS) $K/kernel.ld
-	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $(KERNEL) $(OBJS) && \
-	$(OBJDUMP) -S -l -D $(KERNEL) > $K/kernel.objdump
-
-$K/start.o: $K/start.S
-	$(CC) $(CFLAGS) -c $< -o $@
-
-%.o : %.c %.S
-	$(CC) $(CFLAGS) -c -o $@ $<
 
 
-clean:
-	rm -f $(OBJS) $(KERNEL) 
-
+.PHONY: all clean distclean build run gdb	
