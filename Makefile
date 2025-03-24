@@ -42,7 +42,6 @@ SRC_S = $(shell find $(ARCH_SRC) -type f -name *.S)
 
 SRC_C := $(shell find kernel -type f -name '*.c' \
 			-not -path '$(KERNEL_SRC)/test/*' \
-			-not -path '$(KERNEL_SRC)/dirvers/virtio*' \
 			-not -path '$(KERNEL_SRC)/arch/*') \
 		$(shell find $(ARCH_SRC) -type f -name *.c)
 
