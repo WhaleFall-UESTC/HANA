@@ -4,9 +4,10 @@
 *.dtb
 *.dts
 
-kernel/kernel
-kernel/kernel.objdump
-kernel.ld.copy
+kernel-riscv
+kernel-loongarch
+kernel-riscv.objdump
+kernel-loongarch.objdump
 
 references/*
 

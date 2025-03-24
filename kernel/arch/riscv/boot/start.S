@@ -1,6 +1,6 @@
 # qemu -kernel will load kernel at 0x80000000
 # and causes each CPU to jump there
-.section .text
+.section .text._start
 .global _start
 _start:
     la sp, init_stack + 4096
