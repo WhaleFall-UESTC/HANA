@@ -6,6 +6,7 @@
         "stddef.h": "c",
         "stdarg.h": "c",
         "common.h": "c",
-        "platform.h": "c"
+        "platform.h": "c",
+        "proc.h": "c"
     }
 }

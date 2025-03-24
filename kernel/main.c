@@ -4,7 +4,7 @@
 #include <debug.h>
 #include <interrupt.h>
 
-#include <testdefs.h>
+// #include <testdefs.h>
 
 char init_stack[KSTACK_SIZE] __attribute__((aligned(PGSIZE)));
 char *init_stack_top = &init_stack[KSTACK_SIZE];

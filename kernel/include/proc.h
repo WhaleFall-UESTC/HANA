@@ -69,4 +69,4 @@ struct cpu {
     struct context context; // swtch() here to enter scheduler().
 };
 
-#endif __PROC_H__
+#endif //__PROC_H__

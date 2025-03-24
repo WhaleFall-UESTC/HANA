@@ -1,3 +1,4 @@
+#pragma once
 #include <common.h>
 
 #define PTE_V  (1L << 0)

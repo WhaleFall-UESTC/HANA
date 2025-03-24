@@ -3,7 +3,7 @@
  */
 #include <platform.h>
 #include <common.h>
-#include <virtio.h>
+#include <drivers/virtio.h>
 #include <defs.h>
 #include <interrupt.h>
 #include <debug.h>

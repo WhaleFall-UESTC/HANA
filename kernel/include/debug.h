@@ -12,6 +12,8 @@
 #define ANSI_FG_CYAN    "\033[36m"
 #define ANSI_FG_WHITE   "\033[37m"
 
+int printf(const char *fmt, ...);
+int puts(char* buf);
 
 #define Log(color, info, ...) \
     printf(color "[%s:%d %s] " info ANSI_RESET "\n", \

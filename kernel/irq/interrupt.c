@@ -44,7 +44,7 @@ void response_interrupt(void) {
     ret = irq_handlers[irq](irq, irq_privates[irq]);
 
     if(ret == IRQ_ERR) {
-        painc("Irq handle error");
+        panic("Irq handle error");
     }
 
 out:

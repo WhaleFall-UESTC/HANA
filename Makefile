@@ -4,12 +4,15 @@ BUILD_DIR = build/$(ARCH)
 
 ifeq ($(ARCH), riscv)
 TOOLPREFIX ?= riscv64-unknown-elf-
-RISCV_CFLAGS = -mcmodel=medany -march=rv64imafd -mabi=lp64
 QEMU ?= qemu-system-riscv64
+RISCV_CFLAGS = -mcmodel=medany -march=rv64imafd -mabi=lp64
+RISCV_CFLAGS += -DARCH_RISCV 
+
 else ifeq ($(ARCH), loongarch)
 TOOLPREFIX ?= loongarch64-linux-gnu-
-LOONGARCH_CFLAGS = -march=loongarch64 -mabi=lp64
 QEMU ?= qemu-system-loongarch64
+LOONGARCH_CFLAGS = -march=loongarch64 -mabi=lp64
+
 else
 $(error Unsupported ARCH $(ARCH))
 endif
@@ -43,23 +46,26 @@ SRC_C := $(shell find kernel -type f -name '*.c' \
 
 OBJS = $(addprefix $(BUILD_DIR)/, $(SRC_C:.c=.o) $(SRC_S:.S=.o))
 
+# INCLUDE_DIRS := $(shell find $(SRC_DIR) -name '*.h' -exec dirname {} \; | sort -u)
+# CFLAGS += $(addprefix -I, $(INCLUDE_DIRS))
+
 
 
 all: $(KERNEL)
 
 $(KERNEL): $(OBJS)
 	$(LD) $(LDFLAGS) -o $@ $<
-	@echo "[$(LD)] Linked kernel image: $@"
+	@echo "[LD] Linked kernel image: $@"
 
 $(BUILD_DIR)/%.o: %.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c -o $@ $<
-	@echo "[$(CC)] Compiled $<"
+	@echo "[CC] Compiled $<"
 
 $(BUILD_DIR)/%.o: %.S
 	@mkdir -p $(dir $@)
 	$(AS) $(ASFLAGS) -c -o $@ $<
-	@echo "[$(AS)] Assembled $<"
+	@echo "[AS] Assembled $<"
 
 -include $(OBJS:.o=.d)
 
