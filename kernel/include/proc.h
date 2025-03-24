@@ -1,3 +1,6 @@
+#ifndef __PROC_H__
+#define __PROC_H__
+
 
 struct context {
     uint64 ra;
@@ -66,3 +69,4 @@ struct cpu {
     struct context context; // swtch() here to enter scheduler().
 };
 
+#endif __PROC_H__

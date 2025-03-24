@@ -1,3 +1,6 @@
+#ifndef __DEFS__H__
+#define __DEFS__H__
+
 #include <stddef.h>
 #include <stdarg.h>
 #include <common.h>
@@ -42,18 +45,13 @@ void*           slab_alloc(uint64 sz);
 void            slab_free(void* addr, uint8 nr_free);
 
 
-/* mm/kalloc.c */
-void            kinit();
-void*           kalloc(uint64 sz);
-void            kfree(void *addr);
-
-
 /* mm/vm.c */
 pte_t*          walk(pagetable_t pgtbl, uint64 va, int alloc);
 void            mappages(pagetable_t pgtbl, uint64 va, uint64 pa, uint64 sz, int flag);
 pagetable_t     kvmmake();
 void            kvminit();
 void            kvminithart();
+uint64          walkaddr(pagetable_t pgtbl, uint64 va);
 
 
 /* devices/timer.c */
@@ -70,3 +68,5 @@ void            trap_init();
 void            trap_init_hart();
 void            kernel_trap();
 void            register_trap_handler(int interrupt, int code, void* function);
+
+#endif // __DEFS__H__

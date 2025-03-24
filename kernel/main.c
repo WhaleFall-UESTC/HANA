@@ -2,6 +2,7 @@
 #include <memlayout.h>
 #include <defs.h>
 #include <debug.h>
+#include <interrupt.h>
 
 #include <testdefs.h>
 
@@ -23,6 +24,8 @@ main()
     trap_init();
     trap_init_hart();
     out("Initialize trap");
+    interrupt_init();
+    out("Initialize interrupt");
 
     ecall();
 

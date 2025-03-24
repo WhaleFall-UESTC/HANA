@@ -1,3 +1,8 @@
+#ifndef __COMMON_H__
+#define __COMMON_H__
+
+#include <stddef.h>
+#include <stdarg.h>
 #include <stdbool.h>
 
 #define XLEN 64
@@ -20,6 +25,17 @@
 #define ROUNDUP(sz, align_size)  (((uint64)(sz)+align_size-1) & ~(align_size-1))
 #define ROUNDDOWN(a, align_size) (((uint64)(a)) & ~(align_size-1))
 
+#define ALIGN(x, a) __ALIGN_MASK(x, (typeof(x))(a) - 1)
+#define __ALIGN_MASK(x, mask) (((x) + (mask)) & ~(mask))
+
+#define WRITE32(_reg, _val) \
+    do { \
+        register uint32 __myval__ = (_val); \
+        *(volatile uint32 *)&(_reg) = __myval__; \
+    } while (0)
+#define READ32(_reg) (*(volatile uint32 *)&(_reg))
+#define READ64(_reg) (*(volatile uint64 *)&(_reg))
+
 // typedefs
 typedef unsigned long uint64;
 typedef unsigned int uint32;
@@ -31,4 +47,6 @@ typedef long int64;
 typedef int int32;
 typedef short int16;
 typedef char int8;
+
+#endif // __COMMON_H__
 

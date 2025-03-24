@@ -1,0 +1,11 @@
+{
+    "files.associations": {
+        "memlayout.h": "c",
+        "defs.h": "c",
+        "debug.h": "c",
+        "stddef.h": "c",
+        "stdarg.h": "c",
+        "common.h": "c",
+        "platform.h": "c"
+    }
+}

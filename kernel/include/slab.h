@@ -1,3 +1,6 @@
+#ifndef __SLAB_H__
+#define __SLAB_H__
+
 #define OBJECT_SIZE 64
 #define OBJECT_SHIFT 6
 #define SLAB_META_DATA_NR_OBJS 3
@@ -76,3 +79,4 @@ list_remove(struct slab* slab, int idx)
 }
 
 
+#endif // __SLAB_H__

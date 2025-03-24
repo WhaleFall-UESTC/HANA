@@ -1,3 +1,6 @@
+#ifndef __DEBUG_H__
+#define __DEBUG_H__
+
 #define ANSI_RESET      "\033[0m"
 #define ANSI_BOLD       "\033[1m"
 #define ANSI_FG_BLACK   "\033[30m"
@@ -19,6 +22,7 @@
 //         __FILE__, __LINE__, ## __VA_ARGS__)
 
 #define log(info, ...)  Log(ANSI_FG_BLUE, info, ## __VA_ARGS__)
+#define error(info, ...) Log(ANSI_FG_RED, info, ## __VA_ARGS__)
 
 #define Assert(cond, format, ...) \
     do { \
@@ -37,3 +41,5 @@
 
 #define PASS(info, ...) Log(ANSI_FG_GREEN, info, ## __VA_ARGS__)
 #define out(info, ...)  Log(ANSI_FG_CYAN, info, ## __VA_ARGS__)
+
+#endif // __DEBUG_H__

@@ -1,3 +1,6 @@
+#ifndef __PLATFORM_H__
+#define __PLATFORM_H__
+
 // virt
 #define VIRT_DEBUG          0x0
 #define VIRT_MROM           0x1000L
@@ -27,19 +30,4 @@
 #define VIRT_PCIE_MMIO_SIZE    0x40000000
 #define VIRT_DRAM_SIZE         0x80000000
 
-
-// PLIC
-#define PLIC_PRIORITY_OFFSET    0x0
-#define PLIC_PENDING_OFFSET     0x1000
-#define PLIC_ENABLE_OFFSET      0x2000
-#define PLIC_THRESHOLD_OFFSET   0x200000
-#define PLIC_CLAIM_OFFSET       0x200004
-
-#define PLIC_SENABLE_OFFSET     0x80 + PLIC_ENABLE_OFFSET
-#define PLIC_STHRESHOLD_OFFSET  0x1000 + PLIC_THRESHOLD_OFFSET
-#define PLIC_SCLAIM_OFFSET      0x1000 + PLIC_CLAIM_OFFSET
-
-#define UART0_IRQ               10
-#define VIRTIO0_IRQ             1
-
-
+#endif // __PLATFORM_H__

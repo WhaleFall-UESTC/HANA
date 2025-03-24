@@ -1,0 +1,20 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${default}",
+                "${workspaceFolder}/kernel/include/",
+                "${workspaceFolder}/kernel/include/drivers",
+                "${workspaceFolder}/kernel/arch/riscv/include",
+                "${workspaceFolder}/kernel/test/include/"
+            ],
+            "defines": ["ARCH_RISCV"],
+            "compilerPath": "/usr/bin/clang",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-clang-x64"
+        }
+    ],
+    "version": 4
+}

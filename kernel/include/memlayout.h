@@ -1,3 +1,6 @@
+#ifndef __MEMLAYOUT_H__
+#define __MEMLAYOUT_H__
+
 #include <platform.h>
 
 /* kernel va and pa will ba the same */
@@ -17,3 +20,5 @@
 #define CLINT   VIRT_CLINT
 
 #define PLIC    VIRT_PLIC
+
+#endif // __MEMLAYOUT_H__

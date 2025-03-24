@@ -1,3 +1,6 @@
+#ifndef __BUDDY_H__
+#define __BUDDY_H__
+
 #define MAX_ORDER 11  // maximum order of buddy system
 
 #define BLOCK_SIZE(order) (PGSIZE << (order))
@@ -34,4 +37,6 @@ struct page {
 };
 
 #pragma pack(pop)
+
+#endif // __BUDDY_H__
 
