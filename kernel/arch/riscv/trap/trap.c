@@ -83,7 +83,7 @@ trap_init()
 
     register_trap_handler(INTERRUPT, SUPERVISOR_SOFTWARE_INTERRUPT, timer_interrupt_handler);
     register_trap_handler(EXCEPTION, ENVIRONMENT_CALL_FROM_S_MODE, s_mode_ecall_handler);
-    register_trap_handler(INTERRUPT, MACHINE_EXTERNAL_INTERRUPT, response_interrupt);
+    register_trap_handler(INTERRUPT, SUPERVISOR_EXTERNEL_INTERRUPT, response_interrupt);
 }
 
 
@@ -119,6 +119,8 @@ dive_to_user()
     struct proc* p = myproc();
 
     intr_off();
+
+    log("dive into user mode");
 
     // w_stvec();
     w_stvec(TRAMPOLINE  + (uservec - trampoline));
