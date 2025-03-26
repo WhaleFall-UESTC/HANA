@@ -1,6 +1,10 @@
 #include <stddef.h>
 #include <stdarg.h>
-#include <defs.h>
+#include <klib.h>
+
+#ifdef ARCH_RISCV 
+#include <uart.h>
+#endif
 
 #define ZEROPAD 1   // defalut blank pad
 #define BIN     2
@@ -35,7 +39,7 @@ static inline void
 write(char *buf, size_t n)
 {
     for (int i = 0; i < n; i++)
-        uart_putc(buf[i]);
+        putchar(buf[i]);
 }
 
 static inline char
@@ -223,31 +227,31 @@ vsnprintf(char *out, size_t n, const char* fmt, va_list ap)
     return str - out;
 }
 
-// int
-// vsprintf(char* out, const char* fmt, va_list ap)
-// {
-//     return vsnprintf(out, BUFMAX, fmt, ap);
-// }
+int
+vsprintf(char* out, const char* fmt, va_list ap)
+{
+    return vsnprintf(out, BUFMAX, fmt, ap);
+}
 
-// int 
-// snprintf(char *out, size_t n, const char *fmt, ...) 
-// {
-//     va_list args;
-//     va_start(args, fmt);
-//     int i = vsnprintf(out, n, fmt, args);
-//     va_end(args);
-//     return i;
-// }
+int 
+snprintf(char *out, size_t n, const char *fmt, ...) 
+{
+    va_list args;
+    va_start(args, fmt);
+    int i = vsnprintf(out, n, fmt, args);
+    va_end(args);
+    return i;
+}
 
-// int 
-// sprintf(char *out, const char *fmt, ...) 
-// {
-//     va_list args;
-//     va_start(args, fmt);
-//     int i = vsprintf(out, fmt, args);
-//     va_end(args);
-//     return i;
-// }
+int 
+sprintf(char *out, const char *fmt, ...) 
+{
+    va_list args;
+    va_start(args, fmt);
+    int i = vsprintf(out, fmt, args);
+    va_end(args);
+    return i;
+}
 
 int
 printf(const char* fmt, ...)
@@ -266,7 +270,7 @@ puts(char* buf)
 {
     int i;
     for (i = 0; buf[i] != '\0'; i++)
-        uart_putc(buf[i]);
+        putchar(buf[i]);
     return i;
 }
 

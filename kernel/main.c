@@ -1,8 +1,18 @@
+#include <common.h>
 #include <platform.h>
-#include <memlayout.h>
-#include <defs.h>
+#include <trap.h>
+#include <mm/memlayout.h>
+#include <mm/mm.h>
 #include <debug.h>
-#include <interrupt.h>
+#include <irq/interrupt.h>
+#include <context.h>
+#include <proc/proc.h>
+#include <proc/sched.h>
+
+#ifdef ARCH_RISCV
+#include <uart.h>
+#include <riscv.h>
+#endif
 
 // #include <testdefs.h>
 
@@ -26,11 +36,14 @@ main()
     out("Initialize trap");
     interrupt_init();
     out("Initialize interrupt");
+    proc_init();
+    out("Initialize first proc");
 
-    ecall();
+    // ecall();
 
-    for (;;) ;
+    out("call scheduler");
+    scheduler();
 
-    log("main return successfully");
+    out("main return successfully");
     return 0;
 }

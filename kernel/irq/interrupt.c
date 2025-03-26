@@ -1,5 +1,5 @@
 #include <common.h>
-#include <interrupt.h>
+#include <irq/interrupt.h>
 #include <debug.h>
 
 #ifdef ARCH_RISCV

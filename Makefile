@@ -42,6 +42,7 @@ SRC_S = $(shell find $(ARCH_SRC) -type f -name *.S)
 
 SRC_C := $(shell find kernel -type f -name '*.c' \
 			-not -path '$(KERNEL_SRC)/test/*' \
+			-not -path '$(KERNEL_SRC)/drivers/virtio/*' \
 			-not -path '$(KERNEL_SRC)/arch/*') \
 		$(shell find $(ARCH_SRC) -type f -name *.c)
 
@@ -90,10 +91,10 @@ QEMUOPTS = 	-machine virt \
 build: $(KERNEL)
 	$(OBJDUMP) -S -l -D $(KERNEL) > $(KERNEL).objdump
 
-run: $(KERNEL)
+run: build
 	$(QEMU) $(QEMUOPTS)
 
-gdb: $(KERNEL) .gdbinit
+gdb: build .gdbinit
 	$(QEMU) $(QEMUOPTS) -S -gdb tcp::1234
 
 

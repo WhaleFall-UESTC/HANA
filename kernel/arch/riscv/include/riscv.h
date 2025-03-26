@@ -1,5 +1,4 @@
 #pragma once
-#include <common.h>
 
 #define PTE_V  (1L << 0)
 #define PTE_R  (1L << 1)
@@ -30,7 +29,7 @@ typedef pte_t* pagetable_t;
 #define INTERRUPT 1
 #define EXCEPTION 0
 
-enum interrupt_irq_code {
+enum interrupt_irq {
     USER_SOFTWARE_INTERRUPT,
     SUPERVISOR_SOFTWARE_INTERRUPT,
     RESERVED_INTERRUPT_1,
@@ -51,7 +50,7 @@ enum interrupt_irq_code {
     NR_INTERRUPT
 };
 
-enum exception_irq_code {
+enum exception_code {
     INTERRUPT_ADDRESS_MISALIGNED,
     INSTRUCTION_ACCESS_FAULT,
     ILLEGAL_INSTRUCTIONS,

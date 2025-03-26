@@ -38,5 +38,11 @@ struct page {
 
 #pragma pack(pop)
 
+
+/* mm/buddy.c */
+void            buddy_init(uint64 start, uint64 end);
+void*           buddy_alloc(uint64 sz);
+void            buddy_free(void* addr, int order);
+
 #endif // __BUDDY_H__
 

@@ -1,7 +1,13 @@
-#include <memlayout.h>
+#include <common.h>
+#include <mm/memlayout.h>
+#include <mm/mm.h>
+#include <klib.h>
 #include <platform.h>
-#include <defs.h>
 #include <debug.h>
+
+#ifdef ARCH_RISCV
+#include <riscv.h>
+#endif
 
 extern char etext[];
 extern char trampoline[];
@@ -59,6 +65,9 @@ kvmmake()
 
     // kernel data and physical memory space
     mappages(kpgtbl, (uint64)etext, (uint64)etext, PHYSTOP - (uint64)etext, PTE_R | PTE_W);
+
+    // map trampoline page
+    mappages(kpgtbl, TRAMPOLINE, (uint64)trampoline, PGSIZE, PTE_R | PTE_X);
 
     return kpgtbl;
 }
@@ -124,4 +133,37 @@ walkaddr(pagetable_t pgtbl, uint64 va)
         return 0;
 
     return (uint64) PTE2PA(*pte);
+}
+
+
+// make user pagetable
+// user_pa: address of a 2 PGSIZE space
+pagetable_t
+uvmmake(uint64 user_pa, uint64 trapframe)
+{
+    pagetable_t upgtbl = alloc_pagetable();
+
+    mappages(upgtbl, 0, user_pa, PGSIZE, PTE_U | PTE_R | PTE_X);
+
+    mappages(upgtbl, 2 * PGSIZE, user_pa + PGSIZE, PGSIZE, PTE_U | PTE_R | PTE_W);
+
+    // map TRAMPOLINE
+    mappages(upgtbl, TRAMPOLINE, (uint64)trampoline, PGSIZE, PTE_R | PTE_X);
+
+    mappages(upgtbl, TRAPFRAME, trapframe, PGSIZE, PTE_R | PTE_W);
+
+    return upgtbl;
+}
+
+
+pagetable_t
+uvminit(uint64 trapframe, char* init_code, int sz)
+{
+    assert(init_code);
+    assert(sz <= PGSIZE);
+    
+    void* userspace = kalloc(2*PGSIZE);
+    memmove(userspace, init_code, sz);
+
+    return uvmmake((uint64) userspace, trapframe);
 }
