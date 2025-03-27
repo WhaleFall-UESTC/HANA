@@ -3,6 +3,7 @@
 #include <platform.h>
 #include <mm/memlayout.h>
 #include <debug.h>
+#include <trap.h>
 
 extern char timervec[];
 

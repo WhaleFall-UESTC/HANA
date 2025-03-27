@@ -1,9 +1,10 @@
 #include <common.h>
+#include <debug.h>
+#include <klib.h>
 #include <platform.h>
 #include <trap.h>
 #include <mm/memlayout.h>
 #include <mm/mm.h>
-#include <debug.h>
 #include <irq/interrupt.h>
 #include <context.h>
 #include <proc/proc.h>

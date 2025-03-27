@@ -2,6 +2,8 @@
 #define __PROC_C__
 
 #include <common.h>
+#include <klib.h>
+#include <debug.h>
 
 #ifdef ARCH_RISCV
 #include <riscv.h>
@@ -12,14 +14,12 @@
 #include <trap.h>
 #include <mm/mm.h>
 #include <mm/memlayout.h>
-#include <klib.h>
-#include <debug.h>
 
 extern struct proc* proc_list;
 
 volatile int next_pid = 1;
 
-char init_code[] = {};
+char init_code[] = { 0x14, 0x45, 0x11, 0x00, 0xff, 0xff };
 
 int
 alloc_pid()

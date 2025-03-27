@@ -1,5 +1,6 @@
 #include <common.h>
 #include <klib.h>
+#include <debug.h>
 #include <mm/mm.h>
 #include <mm/memlayout.h>
 #include <context.h>

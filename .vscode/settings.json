@@ -8,6 +8,7 @@
         "common.h": "c",
         "platform.h": "c",
         "proc.h": "c",
-        "mm.h": "c"
+        "mm.h": "c",
+        "interrupt.h": "c"
     }
 }
