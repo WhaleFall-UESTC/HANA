@@ -2,8 +2,9 @@
 struct proc {
     int pid;
     volatile int state;
+    int killed;
 
-    uint64 sz;
+    int sz;
 
     pagetable_t pagetable;
     uint64 stack;

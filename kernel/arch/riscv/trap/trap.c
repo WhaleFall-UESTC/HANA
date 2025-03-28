@@ -152,8 +152,9 @@ dive_to_user()
     p->trapframe->kernel_hartid = r_tp();
     p->trapframe->kernel_trap = (uint64) user_trap;
     
+    uint64 trapframe = TRAPFRAME + (uint64)p->trapframe - PGROUNDDOWN(p->trapframe);
     uint64 satp = MAKE_SATP(p->pagetable);
 
     uint64 fn = TRAMPOLINE + (userret - trampoline);
-    ((void (*)(uint64,uint64))fn)(TRAPFRAME, satp);
+    ((void (*)(uint64,uint64))fn)(trapframe, satp);
 }

@@ -19,7 +19,8 @@ extern struct proc* proc_list;
 
 volatile int next_pid = 1;
 
-char init_code[] = { 0x14, 0x45, 0x11, 0x00, 0xff, 0xff };
+// dead loop
+char init_code[] = {0x67, 0x00, 0x00, 0x00};
 
 int
 alloc_pid()
@@ -44,7 +45,7 @@ alloc_proc()
 
     p->state = INIT;
 
-    p->trapframe = (struct trapframe*) kalloc(PGSIZE);
+    p->trapframe = (struct trapframe*) kalloc(sizeof(struct trapframe));
     Assert(p->trapframe, "out of memory");
 
     memset(&p->context, 0, sizeof(struct context));
