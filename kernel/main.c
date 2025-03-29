@@ -1,9 +1,19 @@
-#include <platform.h>
-#include <memlayout.h>
-#include <defs.h>
+#include <common.h>
 #include <debug.h>
-#include <interrupt.h>
-#include <drivers/virtio.h>
+#include <klib.h>
+#include <platform.h>
+#include <trap.h>
+#include <mm/memlayout.h>
+#include <mm/mm.h>
+#include <irq/interrupt.h>
+#include <context.h>
+#include <proc/proc.h>
+#include <proc/sched.h>
+
+#ifdef ARCH_RISCV
+#include <uart.h>
+#include <riscv.h>
+#endif
 
 // #include <testdefs.h>
 
@@ -27,15 +37,14 @@ main()
     out("Initialize trap");
     interrupt_init();
     out("Initialize interrupt");
-    virtio_init();
+    proc_init();
+    out("Initialize first proc");
 
-    ecall();
+    // ecall();
 
+    out("call scheduler");
+    scheduler();
 
-    out("Virtio version: %d", *(uint32*)(VIRT_VIRTIO + 4));
-
-    for (;;) ;
-
-    log("main return successfully");
+    out("main return successfully");
     return 0;
 }

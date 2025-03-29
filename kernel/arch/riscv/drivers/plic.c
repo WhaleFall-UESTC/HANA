@@ -1,4 +1,5 @@
-#include <defs.h>
+#include <common.h>
+#include <riscv.h>
 #include <platform.h>
 #include <plic.h>
 

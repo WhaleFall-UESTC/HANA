@@ -79,4 +79,10 @@ list_remove(struct slab* slab, int idx)
 }
 
 
+/* mm/slab.c */
+void            slab_init();
+void*           slab_alloc(uint64 sz);
+void            slab_free(void* addr, uint8 nr_free);
+
+
 #endif // __SLAB_H__

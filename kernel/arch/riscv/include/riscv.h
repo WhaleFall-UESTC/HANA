@@ -1,5 +1,4 @@
 #pragma once
-#include <common.h>
 
 #define PTE_V  (1L << 0)
 #define PTE_R  (1L << 1)
@@ -26,55 +25,6 @@
 typedef uint64 pte_t;
 typedef pte_t* pagetable_t;
 
-
-#define INTERRUPT 1
-#define EXCEPTION 0
-
-enum interrupt_irq_code {
-    USER_SOFTWARE_INTERRUPT,
-    SUPERVISOR_SOFTWARE_INTERRUPT,
-    RESERVED_INTERRUPT_1,
-    MACHINE_SOFTWARE_INTERRUPT,
-
-    USER_TIMER_INTERRUPT,
-    SUPERVISOR_TIMER_INTERRUPT,
-    RESERVED_INTERRUPT_2,
-    MACHINE_TIMER_INTERRUPT,
-
-    USER_EXTERNAL_INTERRUPT,
-    SUPERVISOR_EXTERNEL_INTERRUPT,
-    RESERVED_INTERRUPT_3,
-    MACHINE_EXTERNAL_INTERRUPT,
-
-    RESERVED_INTERRUPT_4,
-
-    NR_INTERRUPT
-};
-
-enum exception_irq_code {
-    INTERRUPT_ADDRESS_MISALIGNED,
-    INSTRUCTION_ACCESS_FAULT,
-    ILLEGAL_INSTRUCTIONS,
-    BREAKPOINT,
-    LOAD_ADDRESS_MISSALIGNED,
-    LOAD_ACCESS_FAULT,
-    STORE_AMO_ADDRESS_MISSALIGNED,
-    STORE_AMO_ACCESS_FAULT,
-    ENVIRONMENT_CALL_FROM_U_MODE,
-    ENVIRONMENT_CALL_FROM_S_MODE,
-    RESERVED_EXCEPTION_1,
-    ENVIRONMENT_CALL_FROM_M_MODE,
-    INSTRUCTION_PAGE_FAULT,
-    LOAD_PAGE_FAULT,
-    RESERVED_EXCEPTION_2,
-    STORE_AMO_PAGE_FAULT,
-    RESERVED_EXCEPTION_3,
-
-    NR_EXCEPTION
-};
-
-// raise S mode environment interrupt
-#define ecall() asm volatile("ecall")
 
 
 #define fence(prev, succ) asm volatile("fence " #prev ", " #succ)

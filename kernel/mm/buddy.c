@@ -1,6 +1,7 @@
-#include <defs.h>
+#include <common.h>
+#include <klib.h>
 #include <debug.h>
-#include <buddy.h>
+#include <mm/buddy.h>
 
 extern struct page* pages;
 struct zone zone;

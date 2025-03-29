@@ -1,7 +1,11 @@
-#include <defs.h>
+#include <common.h>
+#include <riscv.h>
 #include <platform.h>
-#include <memlayout.h>
+#include <mm/memlayout.h>
 #include <debug.h>
+#include <trap.h>
+
+extern char timervec[];
 
 #define CLINT VIRT_CLINT
 #define CLINT_MTIMECMP(hartid) (CLINT + 0x4000L + 8 * (hartid))

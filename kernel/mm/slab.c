@@ -1,6 +1,7 @@
-#include <defs.h>
-#include <slab.h>
-#include <buddy.h>
+#include <common.h>
+#include <klib.h>
+#include <mm/slab.h>
+#include <mm/buddy.h>
 #include <debug.h>
 
 struct slab* current;
