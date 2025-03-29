@@ -9,10 +9,9 @@
 #include <platform.h>
 #include <common.h>
 #include <drivers/virtio.h>
-#include <defs.h>
-#include <interrupt.h>
+#include <irq/interrupt.h>
 #include <debug.h>
-#include <mm.h>
+#include <mm/mm.h>
 
 #ifdef ARCH_RISCV
 #include <riscv.h>
@@ -21,7 +20,7 @@
 #endif
 
 #define VIRTIO_MAGIC 0x74726976
-#define VIRTIO_VERSION 0x2
+#define VIRTIO_VERSION 0x1
 #define VIRTIO_DEV_BLK 0x2
 #define wrap(x, len) ((x) & ~(len))
 

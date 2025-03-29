@@ -15,6 +15,27 @@ typedef irqret_t (*irq_handler_t)(uint32, void*);
 #define DEFAULT_PRI 2
 #define DEFAULT_THRESHOLD 0
 
+#ifdef ARCH_RISCV
+#include <riscv.h>
+
+static inline void irq_save(int *flags) {
+    if(intr_get()) {
+        *flags = 1;
+        intr_off();
+    }
+    else {
+        *flags = 0;
+    }
+}
+
+static inline void irq_store(int *flags) {
+    if(*flags) {
+        intr_on();
+    }
+}
+
+#endif
+
 int register_irq(uint32 irq, irq_handler_t handler, void* dev);
 void free_irq(uint32 irq);
 void response_interrupt(void);

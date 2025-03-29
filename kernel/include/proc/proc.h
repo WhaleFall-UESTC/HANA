@@ -1,3 +1,5 @@
+#ifndef __PROC_H__
+#define __PROC_H__
 
 struct proc {
     int pid;
@@ -46,3 +48,5 @@ myproc()
 void            proc_init();
 int             alloc_pid();
 struct proc*    alloc_proc();
+
+#endif // __PROC_H__
