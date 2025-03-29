@@ -36,6 +36,8 @@
 #define READ32(_reg) (*(volatile uint32 *)&(_reg))
 #define READ64(_reg) (*(volatile uint64 *)&(_reg))
 
+#define nr_elem(x) (sizeof(x) / sizeof(x[0]))
+
 // typedefs
 typedef unsigned long uint64;
 typedef unsigned int uint32;

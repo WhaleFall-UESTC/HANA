@@ -12,3 +12,4 @@ kernel-loongarch.objdump
 references/*
 
 .vscode
+.tmp

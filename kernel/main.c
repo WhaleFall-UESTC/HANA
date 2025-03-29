@@ -3,6 +3,7 @@
 #include <defs.h>
 #include <debug.h>
 #include <interrupt.h>
+#include <drivers/virtio.h>
 
 // #include <testdefs.h>
 
@@ -26,8 +27,12 @@ main()
     out("Initialize trap");
     interrupt_init();
     out("Initialize interrupt");
+    virtio_init();
 
     ecall();
+
+
+    out("Virtio version: %d", *(uint32*)(VIRT_VIRTIO + 4));
 
     for (;;) ;
 

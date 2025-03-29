@@ -157,7 +157,7 @@ vsnprintf(char *out, size_t n, const char* fmt, va_list ap)
             precision = (precision < 0) ? 0 : precision;
         }
 
-        if (*fmt == 'h' || *fmt == '1' || *fmt == 'L')
+        if (*fmt == 'h' || *fmt == 'l' || *fmt == 'L')
             cnt++, fmt++;
         
         switch (*fmt) {

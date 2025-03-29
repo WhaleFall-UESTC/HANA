@@ -45,6 +45,7 @@ kernel_trap()
     return;
 
 error_trap:
+    error("bad code: %d", code);
     TRAP_PANIC(reason);
 }
 

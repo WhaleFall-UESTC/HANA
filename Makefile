@@ -33,6 +33,7 @@ CFLAGS = -Wall -Werror -O -fno-omit-frame-pointer -ggdb
 CFLAGS += $(if $(RISCV_CFLAGS),$(RISCV_CFLAGS),$(LOONGARCH_CFLAGS)) 
 CFLAGS += -I $(KERNEL_SRC)/include -I $(ARCH_SRC)/include
 CFLAGS += -MD -MP -MF $(BUILD_DIR)/$(@F).d
+CFLAGS += -Wno-unused-variable -Wno-unused-function
 
 ASFLAGS = $(CFLAGS) -D__ASSEMBLY__
 LDFLAGS = -nostdlib -T $(KERNEL_SRC)/kernel.ld
@@ -85,7 +86,10 @@ QEMUOPTS = 	-machine virt \
 			-m $(MEMORY) \
 			-smp $(SMP) \
 			-nographic \
-			-no-reboot
+			-no-reboot \
+			-drive file=fs.ext4.img,if=none,format=raw,id=x0 \
+			-device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 \
+			-device virtio-net-device,netdev=net -netdev user,id=net
 
 build: $(KERNEL)
 	$(OBJDUMP) -S -l -D $(KERNEL) > $(KERNEL).objdump
