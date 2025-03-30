@@ -4,7 +4,10 @@
 struct proc {
     int pid;
     volatile int state;
+
     int killed;
+    void* chan;     // proc sleep on which channel
+    int status;     // exit() return status
 
     int sz;
 
@@ -52,5 +55,10 @@ myproc()
 void            proc_init();
 int             alloc_pid();
 struct proc*    alloc_proc();
+void            sleep(void* chan);
+void            wakeup(void* chan);
+int             exit(int status);
+int             kill(int pid);
+
 
 #endif // __PROC_H__

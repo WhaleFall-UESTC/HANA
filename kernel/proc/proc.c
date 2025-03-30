@@ -18,6 +18,7 @@
 extern struct proc* proc_list;
 
 volatile int next_pid = 1;
+struct proc* init_proc = NULL;
 
 // dead loop
 char init_code[] = {0x67, 0x00, 0x00, 0x00};
@@ -44,6 +45,7 @@ alloc_proc()
     mappages(kernel_pagetable, p->stack, (uint64)stack, KSTACK_SIZE, PTE_R | PTE_W);
 
     p->state = INIT;
+    p->killed = 0;
 
     p->trapframe = (struct trapframe*) kalloc(sizeof(struct trapframe));
     Assert(p->trapframe, "out of memory");
@@ -76,7 +78,80 @@ proc_init()
     p->state = RUNNABLE;
 
     proc_list = p;
+    init_proc = p;
 }
+
+
+void
+sleep(void* chan)
+{
+    struct proc *p = myproc();
+    p->chan = chan;
+    p->state = SLEEPING;
+
+    sched();
+
+    p->chan = NULL;
+}
+
+
+// wake up all process sleeping on the chan
+// P.S. current NCPU = 1, so no need to worry about Lost Wakeup
+void
+wakeup(void* chan) 
+{
+    struct proc* cur = myproc();
+    
+    for (struct proc* p = proc_list; p; p = p->next) {
+        // p != myproc()
+        if (p != cur) {
+            if (p->state == SLEEPING && p->chan == chan)
+                p->state = RUNNABLE;
+        }
+    }
+}
+
+
+// Exit current process
+int
+exit(int status)
+{
+    struct proc* p = myproc();
+    // close opened files
+
+    // reparent to init
+
+    // wakeup parent, which might be sleeping in wait
+
+    // set status ZOMBIE
+    p->status = status;
+    p->state = ZOMBIE;
+
+    // swtch to scheduler, should never return
+    sched();
+    panic("proc %s should be exited", p->name);
+}
+
+
+// kill process by pid
+// but not kill it right now
+int
+kill(int pid)
+{
+    for (struct proc* p = proc_list; p; p = p->next) {
+        if (p->pid == pid) {
+            p->killed = 1;
+            // if this proc is sleeping, wake it up
+            p->state = (p->state == SLEEPING ? RUNNABLE : p->state);
+
+            return 0;
+        }
+    }
+
+    // not found
+    return -1;
+}
+
 
 
 #endif // __PROC_C__

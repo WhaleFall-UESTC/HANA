@@ -119,7 +119,12 @@ user_trap()
     int res = trap(scause);
     if (res != 0) {
         LOG_ERROR_TRAP();
+        // error occurs, kill this proc
+        p->killed = 1;
     }
+
+    if (p->killed)
+        exit(-1);
 
     dive_to_user();
 }
