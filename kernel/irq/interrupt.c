@@ -3,7 +3,7 @@
 #include <debug.h>
 
 #ifdef ARCH_RISCV
-#include <plic.h>
+#include <drivers/plic.h>
 #else
 /* other archs */
 #endif

@@ -3,8 +3,8 @@
 #include <debug.h>
 #include <irq/interrupt.h>
 #include <riscv.h>
-#include <trap.h>
-#include <context.h>
+#include <trap/trap.h>
+#include <trap/context.h>
 #include <proc/proc.h>
 
 extern char kernelvec[], trampoline[], uservec[], userret[];

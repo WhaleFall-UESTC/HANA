@@ -2,18 +2,18 @@
 #include <debug.h>
 #include <klib.h>
 #include <platform.h>
-#include <trap.h>
+#include <trap/trap.h>
 #include <mm/memlayout.h>
 #include <mm/mm.h>
 #include <irq/interrupt.h>
-#include <context.h>
+#include <trap/context.h>
 #include <proc/proc.h>
 #include <proc/sched.h>
 
 // #include <drivers/virtio.h>
 
 #ifdef ARCH_RISCV
-#include <uart.h>
+#include <drivers/uart.h>
 #include <riscv.h>
 #endif
 

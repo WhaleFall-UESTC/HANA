@@ -3,7 +3,7 @@
 #include <klib.h>
 
 #ifdef ARCH_RISCV 
-#include <uart.h>
+#include <drivers/uart.h>
 #endif
 
 #define ZEROPAD 1   // defalut blank pad

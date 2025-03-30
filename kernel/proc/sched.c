@@ -3,10 +3,10 @@
 #include <debug.h>
 #include <mm/mm.h>
 #include <mm/memlayout.h>
-#include <context.h>
+#include <trap/context.h>
 #include <proc/proc.h>
 #include <proc/sched.h>
-#include <trap.h>
+#include <trap/trap.h>
 
 #ifdef ARCH_RISCV
 #include <riscv.h>
