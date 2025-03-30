@@ -34,6 +34,8 @@ struct cpu cpus[NCPU];
 extern struct cpu cpus[NCPU];
 #endif
 
+#define CPUID(c) (int)(((uint64)((c) - cpus))/sizeof(struct cpu))
+
 static inline struct cpu*
 mycpu() 
 {
