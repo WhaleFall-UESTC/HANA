@@ -1,5 +1,6 @@
 *.o
 *.d
+*.o.d
 *.img
 *.dtb
 *.dts
@@ -10,7 +11,7 @@ kernel-riscv.objdump
 kernel-loongarch.objdump
 
 references/*
-build/*
+build/
 
-.vscode
+.vscode/
 .tmp
