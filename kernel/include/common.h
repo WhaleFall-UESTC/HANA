@@ -38,6 +38,8 @@
 
 #define KALLOC(type, var) type* var = (type*) kalloc(sizeof(type))
 
+#define nr_elem(x) (sizeof(x) / sizeof(x[0]))
+
 // typedefs
 typedef unsigned long uint64;
 typedef unsigned int uint32;

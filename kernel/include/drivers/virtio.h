@@ -1,17 +1,12 @@
 /**
  * virtio declarations (mmio, queue)
  */
-#ifndef __VIRTIO__H__
-#define __VIRTIO__H__
 
-#include <stdbool.h>
+#ifndef __VIRTIO_H__
+#define __VIRTIO_H__
+
 #include <common.h>
-
-#define VIRTIO_MAGIC   0x74726976
-#define VIRTIO_VERSION 0x2
-#define VIRTIO_DEV_NET 0x1
-#define VIRTIO_DEV_BLK 0x2
-#define wrap(x, len)   ((x) & ~(len))
+#include <stdbool.h>
 
 /*
 * See Section 4.2.2 of VIRTIO 1.0 Spec:
@@ -54,11 +49,11 @@ typedef volatile struct __attribute__((packed)) {
     uint32 Config[0];
 } virtio_regs;
 
-#define VIRTIO_STATUS_ACKNOWLEDGE        (1)
-#define VIRTIO_STATUS_DRIVER             (2)
-#define VIRTIO_STATUS_FAILED             (128)
-#define VIRTIO_STATUS_FEATURES_OK        (8)
-#define VIRTIO_STATUS_DRIVER_OK          (4)
+#define VIRTIO_STATUS_ACKNOWLEDGE (1)
+#define VIRTIO_STATUS_DRIVER (2)
+#define VIRTIO_STATUS_FAILED (128)
+#define VIRTIO_STATUS_FEATURES_OK (8)
+#define VIRTIO_STATUS_DRIVER_OK (4)
 #define VIRTIO_STATUS_DEVICE_NEEDS_RESET (64)
 
 struct virtio_cap {
@@ -72,11 +67,11 @@ struct virtqueue_desc {
     uint64 addr;
     uint32 len;
 /* This marks a buffer as continuing via the next field. */
-#define VIRTQ_DESC_F_NEXT 1
+#define VIRTQ_DESC_F_NEXT   1
 /* This marks a buffer as device write-only (otherwise device read-only). */
-#define VIRTQ_DESC_F_WRITE 2
+#define VIRTQ_DESC_F_WRITE     2
 /* This means the buffer contains a list of buffer descriptors. */
-#define VIRTQ_DESC_F_INDIRECT 4
+#define VIRTQ_DESC_F_INDIRECT   4
     /* The flags as indicated above. */
     uint16 flags;
     /* Next field if flags & NEXT */
@@ -108,8 +103,8 @@ struct virtqueue_used {
 */
 struct virtqueue {
     /* Physical base address of the full data structure. */
-    uint32 phys;
-    uint32 len;
+    uint64 phys;
+    uint64 len;
     uint32 seen_used;
     uint32 free_desc;
 
@@ -140,100 +135,25 @@ struct virtio_blk_config {
     uint8 writeback;
 } __attribute__((packed));
 
-struct virtio_net_config {
-    uint8 mac[6];
-#define VIRTIO_NET_S_LINK_UP  1
-#define VIRTIO_NET_S_ANNOUNCE 2
-    uint16 status;
-    uint16 max_virtqueue_pairs;
-} __attribute__((packed));
-
 #define VIRTIO_BLK_REQ_HEADER_SIZE 16
 #define VIRTIO_BLK_REQ_FOOTER_SIZE 1
 struct virtio_blk_req {
-#define VIRTIO_BLK_T_IN    0
-#define VIRTIO_BLK_T_OUT   1
-#define VIRTIO_BLK_T_SCSI  2
-#define VIRTIO_BLK_T_FLUSH 4
+#define VIRTIO_BLK_T_IN       0
+#define VIRTIO_BLK_T_OUT      1
+#define VIRTIO_BLK_T_SCSI     2
+#define VIRTIO_BLK_T_FLUSH    4
     uint32 type;
     uint32 reserved;
     uint64 sector;
     uint8 status;
-    /* end standard fields, begin helpers */
-    uint8 _pad[3];
-    uint32 descriptor;
-    struct blkreq blkreq;
 } __attribute__((packed));
 
 #define VIRTIO_BLK_SECTOR_SIZE 512
 
-#define VIRTIO_BLK_S_OK     0
-#define VIRTIO_BLK_S_IOERR  1
-#define VIRTIO_BLK_S_UNSUPP 2
+#define VIRTIO_BLK_S_OK       0
+#define VIRTIO_BLK_S_IOERR    1
+#define VIRTIO_BLK_S_UNSUPP   2
 
-struct packet;
-struct virtio_net_hdr {
-#define VIRTIO_NET_HDR_F_NEEDS_CSUM 1
-    uint8 flags;
-#define VIRTIO_NET_HDR_GSO_NONE  0
-#define VIRTIO_NET_HDR_GSO_TCPV4 1
-#define VIRTIO_NET_HDR_GSO_UDP   3
-#define VIRTIO_NET_HDR_GSO_TCPV6 4
-#define VIRTIO_NET_HDR_GSO_ECN   0x80
-    uint8 gso_type;
-    uint16 hdr_len;
-    uint16 gso_size;
-    uint16 csum_start;
-    uint16 csum_offset;
-    uint16 num_buffers;
-    struct packet *packet;
-} __attribute__((packed));
+void virtio_init(void);
 
-#define VIRTIO_NET_HDRLEN 10
-
-#define VIRTIO_NET_Q_RX 0
-#define VIRTIO_NET_Q_TX 1
-
-struct virtio_net {
-    virtio_regs *regs;
-    volatile struct virtio_net_config *cfg;
-    struct virtqueue *rx;
-    struct virtqueue *tx;
-};
-
-/*
-* virtqueue routines
-*/
-struct virtqueue *virtq_create(uint32 len);
-uint32 virtq_alloc_desc(struct virtqueue *virtq, void *addr);
-void virtq_free_desc(struct virtqueue *virtq, uint32 desc);
-void virtq_add_to_device(volatile virtio_regs *regs, struct virtqueue *virtq,
-                        uint32 queue_sel);
-void virtq_show(struct virtqueue *virtq);
-
-/*
-* General purpose routines for virtio drivers
-*/
-void virtio_check_capabilities(virtio_regs *device, struct virtio_cap *caps,
-                            uint32 n, char *whom);
-
-#define VIRTIO_INDP_CAPS                                                       \
-    { "VIRTIO_F_RING_INDIRECT_DESC", 28, false,                            \
-    "Negotiating this feature indicates that the driver can use"         \
-    " descriptors with the VIRTQ_DESC_F_INDIRECT flag set, as"           \
-    " described in 2.4.5.3 Indirect Descriptors." },                     \
-            { "VIRTIO_F_RING_EVENT_IDX", 29, false,                        \
-        "This feature enables the used_event and the avail_event "   \
-        "fields"                                                     \
-        " as described in 2.4.7 and 2.4.8." },                       \
-            { "VIRTIO_F_VERSION_1", 32, false,                             \
-        "This indicates compliance with this specification, giving " \
-        "a"                                                          \
-        " simple way to detect legacy devices or drivers." },
-
-/*
-*/
-int virtio_blk_init(virtio_regs *regs, uint32 intid);
-int virtio_net_init(virtio_regs *regs, uint32 intid);
- 
-#endif // __VIRTIO__H__
+#endif // __VIRTIO_H__

@@ -3,6 +3,7 @@
 #include <platform.h>
 #include <mm/memlayout.h>
 #include <debug.h>
+#include <context.h>
 #include <trap.h>
 #include <proc/proc.h>
 #include <proc/sched.h>

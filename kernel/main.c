@@ -10,6 +10,8 @@
 #include <proc/proc.h>
 #include <proc/sched.h>
 
+// #include <drivers/virtio.h>
+
 #ifdef ARCH_RISCV
 #include <uart.h>
 #include <riscv.h>
@@ -41,6 +43,8 @@ main()
     out("Initialize first proc");
 
     // ecall();
+
+    // virtio_init();
 
     out("call scheduler");
     scheduler();
