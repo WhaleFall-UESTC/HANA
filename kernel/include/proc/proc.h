@@ -22,6 +22,8 @@ enum proc_state{ INIT, SLEEPING, RUNNABLE, RUNNING, ZOMBIE, NR_PROC_STATE };
 struct cpu {
     struct context context;
     struct proc* proc;
+    int noff;       // Depth of push_off() nesting.
+    int intena;     // Were interrupts enabled before push_off()?
 };
 
 #ifdef __PROC_C__

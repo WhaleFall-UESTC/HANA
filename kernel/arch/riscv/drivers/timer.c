@@ -4,6 +4,8 @@
 #include <mm/memlayout.h>
 #include <debug.h>
 #include <trap.h>
+#include <proc/proc.h>
+#include <proc/sched.h>
 
 extern char timervec[];
 
@@ -43,4 +45,8 @@ timer_interrupt_handler()
     log("receive timer interrupt");
     // clear timer interrupt
     w_sip(r_sip() & ~(1 << SUPERVISOR_SOFTWARE_INTERRUPT));
+
+    struct proc* p = myproc();
+    if (p && p->state == RUNNING)
+        yield();
 }

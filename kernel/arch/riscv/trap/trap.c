@@ -2,11 +2,7 @@
 #include <mm/memlayout.h>
 #include <debug.h>
 #include <irq/interrupt.h>
-
-#ifdef ARCH_RISCV
 #include <riscv.h>
-#endif
-
 #include <trap.h>
 #include <context.h>
 #include <proc/proc.h>
