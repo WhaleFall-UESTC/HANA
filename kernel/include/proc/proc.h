@@ -57,7 +57,7 @@ int             alloc_pid();
 struct proc*    alloc_proc();
 void            sleep(void* chan);
 void            wakeup(void* chan);
-int             exit(int status);
+void            exit(int status);
 int             kill(int pid);
 
 

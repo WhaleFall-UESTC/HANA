@@ -133,6 +133,7 @@ user_trap()
 void
 dive_to_user()
 {
+    log("dive to user");
     struct proc* p = myproc();
 
     intr_off();

@@ -12,6 +12,7 @@
 #include <trap/context.h>
 #include <proc/proc.h>
 #include <trap/trap.h>
+#include <proc/sched.h>
 #include <mm/mm.h>
 #include <mm/memlayout.h>
 
@@ -113,7 +114,7 @@ wakeup(void* chan)
 
 
 // Exit current process
-int
+void
 exit(int status)
 {
     struct proc* p = myproc();
