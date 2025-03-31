@@ -9,6 +9,7 @@
 #include <riscv.h>
 #endif
 
+
 extern char etext[];
 extern char trampoline[];
 extern char *init_stack_top;
@@ -139,23 +140,21 @@ walkaddr(pagetable_t pgtbl, uint64 va)
 // make user pagetable
 // user_pa: address of a 2 PGSIZE space
 pagetable_t
-uvmmake(uint64 user_pa, uint64 trapframe)
+uvmmake(uint64 trapframe)
 {
     pagetable_t upgtbl = alloc_pagetable();
-
-    mappages(upgtbl, 0, user_pa, PGSIZE, PTE_U | PTE_R | PTE_X);
-
-    mappages(upgtbl, 2 * PGSIZE, user_pa + PGSIZE, PGSIZE, PTE_U | PTE_R | PTE_W);
 
     // map TRAMPOLINE
     mappages(upgtbl, TRAMPOLINE, (uint64)trampoline, PGSIZE, PTE_R | PTE_X);
 
+    // map TRAPFRAME
     mappages(upgtbl, TRAPFRAME, trapframe, PGSIZE, PTE_R | PTE_W);
 
     return upgtbl;
 }
 
 
+// just for init proc
 pagetable_t
 uvminit(uint64 trapframe, char* init_code, int sz)
 {
@@ -165,5 +164,38 @@ uvminit(uint64 trapframe, char* init_code, int sz)
     void* userspace = kalloc(2*PGSIZE);
     memmove(userspace, init_code, sz);
 
-    return uvmmake((uint64) userspace, trapframe);
+    pagetable_t upgtbl = uvmmake(trapframe);
+
+    mappages(upgtbl, 0, (uint64)userspace, PGSIZE, PTE_U | PTE_R | PTE_X);
+
+    // map guard page, for uvmcpoy
+    mappages(upgtbl, PGSIZE, 0, PGSIZE, 0);
+
+    mappages(upgtbl, 2 * PGSIZE, (uint64)userspace + PGSIZE, PGSIZE, PTE_U | PTE_R | PTE_W);
+
+    return upgtbl;
+}
+
+
+// for fork() copy child process userspace
+void
+uvmcopy(pagetable_t cpgtbl, pagetable_t ppgtbl, uint64 sz)
+{
+    // copy .text & .data & stack & heap
+    for (uint64 addr = 0; addr < sz;) {
+        pte_t *ppte = walk(ppgtbl, addr, WALK_NOALLOC);
+        assert(ppte);
+        do {
+            pte_t *cpte = walk(cpgtbl, addr, WALK_ALLOC);
+            assert(cpte);
+            uint64 cpa = PTE2PA(*cpte);
+            uint64 ppa = PTE2PA(*ppte);
+            if (ppa)
+                memmove((void*)cpa, (void*)ppa, PGSIZE);
+            *cpte |= PTE_FLAGS(*ppte);
+
+            addr += PGSIZE;
+            ppte++;
+        } while (addr < sz && !IS_PGALIGNED(ppte));
+    }
 }

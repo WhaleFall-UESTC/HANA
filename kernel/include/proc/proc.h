@@ -9,7 +9,9 @@ struct proc {
     void* chan;     // proc sleep on which channel
     int status;     // exit() return status
 
-    int sz;
+    uint64 sz;
+
+    struct proc* parent;
 
     pagetable_t pagetable;
     uint64 stack;
