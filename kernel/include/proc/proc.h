@@ -5,22 +5,22 @@ struct proc {
     int pid;
     volatile int state;
 
-    int killed;
-    void* chan;     // proc sleep on which channel
-    int status;     // exit() return status
-
     uint64 sz;
-
-    struct proc* parent;
 
     pagetable_t pagetable;
     uint64 stack;
     struct trapframe* trapframe;
-
     struct context context;
 
-    struct proc* next;
 
+    int killed;
+    void* chan;     // proc sleep on which channel
+    int status;     // exit() return status
+
+    struct proc* parent;
+
+    struct proc* next;
+    
     char name[16];
 };
 

@@ -32,7 +32,8 @@ ARCH_SRC = $(KERNEL_SRC)/arch/$(ARCH)
 CFLAGS = -Wall -Werror -O -fno-omit-frame-pointer -ggdb 
 CFLAGS += $(if $(RISCV_CFLAGS),$(RISCV_CFLAGS),$(LOONGARCH_CFLAGS)) 
 CFLAGS += -I $(KERNEL_SRC)/include -I $(ARCH_SRC)/include
-CFLAGS += -MD -MP -MF $(BUILD_DIR)/$(@F).d
+# CFLAGS += -MD -MP -MF $(BUILD_DIR)/$(@F).d
+CFLAGS += -MD -MP -MF $@.d
 CFLAGS += -Wno-unused-variable -Wno-unused-function
 
 ASFLAGS = $(CFLAGS) -D__ASSEMBLY__
