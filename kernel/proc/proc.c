@@ -1,6 +1,3 @@
-#ifndef __PROC_C__
-#define __PROC_C__
-
 #include <common.h>
 #include <klib.h>
 #include <debug.h>
@@ -182,7 +179,4 @@ fork()
 
     return cp->pid;
 }
-
-
-#endif // __PROC_C__
 

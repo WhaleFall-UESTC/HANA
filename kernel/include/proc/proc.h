@@ -33,11 +33,7 @@ struct cpu {
     int intena;     // Were interrupts enabled before push_off()?
 };
 
-#ifdef __PROC_C__
-struct cpu cpus[NCPU];
-#else
 extern struct cpu cpus[NCPU];
-#endif
 
 #define CPUID(c) (int)(((uint64)((c) - cpus))/sizeof(struct cpu))
 
