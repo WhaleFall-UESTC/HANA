@@ -42,7 +42,7 @@ struct blkdev {
     int devid;
     unsigned long size; // blkdev capacity in bytes
     char name[BLKDEV_NAME_MAX_LEN];
-    struct blkdev_ops *ops;
+    const struct blkdev_ops *ops;
 };
 
 struct blkdev_ops {

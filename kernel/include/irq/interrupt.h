@@ -36,9 +36,11 @@ static inline void irq_store(int *flags) {
 
 #endif
 
-int register_irq(uint32 irq, irq_handler_t handler, void* dev);
-void free_irq(uint32 irq);
-void response_interrupt(void);
-void interrupt_init(void);
+int irq_register(uint32, irq_handler_t, void *);
+void irq_free(uint32);
+void irq_response(void);
+void irq_init(void);
+void irq_pushoff();
+void irq_popoff();
 
 #endif // __INTERRUPT_H__

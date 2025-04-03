@@ -39,7 +39,7 @@ main()
     trap_init();
     trap_init_hart();
     out("Initialize trap");
-    interrupt_init();
+    irq_init();
     out("Initialize interrupt");
     proc_init();
     out("Initialize first proc");

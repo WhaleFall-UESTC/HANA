@@ -14,18 +14,18 @@
 #define UART0_IRQ               10
 #define VIRTIO0_IRQ             1
 
-#define irq_init(hart) \
+#define __irq_init(hart) \
     do { \
         plic_init(); \
         plic_init_hart(hart); \
     } while(0);
-#define irq_init_default() irq_init(DEFAULT_HART)
-#define irq_enable_default(irq) \
+#define __irq_init_default() __irq_init(DEFAULT_HART)
+#define __irq_enable_default(irq) \
     plic_enable_irq(DEFAULT_HART, irq, DEFAULT_PRI)
-#define irq_disable_default(irq) \
+#define __irq_disable_default(irq) \
     plic_disable_irq(DEFAULT_HART, irq)
-#define irq_get() plic_claim_irq(DEFAULT_HART)
-#define irq_put(irq) plic_complete_irq(DEFAULT_HART, irq)
+#define __irq_get() plic_claim_irq(DEFAULT_HART)
+#define __irq_put(irq) plic_complete_irq(DEFAULT_HART, irq)
 
 void plic_enable_irq(int hart, int irq, int priority);
 void plic_disable_irq(int hart, int irq);
