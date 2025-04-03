@@ -1,6 +1,3 @@
-#ifndef __PROC_C__
-#define __PROC_C__
-
 #include <common.h>
 #include <klib.h>
 #include <debug.h>
@@ -33,6 +30,7 @@ alloc_pid()
 
 // alloc a new proc and initialize it
 // which can be sched after init
+// alloc pid, kstack, trapframe
 struct proc*
 alloc_proc()
 {
@@ -57,6 +55,7 @@ alloc_proc()
     p->context.ra = (uint64) dive_to_user; 
     
     p->next = NULL;
+    p->parent = NULL;
 
     return p;
 }
@@ -154,6 +153,30 @@ kill(int pid)
 }
 
 
+// Create new process, copying form parent
+int
+fork()
+{
+    struct proc* p = myproc();
+    struct proc* cp = alloc_proc();
+    assert(cp);
 
-#endif // __PROC_C__
+    cp->pagetable = uvmmake((uint64)p->trapframe);
+
+    // copy user pagetable from p
+    // COW later
+    uvmcopy(cp->pagetable, p->pagetable, p->sz);
+
+    // copy trapframe
+    *(cp->trapframe) = *(p->trapframe);
+    // let fork return 0 in child proc
+    cp->trapframe->a0 = 0;
+
+    // files
+
+    cp->parent = p;
+    cp->state = RUNNABLE;
+
+    return cp->pid;
+}
 

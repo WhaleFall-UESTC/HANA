@@ -5,20 +5,22 @@ struct proc {
     int pid;
     volatile int state;
 
-    int killed;
-    void* chan;     // proc sleep on which channel
-    int status;     // exit() return status
-
-    int sz;
+    uint64 sz;
 
     pagetable_t pagetable;
     uint64 stack;
     struct trapframe* trapframe;
-
     struct context context;
 
-    struct proc* next;
 
+    int killed;
+    void* chan;     // proc sleep on which channel
+    int status;     // exit() return status
+
+    struct proc* parent;
+
+    struct proc* next;
+    
     char name[16];
 };
 
@@ -31,11 +33,7 @@ struct cpu {
     int intena;     // Were interrupts enabled before push_off()?
 };
 
-#ifdef __PROC_C__
-struct cpu cpus[NCPU];
-#else
 extern struct cpu cpus[NCPU];
-#endif
 
 #define CPUID(c) (int)(((uint64)((c) - cpus))/sizeof(struct cpu))
 
