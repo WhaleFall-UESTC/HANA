@@ -83,7 +83,7 @@ static void virtio_blk_handle_used(struct virtio_blk *dev, uint32 usedidx)
     }
 
     // wait_list_awaken(&req->blkreq.wait);
-    wakeup(dev);
+    wakeup(blkreq_wait_channel(req));
     return;
 bad_desc:
     log("virtio-blk received malformed descriptors\n");
@@ -169,7 +169,7 @@ static void virtio_blk_status(struct blkdev *dev)
 static struct blkreq *virtio_blk_alloc(struct blkdev *dev)
 {
     KALLOC(struct virtio_blk_req, vblkreq);
-    blkreq_init(&vblkreq->blkreq);
+    blkreq_init(&vblkreq->blkreq, dev);
     return &vblkreq->blkreq;
 }
 
