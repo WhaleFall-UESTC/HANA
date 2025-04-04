@@ -172,7 +172,8 @@ struct virtio_blk_req
     uint8 _pad[3];
     uint32 descriptor;
     struct blkreq blkreq;
-} __attribute__((packed));
+// } __attribute__((packed));
+};
 
 #define VIRTIO_BLK_SECTOR_SIZE 512
 

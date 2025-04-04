@@ -36,7 +36,7 @@ struct virtqueue *virtq_create(uint32 len)
 		log("error: too big for a page\n");
 		return NULL;
 	}
-	page_virt = kalloc(PGSIZE);
+	page_virt = (uint64)kalloc(PGSIZE);
 
 	virtq = (struct virtqueue *)page_virt;
 	virtq->phys = virt_to_phys(page_virt);
@@ -70,7 +70,7 @@ uint32 virtq_alloc_desc(struct virtqueue *virtq, void *addr)
 		error("ran out of virtqueue descriptors\n");
 	virtq->free_desc = next;
 
-	virtq->desc[desc].addr = virt_to_phys(addr);
+	virtq->desc[desc].addr = virt_to_phys((uint64)addr);
 	virtq->desc_virt[desc] = addr;
 	return desc;
 }
@@ -177,20 +177,20 @@ void virtio_check_capabilities(virtio_regs *regs, struct virtio_cap *caps,
 	}
 }
 
-static int virtio_dev_init(uint32 virt, uint32 intid)
+static int virtio_dev_init(uint64 virt, uint32 intid)
 {
 	virtio_regs *regs = (virtio_regs *)virt;
 
 	if (READ32(regs->MagicValue) != VIRTIO_MAGIC)
 	{
-		error("virtio at 0x%x had wrong magic value 0x%x, "
+		error("virtio at 0x%lx had wrong magic value 0x%x, "
 			   "expected 0x%x\n",
 			   virt, regs->MagicValue, VIRTIO_MAGIC);
 		return -1;
 	}
 	if (READ32(regs->Version) != VIRTIO_VERSION)
 	{
-		error("virtio at 0x%x had wrong version 0x%x, expected "
+		error("virtio at 0x%lx had wrong version 0x%x, expected "
 			   "0x%x\n",
 			   virt, regs->Version, VIRTIO_VERSION);
 		return -1;
@@ -218,8 +218,8 @@ static int virtio_dev_init(uint32 virt, uint32 intid)
 	{
 	case VIRTIO_DEV_BLK:
 		return virtio_blk_init(regs, intid);
-	case VIRTIO_DEV_NET:
-		return virtio_net_init(regs, intid);
+	// case VIRTIO_DEV_NET:
+		// return virtio_net_init(regs, intid);
 	default:
 		error("unsupported virtio device ID 0x%x\n",
 			   READ32(regs->DeviceID));
@@ -229,6 +229,6 @@ static int virtio_dev_init(uint32 virt, uint32 intid)
 
 void virtio_init(void)
 {
-	for (int i = 0; i < 32; i++)
+	for (int i = 0; i < 1; i++)
 		virtio_dev_init(VIRT_VIRTIO + VIRT_VIRTIO_SIZE * i, i);
 }

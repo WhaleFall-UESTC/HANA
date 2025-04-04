@@ -5,6 +5,8 @@
 #include <locking/spinsem.h>
 #include <proc/proc.h>
 #include <irq/interrupt.h>
+#include <io/blk.h>
+#include <klib.h>
 
 struct virtio_cap blk_caps[] = {
     {"VIRTIO_BLK_F_SIZE_MAX", 1, false,
@@ -28,7 +30,7 @@ struct virtio_cap blk_caps[] = {
 
 struct slab *blkreq_slab = NULL;
 struct list_head vdevs;
-spinsem_t vdev_list_lock;
+spinlock_t vdev_list_lock;
 
 struct virtio_blk
 {
@@ -108,7 +110,7 @@ static struct virtio_blk *virtio_blk_get_dev_by_intid(uint32 intid)
     return NULL;
 }
 
-static void virtio_blk_isr(uint32 intid, struct ctx *ctx)
+static irqret_t virtio_blk_isr(uint32 intid, void* private)
 {
     int i, len;
     struct virtio_blk *dev = virtio_blk_get_dev_by_intid(intid);
@@ -116,7 +118,7 @@ static void virtio_blk_isr(uint32 intid, struct ctx *ctx)
     if (!dev)
     {
         panic("virtio-blk: received IRQ for unknown device!");
-        return; /* just to make it obvious we won't continue */
+        return IRQ_ERR;
     }
 
     len = dev->virtq->len;
@@ -131,6 +133,7 @@ static void virtio_blk_isr(uint32 intid, struct ctx *ctx)
     dev->virtq->seen_used = dev->virtq->used->idx % len;
 
     irq_free(intid);
+    return IRQ_HANDLED;
 }
 
 static void virtio_blk_send(struct virtio_blk *blk, struct virtio_blk_req *hdr)
@@ -143,11 +146,11 @@ static void virtio_blk_send(struct virtio_blk *blk, struct virtio_blk_req *hdr)
     WRITE32(blk->regs->QueueNotify, 0);
 }
 
-static int virtio_blk_status(struct blkdev *dev)
+static void virtio_blk_status(struct blkdev *dev)
 {
     struct virtio_blk *blkdev = get_vblkdev(dev);
-    log("virtio_blk_dev at 0x%x\n",
-           kmem_lookup_phys((void *)blkdev->regs));
+    log("virtio_blk_dev at 0x%lx\n",
+           virt_to_phys((uint64)blkdev->regs));
     log("    Status=0x%x\n", READ32(blkdev->regs->Status));
     log("    DeviceID=0x%x\n", READ32(blkdev->regs->DeviceID));
     log("    VendorID=0x%x\n", READ32(blkdev->regs->VendorID));
@@ -161,7 +164,6 @@ static int virtio_blk_status(struct blkdev *dev)
     mb();
     log("    ready = 0x%x\n", READ32(blkdev->regs->QueueReady));
     virtq_show(blkdev->virtq);
-    return 0;
 }
 
 static struct blkreq *virtio_blk_alloc(struct blkdev *dev)
@@ -237,7 +239,7 @@ int virtio_blk_init(virtio_regs *regs, uint32 intid)
     virtio_mod_init();
     vdev = kalloc(sizeof(struct virtio_blk));
 
-    virtio_check_capabilities(regs, blk_caps, nelem(blk_caps),
+    virtio_check_capabilities(regs, blk_caps, nr_elem(blk_caps),
                               "virtio-blk");
 
     WRITE32(regs->Status, READ32(regs->Status) | VIRTIO_STATUS_FEATURES_OK);
@@ -266,16 +268,19 @@ int virtio_blk_init(virtio_regs *regs, uint32 intid)
     snprintf(vdev->blkdev.name, sizeof(vdev->blkdev.name), "vblk%d",
              vdev->intid);
 
-    spin_acquire_irqsave(&vdev_list_lock, &flags);
+    // spin_acquire_irqsave(&vdev_list_lock, &flags);
+    spinlock_acquire(&vdev_list_lock);
     list_insert(&vdevs, &vdev->list);
-    spin_release_irqrestore(&vdev_list_lock, &flags);
+    // spin_release_irqrestore(&vdev_list_lock, &flags);
+    spinlock_release(&vdev_list_lock);
 
-    gic_register_isr(intid, 1, virtio_blk_isr, "virtio-blk");
-    gic_enable_interrupt(intid);
+    irq_register(intid, virtio_blk_isr, NULL);
+        // gic_register_isr(intid, 1, virtio_blk_isr, "virtio-blk");
+    // gic_enable_interrupt(intid);
 
     WRITE32(regs->Status, READ32(regs->Status) | VIRTIO_STATUS_DRIVER_OK);
     mb();
 
-    blkdev_register(&vdev->blkdev);
+    // blkdev_register(&vdev->blkdev);
     return 0;
 }

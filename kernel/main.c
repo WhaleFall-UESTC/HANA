@@ -9,6 +9,7 @@
 #include <trap/context.h>
 #include <proc/proc.h>
 #include <proc/sched.h>
+#include <io/virtio.h>
 
 // #include <drivers/virtio.h>
 
@@ -46,7 +47,7 @@ main()
 
     // ecall();
 
-    // virtio_init();
+    virtio_init();
 
     out("call scheduler");
     scheduler();
