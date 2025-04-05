@@ -11,50 +11,23 @@
 #include <mm/mm.h>
 #include <drivers/virtio.h>
 #include <platform.h>
+#include <klib.h>
 
-struct virtqueue *virtq_create(uint32 len)
+struct virtqueue *virtq_create()
 {
 	int i;
-	uint64 page_virt;
 	struct virtqueue *virtq;
 
-	/* compute offsets, ensure virtq struct fit into single page */
-	uint64 off_desc = ALIGN(sizeof(struct virtqueue), 16);
-	uint64 off_avail =
-		ALIGN(off_desc + len * sizeof(struct virtqueue_desc), 2);
-	uint64 off_used_event = (off_avail + sizeof(struct virtqueue_avail) +
-							   len * sizeof(uint16));
-	uint64 off_used = ALIGN(off_used_event + sizeof(uint16), 4);
-	uint64 off_avail_event = (off_used + sizeof(struct virtqueue_used) +
-								len * sizeof(struct virtqueue_used_elem));
-	uint64 off_desc_virt =
-		ALIGN(off_avail_event + sizeof(uint16), sizeof(void *));
-	uint64 memsize = off_desc_virt + len * sizeof(void *);
+	assert(virtq_size(VIRTIO_DEFAULT_QUEUE_SIZE) == sizeof(struct virtqueue));
 
-	if (memsize > PGSIZE)
-	{
-		log("error: too big for a page\n");
-		return NULL;
-	}
-	page_virt = (uint64)kalloc(PGSIZE);
+	virtq = (struct virtqueue *)kalloc(sizeof(struct virtqueue));
+	assert(virtq != NULL);
+	memset(virtq, 0, sizeof(struct virtqueue));
 
-	virtq = (struct virtqueue *)page_virt;
-	virtq->phys = virt_to_phys(page_virt);
-	virtq->len = len;
+	virtq->avail.idx = 0;
+	virtq->used.idx = 0;
 
-	virtq->desc = (struct virtqueue_desc *)(page_virt + off_desc);
-	virtq->avail = (struct virtqueue_avail *)(page_virt + off_avail);
-	virtq->used_event = (uint16 *)(page_virt + off_used_event);
-	virtq->used = (struct virtqueue_used *)(page_virt + off_used);
-	virtq->avail_event = (uint16 *)(page_virt + off_avail_event);
-	virtq->desc_virt = (void **)(page_virt + off_desc_virt);
-
-	virtq->avail->idx = 0;
-	virtq->used->idx = 0;
-	virtq->seen_used = virtq->used->idx;
-	virtq->free_desc = 0;
-
-	for (i = 0; i < len; i++)
+	for (i = 0; i < VIRTIO_DEFAULT_QUEUE_SIZE; i++)
 	{
 		virtq->desc[i].next = i + 1;
 	}
@@ -62,56 +35,86 @@ struct virtqueue *virtq_create(uint32 len)
 	return virtq;
 }
 
-uint32 virtq_alloc_desc(struct virtqueue *virtq, void *addr)
+uint32 virtq_alloc_desc(struct virtq_info *virtq_info, void *addr)
 {
-	uint32 desc = virtq->free_desc;
-	uint32 next = virtq->desc[desc].next;
-	if (desc == virtq->len)
+	uint32 desc = virtq_info->free_desc;
+	uint32 next = virtq_info->virtq->desc[desc].next;
+	if (desc == VIRTIO_DEFAULT_QUEUE_SIZE)
 		error("ran out of virtqueue descriptors\n");
-	virtq->free_desc = next;
+	virtq_info->free_desc = next;
 
-	virtq->desc[desc].addr = virt_to_phys((uint64)addr);
-	virtq->desc_virt[desc] = addr;
+	virtq_info->virtq->desc[desc].addr = virt_to_phys((uint64)addr);
+	virtq_info->desc_virt[desc] = addr;
 	return desc;
 }
 
-void virtq_free_desc(struct virtqueue *virtq, uint32 desc)
+void virtq_free_desc(struct virtq_info *virtq_info, uint32 desc)
 {
-	virtq->desc[desc].next = virtq->free_desc;
-	virtq->free_desc = desc;
-	virtq->desc_virt[desc] = NULL;
+	virtq_info->virtq->desc[desc].next = virtq_info->free_desc;
+	virtq_info->free_desc = desc;
+	virtq_info->desc_virt[desc] = NULL;
 }
 
-void virtq_add_to_device(volatile virtio_regs *regs, struct virtqueue *virtq,
-						 uint32 queue_sel)
+struct virtq_info* virtq_add_to_device(volatile virtio_regs *regs, uint32 queue_sel)
 {
+	uint32 max_queue_size;
+	KALLOC(struct virtq_info, virtq_info);
+	assert(virtq_info != NULL);
+
+	// Step 1: Select the queue
 	WRITE32(regs->QueueSel, queue_sel);
 	mb();
-	WRITE32(regs->QueueNum, virtq->len);
-	WRITE32(regs->QueueDescLow,
-			virtq->phys + ((void *)virtq->desc - (void *)virtq));
-	WRITE32(regs->QueueDescHigh, 0);
-	WRITE32(regs->QueueAvailLow,
-			virtq->phys + ((void *)virtq->avail - (void *)virtq));
-	WRITE32(regs->QueueAvailHigh, 0);
-	WRITE32(regs->QueueUsedLow,
-			virtq->phys + ((void *)virtq->used - (void *)virtq));
-	WRITE32(regs->QueueUsedHigh, 0);
+
+	// Step 2: Check if the queue is not already in use
+	if (READ32(regs->QueuePFN) != 0)
+	{
+		error("Queue %u is already in use\n", queue_sel);
+		return NULL;
+	}
+
+	// Step 3: Read maximum queue size
+	max_queue_size = READ32(regs->QueueNumMax);
+	if (max_queue_size == 0)
+	{
+		error("Queue %u is not available\n", queue_sel);
+		return NULL;
+	}
+
+	// Step 4: Allocate and zero the queue pages
+
+	if(VIRTIO_DEFAULT_QUEUE_SIZE > max_queue_size) {
+		panic("Default queue size too big, must be lower than %d", max_queue_size);
+	}
+
+	virtq_info->free_desc = virtq_info->seen_used = 0;
+	virtq_info->virtq = virtq_create();
+	virtq_info->pfn = phys_page_number(virt_to_phys((uint64)virtq_info->virtq));
+	memset(virtq_info->desc_virt, 0, sizeof(virtq_info->desc_virt));
+
+	// Step 5: Notify the device about the queue size
+	WRITE32(regs->QueueNum, VIRTIO_DEFAULT_QUEUE_SIZE);
+
+	// Step 6: Notify the device about the used alignment
+	WRITE32(regs->QueueAlign, PGSIZE);
 	mb();
-	WRITE32(regs->QueueReady, 1);
+	
+	// Step 7: Write the physical number of the first page of the queue
+	WRITE32(regs->QueuePFN, virtq_info->pfn);
+
+	return virtq_info;
 }
 
-void virtq_show(struct virtqueue *virtq)
+void virtq_show(struct virtq_info *virtq_info)
 {
 	int count = 0;
-	uint32 i = virtq->free_desc;
-	log("Current free_desc: %u, len=%u\n", virtq->free_desc, virtq->len);
-	while (i != virtq->len && count++ <= virtq->len)
+	uint32 i = virtq_info->free_desc;
+	log("Current free_desc: %u, len=%u\n", virtq_info->free_desc, VIRTIO_DEFAULT_QUEUE_SIZE);
+	while (i != VIRTIO_DEFAULT_QUEUE_SIZE && count++ <= VIRTIO_DEFAULT_QUEUE_SIZE)
 	{
-		log("  next: %u -> %u\n", i, virtq->desc[i].next);
-		i = virtq->desc[i].next;
+		log("  next: %u -> %u\n", i, virtq_info->virtq->desc[i].next);
+		i = virtq_info->virtq->desc[i].next;
 	}
-	if (count > virtq->len)
+	if (count > VIRTIO_DEFAULT_QUEUE_SIZE)
 	{
 		log("Overflowed descriptors?\n");
 	}
@@ -125,18 +128,18 @@ void virtio_check_capabilities(virtio_regs *regs, struct virtio_cap *caps,
 	uint32 driver = 0;
 	uint32 device;
 
-	WRITE32(regs->DeviceFeaturesSel, bank);
+	WRITE32(regs->HostFeaturesSel, bank);
 	mb();
-	device = READ32(regs->DeviceFeatures);
+	device = READ32(regs->HostFeatures);
 
 	for (i = 0; i < n; i++)
 	{
 		if (caps[i].bit / 32 != bank)
 		{
 			/* Time to write our selected bits for this bank */
-			WRITE32(regs->DriverFeaturesSel, bank);
+			WRITE32(regs->GuestFeaturesSel, bank);
 			mb();
-			WRITE32(regs->DriverFeatures, driver);
+			WRITE32(regs->GuestFeatures, driver);
 			if (device)
 			{
 				/*log("%s: device supports unknown bits"
@@ -145,9 +148,9 @@ void virtio_check_capabilities(virtio_regs *regs, struct virtio_cap *caps,
 			}
 			/* Now we set these variables for next time. */
 			bank = caps[i].bit / 32;
-			WRITE32(regs->DeviceFeaturesSel, bank);
+			WRITE32(regs->HostFeaturesSel, bank);
 			mb();
-			device = READ32(regs->DeviceFeatures);
+			device = READ32(regs->HostFeatures);
 		}
 		if (device & (1 << caps[i].bit))
 		{
@@ -167,9 +170,9 @@ void virtio_check_capabilities(virtio_regs *regs, struct virtio_cap *caps,
 		}
 	}
 	/* Time to write our selected bits for this bank */
-	WRITE32(regs->DriverFeaturesSel, bank);
+	WRITE32(regs->GuestFeaturesSel, bank);
 	mb();
-	WRITE32(regs->DriverFeatures, driver);
+	WRITE32(regs->GuestFeatures, driver);
 	if (device)
 	{
 		/*log("%s: device supports unknown bits"

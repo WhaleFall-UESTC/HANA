@@ -25,4 +25,8 @@ static inline uint64 virt_to_phys(uint64 va) {
     return walkaddr(kernel_pagetable, va);
 }
 
+static inline uint64 phys_page_number(uint64 pa) {
+    return pa >> PGSHIFT;
+}
+
 #endif // __MM_H__

@@ -10,46 +10,39 @@
 #define VIRTIO_DEV_BLK 0x2
 #define wrap(x, len) ((x) & ~(len))
 
-/*
- * See Section 4.2.2 of VIRTIO 1.0 Spec:
+/**
+ * Legacy register layout
+ * See Section 4.2.4 of VIRTIO 1.0 Spec:
  * http://docs.oasis-open.org/virtio/virtio/v1.0/cs04/virtio-v1.0-cs04.html
  */
 typedef volatile struct __attribute__((packed))
 {
-    uint32 MagicValue;
-    uint32 Version;
-    uint32 DeviceID;
-    uint32 VendorID;
-    uint32 DeviceFeatures;
-    uint32 DeviceFeaturesSel;
-    uint32 _reserved0[2];
-    uint32 DriverFeatures;
-    uint32 DriverFeaturesSel;
-    uint32 _reserved1[2];
-    uint32 QueueSel;
-    uint32 QueueNumMax;
-    uint32 QueueNum;
-    uint32 _reserved2[2];
-    uint32 QueueReady;
-    uint32 _reserved3[2];
-    uint32 QueueNotify;
-    uint32 _reserved4[3];
-    uint32 InterruptStatus;
-    uint32 InterruptACK;
-    uint32 _reserved5[2];
-    uint32 Status;
-    uint32 _reserved6[3];
-    uint32 QueueDescLow;
-    uint32 QueueDescHigh;
-    uint32 _reserved7[2];
-    uint32 QueueAvailLow;
-    uint32 QueueAvailHigh;
-    uint32 _reserved8[2];
-    uint32 QueueUsedLow;
-    uint32 QueueUsedHigh;
-    uint32 _reserved9[21];
-    uint32 ConfigGeneration;
-    uint32 Config[0];
+    /* 0x000 */ uint32 MagicValue;       // R
+    /* 0x004 */ uint32 Version;          // R
+    /* 0x008 */ uint32 DeviceID;         // R
+    /* 0x00c */ uint32 VendorID;         // R
+    /* 0x010 */ uint32 HostFeatures;     // R
+    /* 0x014 */ uint32 HostFeaturesSel;  // W
+    /* 0x018 */ uint32 _reserved0[2];
+    /* 0x020 */ uint32 GuestFeatures;    // W
+    /* 0x024 */ uint32 GuestFeaturesSel; // W
+    /* 0x028 */ uint32 GuestPageSize;    // W
+    /* 0x02c */ uint32 _reserved1;
+    /* 0x030 */ uint32 QueueSel;         // W
+    /* 0x034 */ uint32 QueueNumMax;      // R
+    /* 0x038 */ uint32 QueueNum;         // W
+    /* 0x03c */ uint32 QueueAlign;       // W
+    /* 0x040 */ uint32 QueuePFN;         // RW
+    /* 0x044 */ uint32 _reserved2[3];
+    /* 0x050 */ uint32 QueueNotify;      // W
+    /* 0x054 */ uint32 _reserved3[3];
+    /* 0x060 */ uint32 InterruptStatus;  // R
+    /* 0x064 */ uint32 InterruptACK;     // W
+    /* 0x068 */ uint32 _reserved4[2];
+    /* 0x070 */ uint32 Status;           // RW
+    /* 0x074 */ uint32 _reserved5[3];
+    /* 0x080 */ uint32 _reserved6[0x20];
+    /* 0x100 */ uint32 Config[];         // RW
 } virtio_regs;
 
 #define VIRTIO_STATUS_ACKNOWLEDGE (1)
@@ -88,7 +81,7 @@ struct virtqueue_avail
 #define VIRTQ_AVAIL_F_NO_INTERRUPT 1
     uint16 flags;
     uint16 idx;
-    uint16 ring[0];
+    uint16 ring[0]; // Queuesize of nr elements
 } __attribute__((packed));
 
 struct virtqueue_used_elem
@@ -102,28 +95,57 @@ struct virtqueue_used
 #define VIRTQ_USED_F_NO_NOTIFY 1
     uint16 flags;
     uint16 idx;
-    struct virtqueue_used_elem ring[0];
+    struct virtqueue_used_elem ring[0]; // Queuesize of nr elements
 } __attribute__((packed));
 
-/*
- * For simplicity, we lay out the virtqueue in contiguous memory on a single
- * page. See virtq_create for the layout and alignment requirements.
+/**
+ * Lagacy interfaces force to lay out the virtqueue in
+ * contiguous memory on two or more physically-contiguous pages.
+ * See 2.4.2 Legacy Interfaces: A Note on Virtqueue Layout
  */
+
+#define VIRTIO_DEFAULT_QUEUE_SIZE 128
+#define VIRTIO_DEFAULT_ALIGN PGSIZE
+#define VIRTIO_DEFAULT_QUEUE_PADDING \
+    ( \
+        sizeof(struct virtqueue_desc) \
+        * VIRTIO_DEFAULT_QUEUE_SIZE \
+        + sizeof(struct virtqueue_avail) \
+    )
+#define VIRTIO_DEFAULT_QUEUE_STRUCT_SIZE 8192
+
+#define QALIGN(x) (((x) + VIRTIO_DEFAULT_ALIGN) & VIRTIO_DEFAULT_ALIGN)
+static inline unsigned virtq_size(unsigned int qsz)
+{
+    return QALIGN(sizeof(struct virtqueue_desc) * qsz + sizeof(uint16) * (3 + qsz))
+         + QALIGN(sizeof(uint16) * 3 + sizeof(struct virtqueue_used_elem) * qsz);
+}
+
 struct virtqueue
 {
-    /* Physical base address of the full data structure. */
-    uint64 phys;
-    uint32 len;
+    // The actual descriptors (16 bytes each)
+    struct virtqueue_desc desc[VIRTIO_DEFAULT_QUEUE_SIZE];
+
+    // A ring of available descriptor heads with free-running index.
+    struct virtqueue_avail avail;
+
+    // Padding to the next Queue Align boundary.
+    uint8 pad[VIRTIO_DEFAULT_QUEUE_PADDING];
+
+    // A ring of used descriptor heads with free-running index.
+    struct virtqueue_used used;
+} __attribute__((packed));
+
+struct virtq_info
+{
+    /* Physical page frame number of struct virtqueue. */
+    uint32 pfn;
     uint32 seen_used;
     uint32 free_desc;
 
-    volatile struct virtqueue_desc *desc;
-    volatile struct virtqueue_avail *avail;
-    volatile uint16 *used_event;
-    volatile struct virtqueue_used *used;
-    volatile uint16 *avail_event;
-    void **desc_virt;
-} __attribute__((packed));
+    volatile struct virtqueue* virtq;
+    void *desc_virt[VIRTIO_DEFAULT_QUEUE_SIZE];
+};
 
 struct virtio_blk_config
 {
@@ -216,12 +238,11 @@ struct virtio_net
 /*
  * virtqueue routines
  */
-struct virtqueue *virtq_create(uint32 len);
-uint32 virtq_alloc_desc(struct virtqueue *virtq, void *addr);
-void virtq_free_desc(struct virtqueue *virtq, uint32 desc);
-void virtq_add_to_device(volatile virtio_regs *regs, struct virtqueue *virtq,
-                         uint32 queue_sel);
-void virtq_show(struct virtqueue *virtq);
+struct virtqueue *virtq_create();
+uint32 virtq_alloc_desc(struct virtq_info *virtq_info, void *addr);
+void virtq_free_desc(struct virtq_info *virtq_info, uint32 desc);
+struct virtq_info* virtq_add_to_device(volatile virtio_regs *regs, uint32 queue_sel);
+void virtq_show(struct virtq_info *virtq_info);
 
 /*
  * General purpose routines for virtio drivers
