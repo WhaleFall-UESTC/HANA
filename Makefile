@@ -29,7 +29,7 @@ KERNEL_SRC = kernel
 ARCH_SRC = $(KERNEL_SRC)/arch/$(ARCH)
 
 
-CFLAGS = -Wall -Werror -O -fno-omit-frame-pointer -ggdb 
+CFLAGS = -Wall -Werror -O -fno-omit-frame-pointer -ggdb
 CFLAGS += $(if $(RISCV_CFLAGS),$(RISCV_CFLAGS),$(LOONGARCH_CFLAGS)) 
 CFLAGS += -I $(KERNEL_SRC)/include -I $(ARCH_SRC)/include
 # CFLAGS += -MD -MP -MF $(BUILD_DIR)/$(@F).d
@@ -44,9 +44,10 @@ SRC_S = $(shell find $(ARCH_SRC) -type f -name *.S)
 
 SRC_C := $(shell find kernel -type f -name '*.c' \
 			-not -path '$(KERNEL_SRC)/test/*' \
-			-not -path '$(KERNEL_SRC)/drivers/virtio/*' \
 			-not -path '$(KERNEL_SRC)/arch/*') \
 		$(shell find $(ARCH_SRC) -type f -name *.c)
+
+# -not -path '$(KERNEL_SRC)/drivers/virtio/*'
 
 OBJS = $(addprefix $(BUILD_DIR)/, $(SRC_C:.c=.o) $(SRC_S:.S=.o))
 
@@ -100,7 +101,7 @@ run: build
 	$(QEMU) $(QEMUOPTS)
 
 gdb: build .gdbinit
-	$(QEMU) $(QEMUOPTS) -S -gdb tcp::1234
+	$(QEMU) $(QEMUOPTS) -S -gdb tcp::9877
 
 
 

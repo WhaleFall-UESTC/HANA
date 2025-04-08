@@ -52,5 +52,7 @@ typedef int int32;
 typedef short int16;
 typedef char int8;
 
+typedef unsigned long sector_t;
+
 #endif // __COMMON_H__
 

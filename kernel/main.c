@@ -9,6 +9,7 @@
 #include <trap/context.h>
 #include <proc/proc.h>
 #include <proc/sched.h>
+#include <io/virtio.h>
 
 // #include <drivers/virtio.h>
 
@@ -39,14 +40,14 @@ main()
     trap_init();
     trap_init_hart();
     out("Initialize trap");
-    interrupt_init();
+    irq_init();
     out("Initialize interrupt");
     proc_init();
     out("Initialize first proc");
 
     // ecall();
 
-    // virtio_init();
+    virtio_init();
 
     out("call scheduler");
     scheduler();

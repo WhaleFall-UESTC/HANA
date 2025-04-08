@@ -1,6 +1,7 @@
 #include <common.h>
 #include <irq/interrupt.h>
 #include <debug.h>
+#include <proc/proc.h>
 
 #ifdef ARCH_RISCV
 #include <drivers/plic.h>
@@ -11,7 +12,7 @@
 static irq_handler_t irq_handlers[MAX_NR_IRQ];
 static void* irq_privates[MAX_NR_IRQ];
 
-int register_irq(unsigned int irq, irq_handler_t handler, void* dev) {
+int irq_register(unsigned int irq, irq_handler_t handler, void* dev) {
     if(irq >= MAX_NR_IRQ || irq_handlers[irq] != NULL) {
         return -1;
     }
@@ -19,22 +20,22 @@ int register_irq(unsigned int irq, irq_handler_t handler, void* dev) {
     irq_handlers[irq] = handler;
     irq_privates[irq] = dev;
 
-    irq_enable_default(irq);
+    __irq_enable_default(irq);
 
     return 0;
 }
 
-void free_irq(unsigned int irq) {
-    irq_disable_default(irq);
+void irq_free(unsigned int irq) {
+    __irq_disable_default(irq);
 
     irq_handlers[irq] = NULL;
     irq_privates[irq] = NULL;
 }
 
-void response_interrupt(void) {
+void irq_response(void) {
     int irq, ret;
 
-    irq = irq_get();
+    irq = __irq_get();
 
     if(irq >= MAX_NR_IRQ || irq_handlers[irq] != NULL) {
         panic("Irq too large or unregistered");
@@ -48,9 +49,27 @@ void response_interrupt(void) {
     }
 
 out:
-    irq_put(irq);
+    __irq_put(irq);
 }
 
-void interrupt_init(void) {
-    irq_init_default();
+void irq_init(void) {
+    __irq_init_default();
+}
+
+void irq_pushoff() {
+    int old_intr_status = intr_get();
+    intr_off();
+
+    struct cpu *c = mycpu();
+    if (c->noff == 0)
+        c->intena = old_intr_status;
+    c->noff++;
+}
+
+void irq_popoff() {
+    Assert(!intr_get(), "interruptible");
+    struct cpu *c = mycpu();
+    assert(c->noff > 0);
+    if (--c->noff == 0 && c->intena)
+        intr_on();
 }

@@ -1,6 +1,10 @@
 #ifndef __PROC_H__
 #define __PROC_H__
 
+#ifdef ARCH_RISCV
+#include <trap/context.h>
+#endif
+
 struct proc {
     int pid;
     volatile int state;
