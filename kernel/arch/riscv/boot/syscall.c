@@ -26,11 +26,13 @@ argraw(int n)
     return -1;
 }
 
+extern uint64 sys_fork();
+
 
 typedef uint64 (*syscall_handler)(void);
 
 syscall_handler syscalls[NR_SYSCALL] = {
-    
+    [SYS_fork] sys_fork,
 };
 
 
@@ -39,10 +41,12 @@ syscall()
 {
     struct proc* p = myproc();
     int code = p->trapframe->a7;
-    if (code > 0 && code < NR_SYSCALL && syscalls[code]) {
+    if (code > 0 && code < NR_SYSCALL) {
+        if (syscalls[code] == NULL)
+            panic("unregistered syscall %d", code);
         p->trapframe->a0 = syscalls[code]();
     }
     else {
-        panic("syscall");
+        panic("unknown syscall %d", code);
     }
 }
