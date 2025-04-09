@@ -205,11 +205,11 @@ struct virtio_blk_req
     uint64 sector;
     uint8 status;
     /* end standard fields, begin helpers */
-    uint8 _pad[3];
+    // uint8 _pad[3];
     uint32 descriptor;
     struct blkreq blkreq;
-// } __attribute__((packed));
-};
+} __attribute__((aligned(4)));
+// };
 
 #define VIRTIO_BLK_SECTOR_SIZE 512
 

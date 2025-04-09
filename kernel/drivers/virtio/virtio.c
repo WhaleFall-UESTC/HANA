@@ -18,9 +18,6 @@ struct virtqueue *virtq_create()
 	int i;
 	struct virtqueue *virtq;
 
-	log("virtq_create: virtq_size=%u\n", virtq_size(VIRTIO_DEFAULT_QUEUE_SIZE));
-	log("virtq_create: sizeof(struct virtqueue)=%lu\n", sizeof(struct virtqueue));
-
 	assert(virtq_size(VIRTIO_DEFAULT_QUEUE_SIZE) == sizeof(struct virtqueue));
 
 	virtq = (struct virtqueue *)kalloc(sizeof(struct virtqueue));
@@ -242,5 +239,5 @@ static int virtio_dev_init(uint64 virt, uint32 intid)
 void virtio_init(void)
 {
 	for (int i = 0; i < 1; i++)
-		virtio_dev_init(VIRT_VIRTIO + VIRT_VIRTIO_SIZE * i, i);
+		virtio_dev_init(VIRT_VIRTIO + VIRT_VIRTIO_SIZE * i, i + 1);
 }

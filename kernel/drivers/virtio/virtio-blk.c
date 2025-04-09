@@ -9,6 +9,10 @@
 #include <io/blk.h>
 #include <klib.h>
 
+#ifdef ARCH_RISCV
+#include <riscv.h>
+#endif
+
 #define VIRTIO_BLK_DEV_NAME "virtio-blk"
 
 struct virtio_cap blk_caps[] = {
@@ -120,6 +124,8 @@ static irqret_t virtio_blk_isr(uint32 intid, void* private)
     struct virtio_blk *dev = virtio_blk_get_dev_by_intid(intid);
     struct virtq_info* virtq_info = dev->virtq_info;
 
+    log("irq triggered, intid=%u\n", intid);
+
     if (!dev)
     {
         panic("virtio-blk: received IRQ for unknown device!");
@@ -222,6 +228,7 @@ static void virtio_blk_submit(struct blkdev *dev, struct blkreq *req)
 
     virtq->desc[d1].next = d2;
     virtq->desc[d2].next = d3;
+    virtq->desc[d3].next = 0;
 
     virtio_blk_send(blk, hdr);
 }
