@@ -10,6 +10,7 @@
 
 extern char kernelvec[], trampoline[], uservec[], userret[];
 void timer_interrupt_handler();
+static void syscall_handler();
 
 typedef void (*handler)(void);
 
@@ -164,7 +165,7 @@ dive_to_user()
 }
 
 
-void 
+static void 
 syscall_handler()
 {
     struct proc *p = myproc();

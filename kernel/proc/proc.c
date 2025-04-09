@@ -79,6 +79,9 @@ proc_init()
 
     proc_list = p;
     init_proc = p;
+
+    // should be deleted
+    cpus[0].proc = p;
 }
 
 

@@ -46,8 +46,6 @@ void            kernel_trap();
 void            register_trap_handler(int interrupt, int code, void* function);
 void            dive_to_user();
 
-void            syscall_handler();
-
 
 
 #define INTERRUPT 1
