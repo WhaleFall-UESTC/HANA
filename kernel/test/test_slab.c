@@ -1,6 +1,7 @@
-#include <defs.h>
-#include <buddy.h>
-#include <slab.h>
+#include <common.h>
+#include <klib.h>
+#include <mm/buddy.h>
+#include <mm/slab.h>
 #include <debug.h>
 
 extern uint partial_len;

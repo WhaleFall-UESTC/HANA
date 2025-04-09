@@ -46,13 +46,15 @@ main()
     proc_init();
     out("Initialize first proc");
 
+    test_proc_init((uint64) test);
+
     // ecall();
 
     blocks_init();
 
     virtio_init();
 
-    test_virtio();
+    // test_virtio();
 
     out("call scheduler");
     scheduler();

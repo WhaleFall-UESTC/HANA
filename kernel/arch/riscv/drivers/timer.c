@@ -45,7 +45,7 @@ timer_interrupt_handler()
 {
     log("receive timer interrupt");
     // clear timer interrupt
-    w_sip(r_sip() & ~(1 << SUPERVISOR_SOFTWARE_INTERRUPT));
+    w_sip(r_sip() & ~(0x2));
 
     struct proc* p = myproc();
     if (p && p->state == RUNNING)

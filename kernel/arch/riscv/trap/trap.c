@@ -111,7 +111,7 @@ register_trap_handler(int interrupt, int code, void* function)
 void
 user_trap()
 {
-    log("catch user trap");
+    // log("catch user trap");
     GET_S_REGS();
     
     w_stvec((uint64) kernelvec);
@@ -136,12 +136,11 @@ user_trap()
 void
 dive_to_user()
 {
-    log("dive to user");
     struct proc* p = myproc();
 
     intr_off();
 
-    log("dive into user mode");
+    // log("dive into user mode");
 
     // w_stvec();
     w_stvec(TRAMPOLINE  + (uservec - trampoline));

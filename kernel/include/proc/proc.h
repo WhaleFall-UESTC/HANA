@@ -55,6 +55,7 @@ myproc()
 
 
 void            proc_init();
+void            test_proc_init(uint64 test_func);
 int             alloc_pid();
 struct proc*    alloc_proc();
 void            sleep(void* chan);

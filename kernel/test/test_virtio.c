@@ -12,7 +12,7 @@ void test_virtio() {
     struct blkdev* blkdev;
     struct blkreq* req;
 
-    intr_on();
+    // intr_on();
 
     blkdev = blkdev_get_by_name(VIRTIO_BLK_DEV_NAME);
     assert(blkdev != NULL);
