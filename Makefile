@@ -31,7 +31,7 @@ ARCH_SRC = $(KERNEL_SRC)/arch/$(ARCH)
 
 CFLAGS = -Wall -Werror -O -fno-omit-frame-pointer -ggdb
 CFLAGS += $(if $(RISCV_CFLAGS),$(RISCV_CFLAGS),$(LOONGARCH_CFLAGS)) 
-CFLAGS += -I $(KERNEL_SRC)/include -I $(ARCH_SRC)/include
+CFLAGS += -I $(KERNEL_SRC)/include -I $(ARCH_SRC)/include -I $(KERNEL_SRC)/test/include
 # CFLAGS += -MD -MP -MF $(BUILD_DIR)/$(@F).d
 CFLAGS += -MD -MP -MF $@.d
 CFLAGS += -Wno-unused-variable -Wno-unused-function
@@ -45,7 +45,8 @@ SRC_S = $(shell find $(ARCH_SRC) -type f -name *.S)
 SRC_C := $(shell find kernel -type f -name '*.c' \
 			-not -path '$(KERNEL_SRC)/test/*' \
 			-not -path '$(KERNEL_SRC)/arch/*') \
-		$(shell find $(ARCH_SRC) -type f -name *.c)
+		$(shell find $(ARCH_SRC) -type f -name *.c) \
+		kernel/test/test_virtio.c
 
 # -not -path '$(KERNEL_SRC)/drivers/virtio/*'
 
@@ -90,8 +91,8 @@ QEMUOPTS = 	-machine virt \
 			-smp $(SMP) \
 			-nographic \
 			-no-reboot \
-			# -drive file=fs.ext4.img,if=none,format=raw,id=x0 \
-			# -device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 \
+			-drive file=disk.img,if=none,format=raw,id=x0 \
+			-device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 \
 			# -device virtio-net-device,netdev=net -netdev user,id=net
 
 build: $(KERNEL)

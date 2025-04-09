@@ -10,6 +10,7 @@
 #include <proc/proc.h>
 #include <proc/sched.h>
 #include <io/virtio.h>
+#include <io/blk.h>
 
 // #include <drivers/virtio.h>
 
@@ -18,7 +19,7 @@
 #include <riscv.h>
 #endif
 
-// #include <testdefs.h>
+#include <testdefs.h>
 
 char init_stack[KSTACK_SIZE] __attribute__((aligned(PGSIZE)));
 char *init_stack_top = &init_stack[KSTACK_SIZE];
@@ -47,7 +48,11 @@ main()
 
     // ecall();
 
+    blocks_init();
+
     virtio_init();
+
+    test_virtio();
 
     out("call scheduler");
     scheduler();
