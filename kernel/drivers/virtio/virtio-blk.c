@@ -8,6 +8,8 @@
 #include <io/blk.h>
 #include <klib.h>
 
+#define VIRTIO_BLK_DEV_NAME "virtio-blk"
+
 struct virtio_cap blk_caps[] = {
     {"VIRTIO_BLK_F_SIZE_MAX", 1, false,
      "Maximum size of any single segment is in size_max."},
@@ -199,6 +201,10 @@ static void virtio_blk_submit(struct blkdev *dev, struct blkreq *req)
     }
     hdr->sector = req->sector_sta;
 
+    log("virtio_blk_submit: %s, sector=%lu, size=%lu\n",
+        req->type == BLKREQ_TYPE_READ ? "read" : "write",
+        req->sector_sta, req->size);
+
     d1 = virtq_alloc_desc(virtq_info, hdr);
     hdr->descriptor = d1;
     virtq->desc[d1].len = VIRTIO_BLK_REQ_HEADER_SIZE;
@@ -232,7 +238,7 @@ struct blkdev_ops virtio_blk_ops = {
     .status = virtio_blk_status,
 };
 
-int virtio_blk_init(virtio_regs *regs, uint32 intid)
+int virtio_blk_init(volatile virtio_regs *regs, uint32 intid)
 {
     struct virtio_blk *vdev;
     struct virtq_info *virtq_info;
@@ -241,20 +247,19 @@ int virtio_blk_init(virtio_regs *regs, uint32 intid)
     virtio_mod_init();
     vdev = kalloc(sizeof(struct virtio_blk));
 
-    // Reset the device
-    WRITE32(regs->Status, 0);
-    mb();
-
-    // Set ACKNOWLEDGE status bit
-    WRITE32(regs->Status, VIRTIO_STATUS_ACKNOWLEDGE);
-    mb();
-
-    // Set DRIVER status bit
-    WRITE32(regs->Status, READ32(regs->Status) | VIRTIO_STATUS_DRIVER);
-    mb();
-
     // Read and write feature bits
-    virtio_check_capabilities(regs, blk_caps, nr_elem(blk_caps), "virtio-blk");
+    // virtio_check_capabilities(regs, blk_caps, nr_elem(blk_caps), "virtio-blk");
+
+    uint64 features = READ32(regs->HostFeatures);
+    features &= ~(1 << VIRTIO_BLK_F_RO);
+    features &= ~(1 << VIRTIO_BLK_F_SCSI);
+    features &= ~(1 << VIRTIO_BLK_F_CONFIG_WCE);
+    features &= ~(1 << VIRTIO_BLK_F_MQ);
+    features &= ~(1 << VIRTIO_F_ANY_LAYOUT);
+    features &= ~(1 << VIRTIO_RING_F_EVENT_IDX);
+    features &= ~(1 << VIRTIO_RING_F_INDIRECT_DESC);
+    WRITE32(regs->GuestFeatures, features);
+    mb();
 
     // Perform device-specific setup
     virtq_info = virtq_add_to_device(regs, 0);
@@ -290,6 +295,9 @@ int virtio_blk_init(virtio_regs *regs, uint32 intid)
     // Set DRIVER_OK status bit
     WRITE32(regs->Status, READ32(regs->Status) | VIRTIO_STATUS_DRIVER_OK);
     mb();
+
+    blkdev_init(&vdev->blkdev);
+    blkdev_register(&vdev->blkdev);
 
     return 0;
 }

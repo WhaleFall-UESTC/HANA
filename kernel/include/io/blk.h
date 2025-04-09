@@ -101,6 +101,11 @@ struct blkdev* blkdev_alloc(int devid, unsigned long size,
                             const char* name, const struct blkdev_ops *ops);
 
 /**
+ * initialize a block device
+ */
+void blkdev_init(struct blkdev* dev);
+
+/**
  * register block device in list
  * blkdevs differ by devid(majo&minor)/name
  */

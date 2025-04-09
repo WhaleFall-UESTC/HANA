@@ -18,6 +18,9 @@ struct virtqueue *virtq_create()
 	int i;
 	struct virtqueue *virtq;
 
+	log("virtq_create: virtq_size=%u\n", virtq_size(VIRTIO_DEFAULT_QUEUE_SIZE));
+	log("virtq_create: sizeof(struct virtqueue)=%lu\n", sizeof(struct virtqueue));
+
 	assert(virtq_size(VIRTIO_DEFAULT_QUEUE_SIZE) == sizeof(struct virtqueue));
 
 	virtq = (struct virtqueue *)kalloc(sizeof(struct virtqueue));
@@ -182,7 +185,7 @@ void virtio_check_capabilities(virtio_regs *regs, struct virtio_cap *caps,
 
 static int virtio_dev_init(uint64 virt, uint32 intid)
 {
-	virtio_regs *regs = (virtio_regs *)virt;
+	volatile virtio_regs *regs = (virtio_regs *)virt;
 
 	if (READ32(regs->MagicValue) != VIRTIO_MAGIC)
 	{
@@ -217,6 +220,11 @@ static int virtio_dev_init(uint64 virt, uint32 intid)
 	WRITE32(regs->Status, READ32(regs->Status) | VIRTIO_STATUS_DRIVER);
 	mb();
 
+	log("virtio regs at 0x%lx\n", (uint64)regs);
+	log("virtio regs phycal addr: 0x%lx\n",
+		virt_to_phys((uint64)regs));
+	log("Magic: 0x%x\n", READ32(regs->MagicValue));
+
 	switch (READ32(regs->DeviceID))
 	{
 	case VIRTIO_DEV_BLK:
@@ -227,6 +235,7 @@ static int virtio_dev_init(uint64 virt, uint32 intid)
 		error("unsupported virtio device ID 0x%x\n",
 			   READ32(regs->DeviceID));
 	}
+	
 	return 0;
 }
 

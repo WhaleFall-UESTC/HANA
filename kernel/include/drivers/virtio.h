@@ -4,6 +4,10 @@
 #include <common.h>
 #include <io/blk.h>
 
+#ifdef ARCH_RISCV
+#include <riscv.h>
+#endif
+
 #define VIRTIO_MAGIC 0x74726976
 #define VIRTIO_VERSION 0x1
 #define VIRTIO_DEV_NET 0x1
@@ -15,7 +19,7 @@
  * See Section 4.2.4 of VIRTIO 1.0 Spec:
  * http://docs.oasis-open.org/virtio/virtio/v1.0/cs04/virtio-v1.0-cs04.html
  */
-typedef volatile struct __attribute__((packed))
+typedef volatile struct __attribute__((aligned(4)))
 {
     /* 0x000 */ uint32 MagicValue;       // R
     /* 0x004 */ uint32 Version;          // R
@@ -51,6 +55,14 @@ typedef volatile struct __attribute__((packed))
 #define VIRTIO_STATUS_FEATURES_OK (8)
 #define VIRTIO_STATUS_DRIVER_OK (4)
 #define VIRTIO_STATUS_DEVICE_NEEDS_RESET (64)
+
+#define VIRTIO_BLK_F_RO 5          /* Disk is read-only */
+#define VIRTIO_BLK_F_SCSI 7        /* Supports scsi command passthru */
+#define VIRTIO_BLK_F_CONFIG_WCE 11 /* Writeback mode available in config */
+#define VIRTIO_BLK_F_MQ 12         /* support more than one vq */
+#define VIRTIO_F_ANY_LAYOUT 27
+#define VIRTIO_RING_F_INDIRECT_DESC 28
+#define VIRTIO_RING_F_EVENT_IDX 29
 
 struct virtio_cap
 {
@@ -99,20 +111,22 @@ struct virtqueue_used
 } __attribute__((packed));
 
 /**
- * Lagacy interfaces force to lay out the virtqueue in
- * contiguous memory on two or more physically-contiguous pages.
+ * Lagacy interfaces force to lay out the virtqueue
+ * on two or more physically-contiguous pages.
  * See 2.4.2 Legacy Interfaces: A Note on Virtqueue Layout
  */
 
 #define VIRTIO_DEFAULT_QUEUE_SIZE 128
 #define VIRTIO_DEFAULT_ALIGN PGSIZE
+#define VIRTIO_DEFAULT_QUEUE_STRUCT_SIZE 8192
 #define VIRTIO_DEFAULT_QUEUE_PADDING \
     ( \
+        VIRTIO_DEFAULT_QUEUE_STRUCT_SIZE - \
         sizeof(struct virtqueue_desc) \
         * VIRTIO_DEFAULT_QUEUE_SIZE \
-        + sizeof(struct virtqueue_avail) \
+        - sizeof(struct virtqueue_avail) \
+        - sizeof(struct virtqueue_used) \
     )
-#define VIRTIO_DEFAULT_QUEUE_STRUCT_SIZE 8192
 
 #define QALIGN(x) (((x) + VIRTIO_DEFAULT_ALIGN) & VIRTIO_DEFAULT_ALIGN)
 static inline unsigned virtq_size(unsigned int qsz)
@@ -266,7 +280,7 @@ void virtio_check_capabilities(virtio_regs *device, struct virtio_cap *caps,
 
 /*
  */
-int virtio_blk_init(virtio_regs *regs, uint32 intid);
+int virtio_blk_init(volatile virtio_regs *regs, uint32 intid);
 int virtio_net_init(virtio_regs *regs, uint32 intid);
 
 #endif // __VIRTIO_H__

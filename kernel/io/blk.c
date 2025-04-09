@@ -25,11 +25,17 @@ struct blkdev *blkdev_alloc(int devid, unsigned long size,
 
     strncpy(dev->name, name, BLKDEV_NAME_MAX_LEN);
 
+    blkdev_init(dev);
+
+    return dev;
+}
+
+
+void blkdev_init(struct blkdev* dev)
+{
     INIT_LIST_HEAD(dev->blk_list);
     INIT_LIST_HEAD(dev->rq_list);
     spinlock_init(&dev->rq_list_lock, "blkdev rq_list lock");
-
-    return dev;
 }
 
 void blkdev_register(struct blkdev *blkdev)
@@ -68,8 +74,11 @@ void blkdev_wait_all(struct blkdev *dev)
     spinlock_acquire(&dev->rq_list_lock);
     list_for_each_entry(request, &dev->rq_list, rq_head)
     {
+        log("1");
+        assert(request != NULL);
         if(request->status == BLKREQ_STATUS_INIT)
         {
+            log("2");
             sleep(blkreq_wait_channel(request));
         }
         else if(request->status == BLKREQ_STATUS_OK)

@@ -28,13 +28,27 @@
 #define ALIGN(x, a) __ALIGN_MASK(x, (typeof(x))(a) - 1)
 #define __ALIGN_MASK(x, mask) (((x) + (mask)) & ~(mask))
 
+#ifdef __WRITE32
+#define WRITE32 __WRITE32
+#else
 #define WRITE32(_reg, _val) \
     do { \
         register uint32 __myval__ = (_val); \
         *(volatile uint32 *)&(_reg) = __myval__; \
     } while (0)
-#define READ32(_reg) (*(volatile uint32 *)&(_reg))
-#define READ64(_reg) (*(volatile uint64 *)&(_reg))
+#endif
+
+#ifdef __READ32
+#define READ32 __READ32
+#else
+#define READ32(_reg) (*((volatile uint32 *)(&(_reg))))
+#endif
+
+#ifdef __READ64
+#define READ64 __READ64
+#else
+#define READ64(_reg) (*((volatile uint64 *)(&(_reg))))
+#endif
 
 #define KALLOC(type, var) type* var = (type*) kalloc(sizeof(type))
 
