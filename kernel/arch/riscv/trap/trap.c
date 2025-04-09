@@ -6,6 +6,7 @@
 #include <trap/trap.h>
 #include <trap/context.h>
 #include <proc/proc.h>
+#include <syscall.h>
 
 extern char kernelvec[], trampoline[], uservec[], userret[];
 void timer_interrupt_handler();
@@ -83,6 +84,7 @@ trap_init()
 
     register_trap_handler(INTERRUPT, SUPERVISOR_SOFTWARE_INTERRUPT, timer_interrupt_handler);
     register_trap_handler(EXCEPTION, ENVIRONMENT_CALL_FROM_S_MODE, s_mode_ecall_handler);
+    register_trap_handler(EXCEPTION, ENVIRONMENT_CALL_FROM_U_MODE, syscall_handler);
     register_trap_handler(INTERRUPT, SUPERVISOR_EXTERNEL_INTERRUPT, irq_response);
 }
 
@@ -159,4 +161,17 @@ dive_to_user()
 
     uint64 fn = TRAMPOLINE + (userret - trampoline);
     ((void (*)(uint64,uint64))fn)(trapframe, satp);
+}
+
+
+void 
+syscall_handler()
+{
+    struct proc *p = myproc();
+    if (p->killed)
+        exit(-1);
+    
+    intr_on();
+
+    syscall();
 }

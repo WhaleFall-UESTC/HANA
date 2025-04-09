@@ -51,3 +51,4 @@ enum Syscall {
     NR_SYSCALL
 };
 
+void syscall();
