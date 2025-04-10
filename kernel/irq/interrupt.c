@@ -5,6 +5,7 @@
 
 #ifdef ARCH_RISCV
 #include <drivers/plic.h>
+#include <drivers/uart.h>
 #else
 /* other archs */
 #endif

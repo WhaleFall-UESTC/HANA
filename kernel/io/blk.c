@@ -46,7 +46,7 @@ void blkdev_register(struct blkdev *blkdev)
     list_insert(&blkdev_list, &blkdev->blk_list);
     spinlock_release(&blkdev_list_lock);
 
-    log("blkdev %s registered\n", blkdev->name);
+    log("blkdev %s registered", blkdev->name);
 }
 
 struct blkdev *blkdev_get_by_name(const char *name)
@@ -83,12 +83,12 @@ void blkdev_wait_all(struct blkdev *dev)
         }
         else if(request->status == BLKREQ_STATUS_OK)
         {
-            log("Request completed successfully, sector=%ld, size=%ld, in device %s\n",
+            log("Request completed successfully, sector=%ld, size=%ld, in device %s",
                 request->sector_sta, request->size, dev->name);
         }
         else
         {
-            error("Request failed, sector=%ld, size=%ld, in device %s\n",
+            error("Request failed, sector=%ld, size=%ld, in device %s",
                   request->sector_sta, request->size, dev->name);
         }
     }
