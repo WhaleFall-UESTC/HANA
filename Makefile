@@ -97,7 +97,8 @@ QEMUOPTS = 	-machine virt \
 			-drive file=disk.img,if=none,format=raw,id=x0 \
 			# -device virtio-net-device,netdev=net -netdev user,id=net
 
-VIRTIO_DBG = -d trace:virtio_* -D qemu.log
+VIRTIO_DBG = -d int,invalid_mem,guest_errors,trace:virtio_* \
+				# -D qemu.log
 
 build: $(KERNEL)
 	$(OBJDUMP) -S -l -D $(KERNEL) > $(KERNEL).objdump
