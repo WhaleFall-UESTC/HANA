@@ -7,7 +7,6 @@ void        test();
 void        test_printf();
 void        test_string();
 
-
 /* test_buddy.c */
 void        test_buddy();
 
@@ -17,6 +16,10 @@ void        test_slab();
 /* test_kalloc.c */;
 void        test_kalloc();
 
-void test_virtio();
+/* test_virtio.c */
+void        test_virtio();
+
+/* test_uart.c */
+void        test_uart();
 
 #endif // __TESTDEFS_H__
