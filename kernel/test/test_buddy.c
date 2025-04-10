@@ -1,6 +1,8 @@
-#include <defs.h>
-#include <buddy.h>
-#include <memlayout.h>
+#include <common.h>
+#include <klib.h>
+#include <mm/mm.h>
+#include <mm/buddy.h>
+#include <mm/memlayout.h>
 #include <debug.h>
 
 extern struct zone zone;

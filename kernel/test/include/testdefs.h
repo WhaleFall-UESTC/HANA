@@ -1,6 +1,8 @@
 #ifndef __TESTDEFS_H__
 #define __TESTDEFS_H__
 
+void        test();
+
 /* testlib.c */
 void        test_printf();
 void        test_string();

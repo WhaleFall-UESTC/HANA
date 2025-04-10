@@ -1,4 +1,5 @@
-#include <defs.h>
+#include <common.h>
+#include <klib.h>
 #include <debug.h>
 
 void

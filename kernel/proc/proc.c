@@ -81,7 +81,19 @@ proc_init()
     init_proc = p;
 
     // should be deleted
-    cpus[0].proc = p;
+    // cpus[0].proc = p;
+}
+
+void 
+test_proc_init(uint64 test_func)
+{
+    struct proc* test_proc = alloc_proc();
+    test_proc->context.ra = test_func;
+
+    strcpy(test_proc->name, "test");
+    test_proc->state = RUNNABLE;
+
+    proc_list->next = test_proc;
 }
 
 
