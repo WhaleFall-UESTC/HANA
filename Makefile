@@ -9,9 +9,11 @@ RISCV_CFLAGS = -mcmodel=medany -march=rv64imafd -mabi=lp64
 RISCV_CFLAGS += -DARCH_RISCV 
 
 else ifeq ($(ARCH), loongarch)
-TOOLPREFIX ?= loongarch64-linux-gnu-
+# Newlib does not support LoongArch yet
+TOOLPREFIX ?= loongarch64-unknown-linux-gnu-
 QEMU ?= qemu-system-loongarch64
 LOONGARCH_CFLAGS = -march=loongarch64 -mabi=lp64
+LOONGARCH_CFLAGS += -DARCH_LOONGARCH
 
 else
 $(error Unsupported ARCH $(ARCH))
@@ -107,5 +109,4 @@ gdb: build .gdbinit
 	$(QEMU) $(QEMUOPTS) -S -gdb tcp::9877
 
 
-
-.PHONY: all clean distclean build run gdb	
+.PHONY: all clean distclean build run gdb disk
