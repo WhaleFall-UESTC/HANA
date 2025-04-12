@@ -31,6 +31,43 @@ sudo apt install build-essential libglib2.0-dev libpixman-1-dev python3 python3-
 make -j
 sudo make install
 ```
+<br>
+
+### loongarch-unknown-linux-gnu
+整个环境配资可以直接从[中科大的编译原理课程](https://ustc-compiler-principles.github.io/2023/lab3/environment/)界面获取
+```bash
+cd ~/Downloads
+wget https://github.com/loongson/build-tools/releases/download/2022.05.29/loongarch64-clfs-5.0-cross-tools-gcc-full.tar.xz
+sudo tar -vxf loongarch64-clfs-5.0-cross-tools-gcc-full.tar.xz -C /opt
+echo "\n\n# loongarch cross-tools" >> $RC
+echo "CC_PREFIX=/opt/cross-tools" >> $RC
+echo "export PATH=$PATH:$CC_PREFIX/bin" >> $RC
+echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CC_PREFIX/lib" >> $RC
+echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CC_PREFIX/loongarch64-unknown-linux-gnu/lib/" >> $RC
+source $RC
+```
+
+### loongarch-unknown-linux-gnu-gdb
+从[中科大的云盘](https://rec.ustc.edu.cn/share/d8c57580-669d-11ee-8794-d542ef642531)下 gdb 的压缩包
+```bash
+wget https://recstore.ustc.edu.cn/file/20230912_652adc3a749c7598bc700945169de89d?Signature=8H0F6jLz4Tn5...sition=attachment%3Bfilename%3D%22gdb.tar.gz%22&storage=moss&filename=gdb.tar.gz&download=download
+cd ~/Downloads
+sudo tar xaf gdb.tar.gz -C /opt
+echo "export PATH=$PATH:/opt/gdb/bin" >> $RC && source $RC
+```
+<br>
+
+### qemu-system-loongarch64
+```bash
+git clone https://github.com/loongson/qemu.git -b tcg-dev
+cd qemu
+mkdir build
+cd build
+../configure --prefix=/usr --target-list=loongarch64-linux-user \
+            --disable-werror --static --disable-docs
+make -j8
+sudo make install
+```
 <br><br>
 
 ## Run & Debug

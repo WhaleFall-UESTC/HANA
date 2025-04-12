@@ -9,9 +9,11 @@ RISCV_CFLAGS = -mcmodel=medany -march=rv64imafd -mabi=lp64
 RISCV_CFLAGS += -DARCH_RISCV 
 
 else ifeq ($(ARCH), loongarch)
-TOOLPREFIX ?= loongarch64-linux-gnu-
+# Newlib does not support LoongArch yet
+TOOLPREFIX ?= loongarch64-unknown-linux-gnu-
 QEMU ?= qemu-system-loongarch64
 LOONGARCH_CFLAGS = -march=loongarch64 -mabi=lp64
+LOONGARCH_CFLAGS += -DARCH_LOONGARCH
 
 else
 $(error Unsupported ARCH $(ARCH))
@@ -84,9 +86,16 @@ disk:
 	qemu-img create -f raw disk.img 2G
 
 
+
+VIRTIO_DBG = -d int,guest_errors,trace:virtio_* 
+
+QEUMDBG = 	$(VIRTIO_DBG) \
+			# -D qemu.log
+
 MEMORY := 128M
 SMP := 1
-QEMUOPTS = 	-machine virt \
+QEMUOPTS = 	$(QEUMDBG) \
+			-machine virt \
 			-bios none \
 			-kernel $(KERNEL) \
 			-m $(MEMORY) \
@@ -97,18 +106,14 @@ QEMUOPTS = 	-machine virt \
 			-drive file=disk.img,if=none,format=raw,id=x0 \
 			# -device virtio-net-device,netdev=net -netdev user,id=net
 
-VIRTIO_DBG = -d int,invalid_mem,guest_errors,trace:virtio_* \
-				# -D qemu.log
-
 build: $(KERNEL)
 	$(OBJDUMP) -S -l -D $(KERNEL) > $(KERNEL).objdump
 
 run: build
-	$(QEMU) $(QEMUOPTS) $(VIRTIO_DBG)
+	$(QEMU) $(QEMUOPTS)
 
 gdb: build .gdbinit
 	$(QEMU) $(QEMUOPTS) -S -gdb tcp::9877
 
 
-
-.PHONY: all clean distclean build run gdb	
+.PHONY: all clean distclean build run gdb disk

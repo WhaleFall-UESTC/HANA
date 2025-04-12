@@ -1,5 +1,5 @@
 
-enum Syscall {
+enum {
     SYS_BLANK,
     
     // File Operations

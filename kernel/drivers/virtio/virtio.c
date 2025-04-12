@@ -44,7 +44,7 @@ uint32 virtq_alloc_desc(struct virtq_info *virtq_info, void *addr)
 	uint32 desc = virtq_info->free_desc;
 	uint32 next = virtq_info->virtq->desc[desc].next;
 	if (desc == VIRTIO_DEFAULT_QUEUE_SIZE)
-		error("ran out of virtqueue descriptors\n");
+		error("ran out of virtqueue descriptors");
 	virtq_info->free_desc = next;
 
 	virtq_info->virtq->desc[desc].addr = virt_to_phys((uint64)addr);
@@ -75,7 +75,7 @@ struct virtq_info* virtq_add_to_device(volatile virtio_regs *regs, uint32 queue_
 	// Step 2: Check if the queue is not already in use
 	if (READ32(regs->QueuePFN) != 0)
 	{
-		error("Queue %u is already in use\n", queue_sel);
+		error("Queue %u is already in use", queue_sel);
 		return NULL;
 	}
 
@@ -83,7 +83,7 @@ struct virtq_info* virtq_add_to_device(volatile virtio_regs *regs, uint32 queue_
 	max_queue_size = READ32(regs->QueueNumMax);
 	if (max_queue_size == 0)
 	{
-		error("Queue %u is not available\n", queue_sel);
+		error("Queue %u is not available", queue_sel);
 		return NULL;
 	}
 
@@ -115,15 +115,15 @@ void virtq_show(struct virtq_info *virtq_info)
 {
 	int count = 0;
 	uint32 i = virtq_info->free_desc;
-	log("Current free_desc: %u, len=%u\n", virtq_info->free_desc, VIRTIO_DEFAULT_QUEUE_SIZE);
+	log("Current free_desc: %u, len=%u", virtq_info->free_desc, VIRTIO_DEFAULT_QUEUE_SIZE);
 	while (i != VIRTIO_DEFAULT_QUEUE_SIZE && count++ <= VIRTIO_DEFAULT_QUEUE_SIZE)
 	{
-		log("  next: %u -> %u\n", i, virtq_info->virtq->desc[i].next);
+		log("  next: %u -> %u", i, virtq_info->virtq->desc[i].next);
 		i = virtq_info->virtq->desc[i].next;
 	}
 	if (count > VIRTIO_DEFAULT_QUEUE_SIZE)
 	{
-		log("Overflowed descriptors?\n");
+		log("Overflowed descriptors?");
 	}
 }
 
@@ -205,21 +205,21 @@ static int virtio_dev_init(uint64 virt, uint32 intid)
 	if (READ32(regs->MagicValue) != VIRTIO_MAGIC)
 	{
 		error("virtio at 0x%lx had wrong magic value 0x%x, "
-			   "expected 0x%x\n",
+			   "expected 0x%x",
 			   virt, regs->MagicValue, VIRTIO_MAGIC);
 		return -1;
 	}
 	if (READ32(regs->Version) != VIRTIO_VERSION)
 	{
 		error("virtio at 0x%lx had wrong version 0x%x, expected "
-			   "0x%x\n",
+			   "0x%x",
 			   virt, regs->Version, VIRTIO_VERSION);
 		return -1;
 	}
 	if ((device_id = (regs->DeviceID)) == 0)
 	{
 		/*On QEMU, this is pretty common, don't print a message */
-		/*log("warn: virtio at 0x%x has DeviceID=0, skipping\n",
+		/*log("warn: virtio at 0x%x has DeviceID=0, skipping",
 		 * virt);*/
 		return -1;
 	}
@@ -247,7 +247,7 @@ static int virtio_dev_init(uint64 virt, uint32 intid)
 	// case VIRTIO_DEV_NET:
 		// return virtio_net_init(regs, intid);
 	default:
-		error("unsupported virtio device ID 0x%x\n",
+		error("unsupported virtio device ID 0x%x",
 			   READ32(regs->DeviceID));
 	}
 	

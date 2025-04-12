@@ -90,14 +90,14 @@ static void virtio_blk_handle_used(struct virtio_blk *dev, uint32 usedidx)
         req->blkreq.status = BLKREQ_STATUS_ERR;
         break;
     default:
-        panic("Unhandled status in virtio_blk irq\n");
+        panic("Unhandled status in virtio_blk irq");
     }
 
     // wait_list_awaken(&req->blkreq.wait);
     wakeup(blkreq_wait_channel(&req->blkreq));
     return;
 bad_desc:
-    log("virtio-blk received malformed descriptors\n");
+    log("virtio-blk received malformed descriptors");
     return;
 }
 
@@ -127,7 +127,7 @@ static irqret_t virtio_blk_isr(uint32 intid, void* private)
     struct virtio_blk *dev = virtio_blk_get_dev_by_intid(intid);
     struct virtq_info* virtq_info = dev->virtq_info;
 
-    log("irq triggered, intid=%u\n", intid);
+    log("irq triggered, intid=%u", intid);
 
     if (!dev)
     {
@@ -163,17 +163,17 @@ static void virtio_blk_status(struct blkdev *dev)
 {
     struct virtio_blk *blkdev = get_vblkdev(dev);
     volatile struct virtqueue *virtq = blkdev->virtq_info->virtq;
-    log("virtio_blk_dev at 0x%lx\n",
+    log("virtio_blk_dev at 0x%lx",
            virt_to_phys((uint64)blkdev->regs));
-    log("    Status=0x%x\n", READ32(blkdev->regs->Status));
-    log("    DeviceID=0x%x\n", READ32(blkdev->regs->DeviceID));
-    log("    VendorID=0x%x\n", READ32(blkdev->regs->VendorID));
-    log("    InterruptStatus=0x%x\n",
+    log("    Status=0x%x", READ32(blkdev->regs->Status));
+    log("    DeviceID=0x%x", READ32(blkdev->regs->DeviceID));
+    log("    VendorID=0x%x", READ32(blkdev->regs->VendorID));
+    log("    InterruptStatus=0x%x",
            READ32(blkdev->regs->InterruptStatus));
-    log("    MagicValue=0x%x\n", READ32(blkdev->regs->MagicValue));
-    log("  Queue 0:\n");
-    log("    avail.idx = %u\n", virtq->avail.idx);
-    log("    used.idx = %u\n", virtq->used.idx);
+    log("    MagicValue=0x%x", READ32(blkdev->regs->MagicValue));
+    log("  Queue 0:");
+    log("    avail.idx = %u", virtq->avail.idx);
+    log("    used.idx = %u", virtq->used.idx);
     WRITE32(blkdev->regs->QueueSel, 0);
     mb();
     virtq_show(blkdev->virtq_info);
@@ -211,7 +211,7 @@ static void virtio_blk_submit(struct blkdev *dev, struct blkreq *req)
     }
     hdr->sector = req->sector_sta;
 
-    log("virtio_blk_submit: %s, sector=%lu, size=%lu\n",
+    log("virtio_blk_submit: %s, sector=%lu, size=%lu",
         req->type == BLKREQ_TYPE_READ ? "read" : "write",
         req->sector_sta, req->size);
 
@@ -306,7 +306,7 @@ int virtio_blk_init(volatile virtio_regs *regs, uint32 intid)
 
     snprintf(vdev->blkdev.name, sizeof(vdev->blkdev.name), "vblk%d", vdev->intid);
 
-    log("virtio-blk: %s, size=%lu, intid=%d\n", vdev->blkdev.name, vdev->blkdev.size, vdev->intid);
+    log("virtio-blk: %s, size=%lu, intid=%d", vdev->blkdev.name, vdev->blkdev.size, vdev->intid);
 
     spinlock_acquire(&vdev_list_lock);
     list_insert(&vdevs, &vdev->list);
