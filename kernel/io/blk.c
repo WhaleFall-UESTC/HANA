@@ -74,11 +74,9 @@ void blkdev_wait_all(struct blkdev *dev)
     spinlock_acquire(&dev->rq_list_lock);
     list_for_each_entry(request, &dev->rq_list, rq_head)
     {
-        log("1");
         assert(request != NULL);
         if(request->status == BLKREQ_STATUS_INIT)
         {
-            log("2");
             sleep(blkreq_wait_channel(request));
         }
         else if(request->status == BLKREQ_STATUS_OK)

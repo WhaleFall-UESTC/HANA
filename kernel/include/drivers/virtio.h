@@ -121,18 +121,16 @@ struct virtqueue_used
 #define VIRTIO_DEFAULT_QUEUE_STRUCT_SIZE 8192
 #define VIRTIO_DEFAULT_QUEUE_PADDING \
     ( \
-        VIRTIO_DEFAULT_QUEUE_STRUCT_SIZE - \
-        sizeof(struct virtqueue_desc) \
-        * VIRTIO_DEFAULT_QUEUE_SIZE \
-        - sizeof(struct virtqueue_avail) \
-        - sizeof(struct virtqueue_used) \
+        VIRTIO_DEFAULT_ALIGN - \
+        sizeof(struct virtqueue_desc) * VIRTIO_DEFAULT_QUEUE_SIZE - \
+        sizeof(struct virtqueue_avail) \
     )
 
-#define QALIGN(x) (((x) + VIRTIO_DEFAULT_ALIGN) & VIRTIO_DEFAULT_ALIGN)
+#define QALIGN(x) (((x) + (VIRTIO_DEFAULT_ALIGN - 1)) & (~(VIRTIO_DEFAULT_ALIGN - 1)))
 static inline unsigned virtq_size(unsigned int qsz)
 {
-    return QALIGN(sizeof(struct virtqueue_desc) * qsz + sizeof(uint16) * (3 + qsz))
-         + QALIGN(sizeof(uint16) * 3 + sizeof(struct virtqueue_used_elem) * qsz);
+    return QALIGN(sizeof(struct virtqueue_desc) * qsz + sizeof(uint16) * (2 + qsz))
+         + QALIGN(sizeof(struct virtqueue_used_elem) * qsz);
 }
 
 struct virtqueue
@@ -261,8 +259,9 @@ void virtq_show(struct virtq_info *virtq_info);
 /*
  * General purpose routines for virtio drivers
  */
-void virtio_check_capabilities(virtio_regs *device, struct virtio_cap *caps,
-                               uint32 n, char *whom);
+// void virtio_check_capabilities(virtio_regs *device, struct virtio_cap *caps,
+//                                uint32 n, char *whom);
+void virtio_check_capabilities(virtio_regs *device);
 
 #define VIRTIO_INDP_CAPS                                              \
     {"VIRTIO_F_RING_INDIRECT_DESC", 28, false,                        \
