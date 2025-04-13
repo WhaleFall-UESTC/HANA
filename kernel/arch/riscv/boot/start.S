@@ -3,10 +3,15 @@
 .section .text._start
 .global _start
 _start:
-    la sp, init_stack + 4096
-
     # keep each CPU's hartid in its tp
     csrr tp, mhartid
+
+    # set initial stack
+    la sp, init_stack
+    li t0, 4096
+    mul a0, tp, t0
+    add a0, a0, t0
+    add sp, sp, a0
     
     # set mstatus.MPP to 0x01
     # after mret will enter S mode

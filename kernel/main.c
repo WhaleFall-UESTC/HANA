@@ -21,7 +21,7 @@
 
 #include <testdefs.h>
 
-char init_stack[KSTACK_SIZE] __attribute__((aligned(PGSIZE)));
+char init_stack[KSTACK_SIZE * NCPU] __attribute__((aligned(PGSIZE)));
 char *init_stack_top = &init_stack[KSTACK_SIZE];
 
 struct cpu cpus[NCPU];
