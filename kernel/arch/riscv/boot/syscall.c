@@ -3,6 +3,7 @@
 #include <debug.h>
 #include <riscv.h>
 #include <syscall.h>
+#include <irq/interrupt.h>
 #include <trap/trap.h>
 #include <trap/context.h>
 #include <proc/proc.h>

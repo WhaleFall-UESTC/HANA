@@ -6,6 +6,7 @@
 #include <riscv.h>
 #endif
 
+#include <irq/interrupt.h>
 #include <trap/context.h>
 #include <proc/proc.h>
 #include <trap/trap.h>

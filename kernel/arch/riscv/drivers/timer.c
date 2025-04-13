@@ -5,6 +5,7 @@
 #include <debug.h>
 #include <trap/context.h>
 #include <trap/trap.h>
+#include <irq/interrupt.h>
 #include <proc/proc.h>
 #include <proc/sched.h>
 

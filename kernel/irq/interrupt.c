@@ -40,8 +40,12 @@ void irq_response(void) {
 
     if(irq >= MAX_NR_IRQ || irq_handlers[irq] == NULL) {
         error("Irq %d too large or unregistered", irq);
-        return;
-        // goto out;
+// <<<<<<< HEAD
+//         goto out;
+// =======
+//         return;
+        goto out;
+// >>>>>>> 61aa3b748de6d8d5444182305384434a92d6033a
     }
 
     ret = irq_handlers[irq](irq, irq_privates[irq]);
@@ -50,7 +54,7 @@ void irq_response(void) {
         panic("Irq handle error");
     }
 
-// out:
+out:
     __irq_put(irq);
 }
 
