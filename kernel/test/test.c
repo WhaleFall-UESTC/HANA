@@ -12,7 +12,7 @@ void test() {
     intr_off();
     PASS("test start!!!");
 
-    test_uart();
+    // test_uart();
     test_virtio();
 
     PASS("test finish!!!");

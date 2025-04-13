@@ -39,7 +39,7 @@ void irq_response(void) {
     irq = __irq_get();
 
     if(irq >= MAX_NR_IRQ || irq_handlers[irq] == NULL) {
-        panic("Irq too large or unregistered");
+        error("Irq %d too large or unregistered", irq);
         goto out;
     }
 
