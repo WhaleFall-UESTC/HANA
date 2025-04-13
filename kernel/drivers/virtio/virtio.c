@@ -50,7 +50,7 @@ uint32 virtq_alloc_desc(struct virtq_info *virtq_info, void *addr)
 	virtq_info->virtq->desc[desc].addr = virt_to_phys((uint64)addr);
 	virtq_info->desc_virt[desc] = addr;
 
-	log("virtq_alloc_desc: %u, addr=0x%lx", desc, virtq_info->virtq->desc[desc].addr);
+	// log("virtq_alloc_desc: %u, addr= 0x%p 0x%lx", desc, addr, virtq_info->virtq->desc[desc].addr);
 
 	return desc;
 }
@@ -225,8 +225,8 @@ static int virtio_dev_init(uint64 virt, uint32 intid)
 	}
 
 	/* First step of initialization: reset */
-	// WRITE32(regs->Status, 0);
-	// mb();
+	WRITE32(regs->Status, 0);
+	mb();
 	/* Hello there, I see you */
 	WRITE32(regs->Status, READ32(regs->Status) | VIRTIO_STATUS_ACKNOWLEDGE);
 	mb();
@@ -234,11 +234,6 @@ static int virtio_dev_init(uint64 virt, uint32 intid)
 	/* Hello, I am a driver for you */
 	WRITE32(regs->Status, READ32(regs->Status) | VIRTIO_STATUS_DRIVER);
 	mb();
-
-	// log("virtio regs at 0x%lx\n", (uint64)regs);
-	// log("virtio regs phycal addr: 0x%lx\n",
-	// 	virt_to_phys((uint64)regs));
-	// log("Magic: 0x%x\n", READ32(regs->MagicValue));
 
 	switch (device_id)
 	{

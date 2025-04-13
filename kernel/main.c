@@ -49,8 +49,10 @@ main()
     // ecall();
     
     blocks_init();
+    out("Initialize block subsystem");
     
     virtio_init();
+    out("Initialize virtio");
 
     test_proc_init((uint64) test);
 

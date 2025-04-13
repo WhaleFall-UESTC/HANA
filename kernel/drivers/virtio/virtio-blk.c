@@ -78,8 +78,10 @@ static void virtio_blk_handle_used(struct virtio_blk *dev, uint32 usedidx)
     {
     case VIRTIO_BLK_S_OK:
         req->blkreq.status = BLKREQ_STATUS_OK;
+        log("virtio_blk_handle_used: request completed successfully");
         break;
     case VIRTIO_BLK_S_IOERR:
+        log("virtio_blk_handle_used: request failed with I/O error");
         req->blkreq.status = BLKREQ_STATUS_ERR;
         break;
     default:
@@ -115,7 +117,7 @@ static irqret_t virtio_blk_isr(uint32 intid, void* private)
     }
     virtq_info->seen_used = virtq_info->virtq->used.idx % VIRTIO_DEFAULT_QUEUE_SIZE;
     
-    WRITE32(dev->regs->InterruptACK, READ32(dev->regs->InterruptStatus) & 0x3);
+    WRITE32(dev->regs->InterruptACK, READ32(dev->regs->InterruptStatus));
     
     irq_free(intid);
     return IRQ_HANDLED;

@@ -9,12 +9,16 @@
 #define VIRTIO_BLK_DEV_NAME "vblk1"
 
 void test_virtio() {
-    char buffer[1024];
+    char* buffer;
     struct blkdev* blkdev;
     struct blkreq* req;
+    void* chan;
 
     // intr_on();
     
+    buffer = (char *)kalloc(1024);
+    assert(buffer != NULL);
+
     blkdev = blkdev_get_by_name(VIRTIO_BLK_DEV_NAME);
     assert(blkdev != NULL);
     log("blkdev %s found", blkdev->name);
@@ -25,14 +29,15 @@ void test_virtio() {
     req->type = BLKREQ_TYPE_WRITE;
     req->sector_sta = 0;
     req->size = 1024;
-    memset(buffer, 0x02, sizeof(buffer));
+    memset(buffer, 0x02, 1024);
     req->buffer = buffer;
 
     assert(blkdev->ops->submit != NULL);
     
     blkdev->ops->submit(blkdev, req);
 
-    log("blkdev %s submit write request", blkdev->name);
+    chan = blkreq_wait_channel(req);
+    log("blkdev %s submit write request %p", blkdev->name, chan);
     
     blkdev_wait_all(blkdev);
     if (req->status == BLKREQ_STATUS_OK) {
@@ -44,7 +49,7 @@ void test_virtio() {
     
     // blkdev->ops->free(blkdev, req);
     
-    memset(buffer, 0, sizeof(buffer));
+    memset(buffer, 0, 1024);
     
     req = blkdev->ops->alloc(blkdev);
     assert(req != NULL);
@@ -56,8 +61,9 @@ void test_virtio() {
     
     blkdev->ops->submit(blkdev, req);
     
-    log("blkdev %s submit read request", blkdev->name);
-    blkdev_wait_all(blkdev);
+    chan = blkreq_wait_channel(req);
+    log("blkdev %s submit read request %p", blkdev->name, chan);
+    // blkdev_wait_all(blkdev);
     if (req->status == BLKREQ_STATUS_OK)
     {
         log("Read %ld bytes from sector %ld", req->size, req->sector_sta);
@@ -68,7 +74,9 @@ void test_virtio() {
     }
 
     // blkdev->ops->free(blkdev, req);
-    blkdev_free_all(blkdev);
+    // blkdev_free_all(blkdev);
 
-    assert(buffer[0] == 0x2);
+    assert(buffer[511] == 0x2);
+
+    kfree(buffer);
 }
