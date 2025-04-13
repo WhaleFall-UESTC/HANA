@@ -34,10 +34,7 @@ struct virtio_cap blk_caps[] = {
     VIRTIO_INDP_CAPS};
 
 #define get_vblkreq(req) container_of(req, struct virtio_blk_req, blkreq)
-
-struct slab *blkreq_slab = NULL;
-struct list_head vdevs;
-spinlock_t vdev_list_lock;
+#define get_vblkdev(dev) container_of(dev, struct virtio_blk, blkdev)
 
 struct virtio_blk
 {
@@ -48,10 +45,6 @@ struct virtio_blk
     struct list_head list;
     struct blkdev blkdev;
 };
-#define get_vblkdev(dev) container_of(dev, struct virtio_blk, blkdev)
-
-#define HI32(u64) ((uint32)((0xFFFFFFFF00000000ULL & (u64)) >> 32))
-#define LO32(u64) ((uint32)(0x00000000FFFFFFFFULL & (u64)))
 
 static void virtio_blk_handle_used(struct virtio_blk *dev, uint32 usedidx)
 {
@@ -60,7 +53,7 @@ static void virtio_blk_handle_used(struct virtio_blk *dev, uint32 usedidx)
     uint32 desc1, desc2, desc3;
     struct virtio_blk_req *req;
 
-    log("virtio_blk_handle_used: usedidx=%u, usedid=%u\n",
+    log("virtio_blk_handle_used: usedidx=%u, usedid=%u",
            usedidx, virtq->used.ring[usedidx].id);
 
     desc1 = virtq->used.ring[usedidx].id;
@@ -101,30 +94,10 @@ bad_desc:
     return;
 }
 
-static struct virtio_blk *virtio_blk_get_dev_by_intid(uint32 intid)
-{
-    struct virtio_blk *blk;
-    // int flags;
-    // spin_acquire_irqsave(&vdev_list_lock, &flags);
-    spinlock_acquire(&vdev_list_lock);
-    list_for_each_entry(blk, &vdevs, list)
-    {
-        if (blk->intid == intid)
-        {
-            spinlock_release(&vdev_list_lock);
-            // spin_release_irqrestore(&vdev_list_lock, &flags);
-            return blk;
-        }
-    }
-    spinlock_release(&vdev_list_lock);
-    // spin_release_irqrestore(&vdev_list_lock, &flags);
-    return NULL;
-}
-
 static irqret_t virtio_blk_isr(uint32 intid, void* private)
 {
     int i;
-    struct virtio_blk *dev = virtio_blk_get_dev_by_intid(intid);
+    struct virtio_blk *dev = (struct virtio_blk *)private;
     struct virtq_info* virtq_info = dev->virtq_info;
 
     log("irq triggered, intid=%u", intid);
@@ -236,12 +209,6 @@ static void virtio_blk_submit(struct blkdev *dev, struct blkreq *req)
     virtio_blk_send(blk, hdr);
 }
 
-static void virtio_mod_init(void)
-{
-    INIT_LIST_HEAD(vdevs);
-    spinlock_init(&vdev_list_lock, "virtio-blk spinlock");
-}
-
 struct blkdev_ops virtio_blk_ops = {
     .alloc = virtio_blk_alloc,
     .free = virtio_blk_free,
@@ -255,7 +222,6 @@ int virtio_blk_init(volatile virtio_regs *regs, uint32 intid)
     struct virtq_info *virtq_info;
     uint64 blk_size, _blk_size;
 
-    virtio_mod_init();
     vdev = kalloc(sizeof(struct virtio_blk));
 
     // Read and write feature bits
@@ -276,7 +242,7 @@ int virtio_blk_init(volatile virtio_regs *regs, uint32 intid)
     WRITE32(regs->Status, READ32(regs->Status) | VIRTIO_STATUS_FEATURES_OK);
 	mb();
 	if (!(regs->Status & VIRTIO_STATUS_FEATURES_OK)) {
-		error("virtio-blk did not accept our features\n");
+		error("virtio-blk did not accept our features");
 		return -1;
 	}
 
@@ -308,11 +274,7 @@ int virtio_blk_init(volatile virtio_regs *regs, uint32 intid)
 
     log("virtio-blk: %s, size=%lu, intid=%d", vdev->blkdev.name, vdev->blkdev.size, vdev->intid);
 
-    spinlock_acquire(&vdev_list_lock);
-    list_insert(&vdevs, &vdev->list);
-    spinlock_release(&vdev_list_lock);
-
-    irq_register(intid, virtio_blk_isr, NULL);
+    irq_register(intid, virtio_blk_isr, (void*)vdev);
 
     // Set DRIVER_OK status bit
     WRITE32(regs->Status, READ32(regs->Status) | VIRTIO_STATUS_DRIVER_OK);
