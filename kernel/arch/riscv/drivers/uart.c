@@ -80,13 +80,15 @@ uart_init()
 int
 uart_putc_sync(char c)
 {
+    int intr_status = intr_get();
     intr_off();
 
     while ((uart_read_reg(LSR) & LSR_TX_IDLE) == 0)
         ;
     char ret = uart_write_reg(THR, c);
 
-    intr_on();
+    if (intr_status)
+        intr_on();
 
     return ret;
 }
