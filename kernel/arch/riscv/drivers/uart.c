@@ -82,13 +82,13 @@ uart_init()
 int
 uart_putc_sync(char c)
 {
-    irq_pushoff();
+    // irq_pushoff();
 
     while ((uart_read_reg(LSR) & LSR_TX_IDLE) == 0)
         ;
     char ret = uart_write_reg(THR, c);
 
-    irq_popoff();
+    // irq_popoff();
 
     return ret;
 }

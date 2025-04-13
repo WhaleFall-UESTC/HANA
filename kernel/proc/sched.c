@@ -39,6 +39,7 @@ scheduler()
                 // switch to this process
                 p->state = RUNNING;
                 c->proc = p;
+                // log("switch to process %s", p->name);
                 swtch(&c->context, &p->context);
 
                 // prev running process is done

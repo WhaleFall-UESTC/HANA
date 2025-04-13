@@ -89,7 +89,8 @@ disk:
 
 VIRTIO_DBG = -d int,guest_errors,trace:virtio_* 
 
-QEUMDBG = 	$(VIRTIO_DBG) \
+QEUMDBG = \
+			# $(VIRTIO_DBG) \
 			# -D qemu.log
 
 MEMORY := 128M

@@ -35,11 +35,16 @@ skip_atoi(const char** s)
     return i;
 }
 
+extern void irq_pushoff();
+extern void irq_popoff();
+
 static inline void
 write(char *buf, size_t n)
 {
+    irq_pushoff();
     for (int i = 0; i < n; i++)
         putchar(buf[i]);
+    irq_popoff();
 }
 
 static inline char
