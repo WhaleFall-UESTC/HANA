@@ -60,6 +60,9 @@ static void virtio_blk_handle_used(struct virtio_blk *dev, uint32 usedidx)
     uint32 desc1, desc2, desc3;
     struct virtio_blk_req *req;
 
+    log("virtio_blk_handle_used: usedidx=%u, usedid=%u\n",
+           usedidx, virtq->used.ring[usedidx].id);
+
     desc1 = virtq->used.ring[usedidx].id;
     if (!(virtq->desc[desc1].flags & VIRTQ_DESC_F_NEXT))
         goto bad_desc;
@@ -131,16 +134,16 @@ static irqret_t virtio_blk_isr(uint32 intid, void* private)
         panic("virtio-blk: received IRQ for unknown device!");
         return IRQ_ERR;
     }
-
-    WRITE32(dev->regs->InterruptACK, READ32(dev->regs->InterruptStatus));
-
+    
     for (i = virtq_info->seen_used; i != (virtq_info->virtq->used.idx % VIRTIO_DEFAULT_QUEUE_SIZE);
-         i = wrap(i + 1, VIRTIO_DEFAULT_QUEUE_SIZE))
+    i = wrap(i + 1, VIRTIO_DEFAULT_QUEUE_SIZE))
     {
         virtio_blk_handle_used(dev, i);
     }
     virtq_info->seen_used = virtq_info->virtq->used.idx % VIRTIO_DEFAULT_QUEUE_SIZE;
-
+    
+    WRITE32(dev->regs->InterruptACK, READ32(dev->regs->InterruptStatus) & 0x3);
+    
     irq_free(intid);
     return IRQ_HANDLED;
 }
@@ -257,6 +260,7 @@ int virtio_blk_init(volatile virtio_regs *regs, uint32 intid)
 
     // Read and write feature bits
     // virtio_check_capabilities(regs, blk_caps, nr_elem(blk_caps), "virtio-blk");
+    virtio_check_capabilities(regs);
 
     uint64 features = READ32(regs->HostFeatures);
     features &= ~(1 << VIRTIO_BLK_F_RO);
@@ -267,6 +271,16 @@ int virtio_blk_init(volatile virtio_regs *regs, uint32 intid)
     features &= ~(1 << VIRTIO_RING_F_EVENT_IDX);
     features &= ~(1 << VIRTIO_RING_F_INDIRECT_DESC);
     WRITE32(regs->GuestFeatures, features);
+    mb();
+
+    WRITE32(regs->Status, READ32(regs->Status) | VIRTIO_STATUS_FEATURES_OK);
+	mb();
+	if (!(regs->Status & VIRTIO_STATUS_FEATURES_OK)) {
+		error("virtio-blk did not accept our features\n");
+		return -1;
+	}
+
+    WRITE32(regs->GuestPageSize, PGSIZE);
     mb();
 
     // Perform device-specific setup
