@@ -19,22 +19,24 @@ make -j8
 亦可以选择从[中科院软件所 ISCAS 提供的镜像](https://mirror.iscas.ac.cn/riscv-toolchains/release/riscv-collab/riscv-gnu-toolchain/LatestRelease/)获取 riscv-gnu-toolchain 的夜间版本，选择 `[riscv64-elf-ubuntu-[version]-gcc-nightly-[date]-nightly.tar.xz` 一项下载然后将其 `tar -Jxvf` 到 `/opt` 下
 <br><br>
 
-### qemu-system-riscv64
+### qemu-system-*
 ```bash
-git clone https://gitlab.com/qemu-project/qemu.git
-cd qemu
-
-sudo apt update
-sudo apt install build-essential libglib2.0-dev libpixman-1-dev python3 python3-pip ninja-build
-
-./configure --target-list=riscv64-softmmu,riscv64-linux-user
-make -j
-sudo make install
+cd ~/Downloads
+wget https://gitlab.educg.net/wangmingjian/os-contest-2024-image/-/raw/master/qemu-9.2.1.tar.xz?inline=false -O qemu-9.2.1.tar.xz \
+    && tar xf qemu-9.2.1.tar.xz \
+    && cd qemu-9.2.1 \
+    && ./configure \
+        --target-list=loongarch64-softmmu,riscv64-softmmu,aarch64-softmmu,x86_64-softmmu \
+        --enable-gcov --enable-debug --enable-slirp \
+    && make -j8 \
+    && sudo make install
 ```
 <br>
 
 ### loongarch-unknown-linux-gnu
 整个环境配资可以直接从[中科大的编译原理课程](https://ustc-compiler-principles.github.io/2023/lab3/environment/)界面获取
+<br>
+但是赛方提供了[环境](https://gitlab.educg.net/wangmingjian/os-contest-2024-image/)，~~现在才注意到~~
 ```bash
 cd ~/Downloads
 wget https://github.com/loongson/build-tools/releases/download/2022.05.29/loongarch64-clfs-5.0-cross-tools-gcc-full.tar.xz
