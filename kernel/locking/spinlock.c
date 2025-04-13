@@ -6,6 +6,7 @@
 #include <riscv.h>
 #endif
 
+#include <irq/interrupt.h>
 #include <locking/spinlock.h>
 #include <trap/context.h>
 #include <proc/proc.h>

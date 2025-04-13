@@ -9,13 +9,14 @@
 extern void exit(int);
 
 void test() {
-    intr_off();
+    // intr_off();
     PASS("test start!!!");
 
     // test_uart();
+    // test_virtio();
     test_virtio();
 
     PASS("test finish!!!");
-    intr_on();
+    // intr_on();
     exit(-1);
 }

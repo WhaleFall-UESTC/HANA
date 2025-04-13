@@ -4,8 +4,8 @@
 #include <drivers/virtio.h>
 // #include <locking/spinsem.h>
 #include <locking/spinlock.h>
-#include <proc/proc.h>
 #include <irq/interrupt.h>
+#include <proc/proc.h>
 #include <io/blk.h>
 #include <klib.h>
 

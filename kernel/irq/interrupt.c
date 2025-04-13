@@ -40,7 +40,12 @@ void irq_response(void) {
 
     if(irq >= MAX_NR_IRQ || irq_handlers[irq] == NULL) {
         error("Irq %d too large or unregistered", irq);
+// <<<<<<< HEAD
+//         goto out;
+// =======
+//         return;
         goto out;
+// >>>>>>> 61aa3b748de6d8d5444182305384434a92d6033a
     }
 
     ret = irq_handlers[irq](irq, irq_privates[irq]);
@@ -55,6 +60,9 @@ out:
 
 void irq_init(void) {
     __irq_init_default();
+
+    // TODO: move register uart irq to uart_init
+    irq_register(UART0_IRQ, uart_irq_handler, NULL);
 }
 
 void irq_pushoff() {

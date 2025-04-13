@@ -5,6 +5,11 @@
 #include <trap/context.h>
 #endif
 
+#ifndef __INTERRUPT_H__
+#define __INTERRUPT_H__
+#include <irq/interrupt.h>
+#endif
+
 struct proc {
     int pid;
     volatile int state;
@@ -50,7 +55,11 @@ mycpu()
 static inline struct proc*
 myproc()
 {
-    return mycpu()->proc;
+    irq_pushoff();
+    struct cpu* c = mycpu();
+    struct proc* p = c->proc;
+    irq_popoff();
+    return p;
 }
 
 

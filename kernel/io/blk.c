@@ -1,6 +1,7 @@
 #include <io/blk.h>
 #include <mm/mm.h>
 #include <klib.h>
+#include <irq/interrupt.h>
 #include <locking/spinlock.h>
 #include <proc/proc.h>
 

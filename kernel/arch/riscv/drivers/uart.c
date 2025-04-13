@@ -2,7 +2,9 @@
 #include <common.h>
 #include <riscv.h>
 #include <trap/context.h>
+#include <irq/interrupt.h>
 #include <proc/proc.h>
+#include <locking/spinlock.h>
 
 #define RHR 0       // receive holding register
 #define THR 0       // transmit holding register
@@ -80,15 +82,13 @@ uart_init()
 int
 uart_putc_sync(char c)
 {
-    int intr_status = intr_get();
-    intr_off();
+    irq_pushoff();
 
     while ((uart_read_reg(LSR) & LSR_TX_IDLE) == 0)
         ;
     char ret = uart_write_reg(THR, c);
 
-    if (intr_status)
-        intr_on();
+    irq_popoff();
 
     return ret;
 }
@@ -125,8 +125,9 @@ uart_putc(char c)
 }
 
 
-void
-uart_irq_handler()
+irqret_t
+uart_irq_handler(uint32, void*)
 {
     uart_start();
+    return IRQ_HANDLED;
 }

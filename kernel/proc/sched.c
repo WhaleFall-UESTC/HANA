@@ -3,6 +3,7 @@
 #include <debug.h>
 #include <mm/mm.h>
 #include <mm/memlayout.h>
+#include <irq/interrupt.h>
 #include <trap/context.h>
 #include <proc/proc.h>
 #include <proc/sched.h>
@@ -38,7 +39,6 @@ scheduler()
                 // switch to this process
                 p->state = RUNNING;
                 c->proc = p;
-                log("switch to %s", p->name);
                 swtch(&c->context, &p->context);
 
                 // prev running process is done
