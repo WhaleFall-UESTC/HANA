@@ -45,14 +45,14 @@ main()
     out("Initialize interrupt");
     proc_init();
     out("Initialize first proc");
+    
+    // ecall();
+    
+    blocks_init();
+    
+    virtio_init();
 
     test_proc_init((uint64) test);
-
-    // ecall();
-
-    blocks_init();
-
-    virtio_init();
 
     // test_virtio();
 
