@@ -17,7 +17,7 @@ void test_virtio() {
     
     blkdev = blkdev_get_by_name(VIRTIO_BLK_DEV_NAME);
     assert(blkdev != NULL);
-    log("blkdev %s found\n", blkdev->name);
+    log("blkdev %s found", blkdev->name);
 
     req = blkdev->ops->alloc(blkdev);
     assert(req != NULL);
@@ -32,40 +32,43 @@ void test_virtio() {
     
     blkdev->ops->submit(blkdev, req);
 
-    log("blkdev %s submit write request\n", blkdev->name);
-
+    log("blkdev %s submit write request", blkdev->name);
+    
     blkdev_wait_all(blkdev);
     if (req->status == BLKREQ_STATUS_OK) {
-        log("Write %ld bytes from sector %ld\n", req->size, req->sector_sta);
+        log("Write %ld bytes to sector %ld", req->size, req->sector_sta);
     } else {
-        error("Failed to write from sector %ld\n", req->sector_sta);
+        error("Failed to write to sector %ld", req->sector_sta);
     }
-
-    blkdev->ops->free(blkdev, req);
-
+    blkdev_free_all(blkdev);
+    
+    // blkdev->ops->free(blkdev, req);
+    
     memset(buffer, 0, sizeof(buffer));
-
+    
     req = blkdev->ops->alloc(blkdev);
     assert(req != NULL);
-
+    
     req->type = BLKREQ_TYPE_READ;
     req->sector_sta = 0;
     req->size = 1024;
     req->buffer = buffer;
-
+    
     blkdev->ops->submit(blkdev, req);
-
+    
+    log("blkdev %s submit read request", blkdev->name);
     blkdev_wait_all(blkdev);
     if (req->status == BLKREQ_STATUS_OK)
     {
-        log("Read %ld bytes from sector %ld\n", req->size, req->sector_sta);
+        log("Read %ld bytes from sector %ld", req->size, req->sector_sta);
     }
     else
     {
-        error("Failed to read from sector %ld\n", req->sector_sta);
+        error("Failed to read from sector %ld", req->sector_sta);
     }
 
-    blkdev->ops->free(blkdev, req);
+    // blkdev->ops->free(blkdev, req);
+    blkdev_free_all(blkdev);
 
     assert(buffer[0] == 0x2);
 }
