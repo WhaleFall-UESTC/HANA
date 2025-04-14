@@ -102,7 +102,7 @@ void
 sleep(void* chan)
 {
     struct proc *p = myproc();
-    log("sleep on chan %p", chan);
+    debug("sleep on chan %p", chan);
     p->chan = chan;
     p->state = SLEEPING;
 
@@ -118,8 +118,8 @@ void
 wakeup(void* chan) 
 {
     struct proc* cur = myproc();
-    log("wakeup on chan %p", chan);
-    
+    debug("wakeup on chan %p", chan);
+
     for (struct proc* p = proc_list; p; p = p->next) {
         // p != myproc()
         if (p != cur) {

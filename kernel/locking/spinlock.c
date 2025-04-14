@@ -17,8 +17,9 @@ void
 spinlock_init(struct spinlock* lk, char* name) 
 {
     lk->locked = UNLOCKED;
-    lk->name = name;
     lk->cpu = NULL;
+
+    strncpy(lk->name, name, SPINLOCK_NAME_MAX_LEN);
 }
 
 

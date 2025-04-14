@@ -3,11 +3,13 @@
 
 #include <common.h>
 
+#define SPINLOCK_NAME_MAX_LEN 32
+
 struct spinlock {
     uint32 locked;
 
     // For debugging
-    char* name;
+    char name[SPINLOCK_NAME_MAX_LEN];
     struct cpu *cpu;    // which cpu holding this lock
 };
 

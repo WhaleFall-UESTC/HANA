@@ -6,13 +6,13 @@
 #include <klib.h>
 #include <riscv.h>
 #include <mm/mm.h>
-#define VIRTIO_BLK_DEV_NAME "vblk1"
+#define VIRTIO_BLK_DEV_NAME "virtio-blk1"
 
 void test_virtio() {
     char* buffer;
     struct blkdev* blkdev;
     struct blkreq* req;
-    void* chan;
+    // void* chan;
 
     // intr_on();
     
@@ -34,12 +34,13 @@ void test_virtio() {
 
     assert(blkdev->ops->submit != NULL);
     
-    blkdev->ops->submit(blkdev, req);
+    blkdev_submit_req_wait(blkdev, req);
+    // blkdev->ops->submit(blkdev, req);
 
-    chan = blkreq_wait_channel(req);
-    log("blkdev %s submit write request %p", blkdev->name, chan);
+    // chan = blkreq_wait_channel(req);
+    // log("blkdev %s submit write request %p", blkdev->name, chan);
     
-    blkdev_wait_all(blkdev);
+    // blkdev_wait_all(blkdev);
     if (req->status == BLKREQ_STATUS_OK) {
         log("Write %ld bytes to sector %ld", req->size, req->sector_sta);
     } else {
@@ -58,11 +59,13 @@ void test_virtio() {
     req->sector_sta = 0;
     req->size = 1024;
     req->buffer = buffer;
+
+    blkdev_submit_req_wait(blkdev, req);
+
+    // blkdev->ops->submit(blkdev, req);
     
-    blkdev->ops->submit(blkdev, req);
-    
-    chan = blkreq_wait_channel(req);
-    log("blkdev %s submit read request %p", blkdev->name, chan);
+    // chan = blkreq_wait_channel(req);
+    // log("blkdev %s submit read request %p", blkdev->name, chan);
     // blkdev_wait_all(blkdev);
     if (req->status == BLKREQ_STATUS_OK)
     {

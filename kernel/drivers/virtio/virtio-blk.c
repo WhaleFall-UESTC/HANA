@@ -53,8 +53,8 @@ static void virtio_blk_handle_used(struct virtio_blk *dev, uint32 usedidx)
     uint32 desc1, desc2, desc3;
     struct virtio_blk_req *req;
 
-    log("virtio_blk_handle_used: usedidx=%u, usedid=%u",
-           usedidx, virtq->used.ring[usedidx].id);
+    debug("virtio_blk_handle_used: usedidx=%u, usedid=%u",
+          usedidx, virtq->used.ring[usedidx].id);
 
     desc1 = virtq->used.ring[usedidx].id;
     if (!(virtq->desc[desc1].flags & VIRTQ_DESC_F_NEXT))
@@ -78,31 +78,30 @@ static void virtio_blk_handle_used(struct virtio_blk *dev, uint32 usedidx)
     {
     case VIRTIO_BLK_S_OK:
         req->blkreq.status = BLKREQ_STATUS_OK;
-        log("virtio_blk_handle_used: request completed successfully");
+        debug("virtio_blk_handle_used: request completed successfully");
         break;
     case VIRTIO_BLK_S_IOERR:
-        log("virtio_blk_handle_used: request failed with I/O error");
+        debug("virtio_blk_handle_used: request failed with I/O error");
         req->blkreq.status = BLKREQ_STATUS_ERR;
         break;
     default:
         panic("Unhandled status in virtio_blk irq");
     }
 
-    // wait_list_awaken(&req->blkreq.wait);
-    wakeup(blkreq_wait_channel(&req->blkreq));
+    if(req->blkreq.endio != NULL)
+        req->blkreq.endio(&req->blkreq);
+
     return;
 bad_desc:
-    log("virtio-blk received malformed descriptors");
+    error("virtio-blk received malformed descriptors");
     return;
 }
 
-static irqret_t virtio_blk_isr(uint32 intid, void* private)
+static irqret_t virtio_blk_isr(struct blkdev *blkdev)
 {
     int i;
-    struct virtio_blk *dev = (struct virtio_blk *)private;
+    struct virtio_blk *dev = get_vblkdev(blkdev);
     struct virtq_info* virtq_info = dev->virtq_info;
-
-    log("irq triggered, intid=%u", intid);
 
     if (!dev)
     {
@@ -118,8 +117,7 @@ static irqret_t virtio_blk_isr(uint32 intid, void* private)
     virtq_info->seen_used = virtq_info->virtq->used.idx % VIRTIO_DEFAULT_QUEUE_SIZE;
     
     WRITE32(dev->regs->InterruptACK, READ32(dev->regs->InterruptStatus));
-    
-    irq_free(intid);
+
     return IRQ_HANDLED;
 }
 
@@ -186,9 +184,9 @@ static void virtio_blk_submit(struct blkdev *dev, struct blkreq *req)
     }
     hdr->sector = req->sector_sta;
 
-    log("virtio_blk_submit: %s, sector=%lu, size=%lu",
-        req->type == BLKREQ_TYPE_READ ? "read" : "write",
-        req->sector_sta, req->size);
+    debug("virtio_blk_submit: %s, sector=%lu, size=%lu",
+          req->type == BLKREQ_TYPE_READ ? "read" : "write",
+          req->sector_sta, req->size);
 
     d1 = virtq_alloc_desc(virtq_info, hdr);
     hdr->descriptor = d1;
@@ -216,6 +214,7 @@ struct blkdev_ops virtio_blk_ops = {
     .free = virtio_blk_free,
     .submit = virtio_blk_submit,
     .status = virtio_blk_status,
+    .irq_handle = virtio_blk_isr,
 };
 
 int virtio_blk_init(volatile virtio_regs *regs, uint32 intid)
@@ -259,7 +258,6 @@ int virtio_blk_init(volatile virtio_regs *regs, uint32 intid)
     vdev->virtq_info = virtq_info;
     vdev->intid = intid;
     vdev->config = (struct virtio_blk_config *)&regs->Config;
-    vdev->blkdev.ops = &virtio_blk_ops;
 
     // Read device configuration fields
     blk_size = READ64(vdev->config->capacity);
@@ -269,20 +267,14 @@ int virtio_blk_init(volatile virtio_regs *regs, uint32 intid)
         mb();
         blk_size = READ64(vdev->config->capacity);
     } while(blk_size != _blk_size);
-
-    vdev->blkdev.size = blk_size * VIRTIO_BLK_SECTOR_SIZE;
-
-    snprintf(vdev->blkdev.name, sizeof(vdev->blkdev.name), "vblk%d", vdev->intid);
-
-    log("virtio-blk: %s, size=%lu, intid=%d", vdev->blkdev.name, vdev->blkdev.size, vdev->intid);
-
-    irq_register(intid, virtio_blk_isr, (void*)vdev);
-
+    
     // Set DRIVER_OK status bit
     WRITE32(regs->Status, READ32(regs->Status) | VIRTIO_STATUS_DRIVER_OK);
     mb();
 
-    blkdev_init(&vdev->blkdev);
+    blkdev_init(&vdev->blkdev, intid, intid, blk_size * VIRTIO_BLK_SECTOR_SIZE,
+                VIRTIO_BLK_DEV_NAME, &virtio_blk_ops);
+    debug("virtio-blk: %s, size=%lu, intid=%d", vdev->blkdev.name, vdev->blkdev.size, vdev->intid);
     blkdev_register(&vdev->blkdev);
 
     return 0;

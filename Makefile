@@ -37,6 +37,7 @@ CFLAGS += -I $(KERNEL_SRC)/include -I $(ARCH_SRC)/include -I $(KERNEL_SRC)/test/
 # CFLAGS += -MD -MP -MF $(BUILD_DIR)/$(@F).d
 CFLAGS += -MD -MP -MF $@.d
 CFLAGS += -Wno-unused-variable -Wno-unused-function
+CFLAGS += -DDEBUG
 
 ASFLAGS = $(CFLAGS) -D__ASSEMBLY__
 LDFLAGS = -nostdlib -T $(KERNEL_SRC)/kernel.ld
@@ -87,10 +88,10 @@ disk:
 
 
 
-VIRTIO_DBG = -d int,guest_errors,trace:virtio_* 
+VIRTIO_DBG = -d guest_errors,trace:virtio_*
 
 QEUMDBG = \
-			# $(VIRTIO_DBG) \
+			$(VIRTIO_DBG) \
 			# -D qemu.log
 
 MEMORY := 128M

@@ -25,6 +25,20 @@ int puts(char* buf);
 
 #define log(info, ...)  Log(ANSI_FG_BLUE, info, ## __VA_ARGS__)
 #define error(info, ...) Log(ANSI_FG_RED, info, ## __VA_ARGS__)
+#define warn(info, ...) Log(ANSI_FG_YELLOW, info, ##__VA_ARGS__)
+
+#ifdef DEBUG
+#define debug(info, ...) Log(ANSI_FG_MAGENTA, info, ##__VA_ARGS__)
+#else
+#define debug(info, ...)
+#endif
+
+#define warn_on(cond, info, ...) \
+    do { \
+        if (cond) { \
+            warn("Warning: " info, ##__VA_ARGS__); \
+        } \
+    } while (0)
 
 #define Assert(cond, format, ...) \
     do { \
