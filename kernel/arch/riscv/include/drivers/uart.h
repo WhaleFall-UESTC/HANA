@@ -7,7 +7,8 @@
 void            uart_init(void);
 int             uart_putc_sync(char c);
 void            uart_putc(char c);
-irqret_t        uart_irq_handler(uint32, void*);
+int             uart_getc();
+irqret_t        uart_isr(uint32, void*);
 
 static inline int
 putchar(int c) 

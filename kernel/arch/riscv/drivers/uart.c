@@ -13,6 +13,7 @@
 #define IER 1       // interrupt enable register
 #define FCR 2       // FIFO control register
 #define ISR 2       // interrupt status register
+#define IIR 2
 #define LCR 3       // line control register
 #define MCR 4       // modem control register
 #define LSR 5       // line status register
@@ -26,6 +27,12 @@
 
 #define IER_TX_EN (1 << 1)
 #define IER_RX_EN (1 << 0)
+
+#define IIR_NO_INT      (1 << 1)
+#define IIR_ID_MASK      0x0f
+#define IIR_TX_EMPTY    (1 << 1)
+#define IIR_RX_READY    (1 << 3)
+#define IIR_RX_TIMEOUT  (1 << 6)
 
 #define UART_REG(reg) ((volatile uint8 *)(VIRT_UART0 + reg))
 #define uart_read_reg(reg) (*UART_REG(reg))
@@ -74,7 +81,7 @@ uart_init()
     uart_write_reg(FCR, FCR_FIFO_EN | FCR_FIFO_CLR);
 
     // enable RHR, THR interrupts
-    uart_write_reg(IER, IER_RX_EN | IER_TX_EN);
+    // uart_write_reg(IER, IER_RX_EN | IER_TX_EN);
 }
 
 // polling version, disable intr while output
@@ -98,7 +105,11 @@ static void
 uart_start()
 {
     while (1) {
-        if (uart_buf_empty()) return;
+        if (uart_buf_empty()) {
+            // disable TX interrupt
+            uart_write_reg(IER, IER_RX_EN);
+            return;
+        }
         if ((uart_read_reg(LSR) & LSR_TX_IDLE) == 0) return;
 
         char c = uart_buf_read();
@@ -113,6 +124,8 @@ uart_start()
 void
 uart_putc(char c)
 {
+    // enable TX interrupt
+    uart_write_reg(IER, IER_RX_EN | IER_TX_EN);
     while (1) {
         if (uart_buf_full()) {
             sleep(&uart_tx_r);
@@ -125,9 +138,34 @@ uart_putc(char c)
 }
 
 
-irqret_t
-uart_irq_handler(uint32, void*)
+int
+uart_getc()
 {
-    uart_start();
+    if (uart_read_reg(LSR) & 0x01) {
+        return uart_read_reg(RHR);
+    } else {
+        return -1;
+    }
+}
+
+
+irqret_t
+uart_isr(uint32, void*)
+{
+    uint8 iir = uart_read_reg(IIR);
+    if (iir & IIR_NO_INT) 
+        return IRQ_ERR;
+
+    switch (iir & IIR_ID_MASK) {
+        case IIR_RX_TIMEOUT:
+        case IIR_RX_READY:
+            break;
+        case IIR_TX_EMPTY:
+            uart_start();
+            break;
+        default:
+            return IRQ_ERR;
+    }
+
     return IRQ_HANDLED;
 }

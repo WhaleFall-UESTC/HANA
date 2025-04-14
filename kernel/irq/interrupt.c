@@ -62,7 +62,7 @@ void irq_init(void) {
     __irq_init_default();
 
     // TODO: move register uart irq to uart_init
-    irq_register(UART0_IRQ, uart_irq_handler, NULL);
+    irq_register(UART0_IRQ, uart_isr, NULL);
 }
 
 void irq_pushoff() {

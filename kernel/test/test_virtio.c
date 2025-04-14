@@ -37,7 +37,7 @@ void test_virtio() {
     blkdev->ops->submit(blkdev, req);
 
     chan = blkreq_wait_channel(req);
-    log("blkdev %s submit write request %p", blkdev->name, chan);
+    Log(ANSI_FG_YELLOW, "blkdev %s submit write request %p", blkdev->name, chan);
     
     blkdev_wait_all(blkdev);
     if (req->status == BLKREQ_STATUS_OK) {
@@ -62,8 +62,8 @@ void test_virtio() {
     blkdev->ops->submit(blkdev, req);
     
     chan = blkreq_wait_channel(req);
-    log("blkdev %s submit read request %p", blkdev->name, chan);
-    // blkdev_wait_all(blkdev);
+    Log(ANSI_FG_YELLOW, "blkdev %s submit read request %p", blkdev->name, chan);
+    blkdev_wait_all(blkdev);
     if (req->status == BLKREQ_STATUS_OK)
     {
         log("Read %ld bytes from sector %ld", req->size, req->sector_sta);
