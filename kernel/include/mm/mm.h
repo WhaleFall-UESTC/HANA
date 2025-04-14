@@ -22,7 +22,8 @@ pagetable_t uvminit(uint64 trapframe, char* init_code, int sz);
 void        uvmcopy(pagetable_t cpgtbl, pagetable_t ppgtbl, uint64 sz);
 
 static inline uint64 virt_to_phys(uint64 va) {
-    return walkaddr(kernel_pagetable, va);
+    return va;
+    // return walkaddr(kernel_pagetable, va);
 }
 
 static inline uint64 phys_page_number(uint64 pa) {
