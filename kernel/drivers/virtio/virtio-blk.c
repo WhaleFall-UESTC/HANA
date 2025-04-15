@@ -64,7 +64,7 @@ static void virtio_blk_handle_used(struct virtio_blk *dev, uint32 usedidx)
         goto bad_desc;
     desc3 = virtq->desc[desc2].next;
     if (virtq->desc[desc1].len != VIRTIO_BLK_REQ_HEADER_SIZE ||
-        virtq->desc[desc2].len != VIRTIO_BLK_SECTOR_SIZE ||
+        // virtq->desc[desc2].len != VIRTIO_BLK_SECTOR_SIZE ||
         virtq->desc[desc3].len != VIRTIO_BLK_REQ_FOOTER_SIZE)
         goto bad_desc;
 
@@ -88,8 +88,7 @@ static void virtio_blk_handle_used(struct virtio_blk *dev, uint32 usedidx)
         panic("Unhandled status in virtio_blk irq");
     }
 
-    if(req->blkreq.endio != NULL)
-        req->blkreq.endio(&req->blkreq);
+    blkdev_general_endio(&req->blkreq);
 
     return;
 bad_desc:
@@ -173,6 +172,12 @@ static void virtio_blk_submit(struct blkdev *dev, struct blkreq *req)
     volatile struct virtqueue *virtq = blk->virtq_info->virtq;
     uint32 d1, d2, d3, datamode = 0;
 
+    if(req->size & (VIRTIO_BLK_SECTOR_SIZE - 1))
+    {
+        error("size not aligned to sector size");
+        return;
+    }
+
     if (req->type == BLKREQ_TYPE_READ)
     {
         hdr->type = VIRTIO_BLK_T_IN;
@@ -194,7 +199,8 @@ static void virtio_blk_submit(struct blkdev *dev, struct blkreq *req)
     virtq->desc[d1].flags = VIRTQ_DESC_F_NEXT;
 
     d2 = virtq_alloc_desc(virtq_info, req->buffer);
-    virtq->desc[d2].len = VIRTIO_BLK_SECTOR_SIZE;
+    // virtq->desc[d2].len = VIRTIO_BLK_SECTOR_SIZE;
+    virtq->desc[d2].len = req->size;
     virtq->desc[d2].flags = datamode | VIRTQ_DESC_F_NEXT;
 
     d3 = virtq_alloc_desc(virtq_info,

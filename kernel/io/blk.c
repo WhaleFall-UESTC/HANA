@@ -86,17 +86,17 @@ void blkdev_submit_req(struct blkdev *dev, struct blkreq *request) {
     dev->ops->submit(dev, request);
 }
 
-static void blkdev_wait_endio(struct blkreq *request)
-{
-    assert(request != NULL);
-    wakeup(blkreq_wait_channel(request));
-}
-
 void blkdev_submit_req_wait(struct blkdev *dev, struct blkreq *request) {
-    warn_on(request->endio != NULL, "using synchronous submit when endio is set");
-    request->endio = blkdev_wait_endio;
     blkdev_submit_req(dev, request);
     sleep(blkreq_wait_channel(request));
+}
+
+void blkdev_general_endio(struct blkreq *request)
+{
+    assert(request != NULL);
+    if(request->endio != NULL)
+        request->endio(request);
+    wakeup(blkreq_wait_channel(request));
 }
 
 void blkdev_wait_all(struct blkdev *dev)
@@ -111,7 +111,8 @@ void blkdev_wait_all(struct blkdev *dev)
         {
             sleep(blkreq_wait_channel(request));
         }
-        else if(request->status == BLKREQ_STATUS_OK)
+
+        if(request->status == BLKREQ_STATUS_OK)
         {
             debug("Request completed successfully, sector=%ld, size=%ld, in device %s",
                 request->sector_sta, request->size, dev->name);
@@ -131,7 +132,12 @@ void blkdev_free_all(struct blkdev *dev) {
     spinlock_acquire(&dev->rq_list_lock);
     list_for_each_entry_safe(request, tmp, &dev->rq_list, rq_head)
     {
-        // log("Freeing request %p in device %s", request, dev->name);
+        if(request->status != BLKREQ_STATUS_OK)
+        {
+            error("Request not completed, sector=%ld, size=%ld, in device %s",
+                  request->sector_sta, request->size, dev->name);
+            continue;
+        }
         dev->ops->free(dev, request);
         list_remove(&request->rq_head);
     }
@@ -147,7 +153,7 @@ irqret_t blkdev_general_isr(uint32 intid, void *private) {
     if (blkdev->ops->irq_handle != NULL)
         ret = blkdev->ops->irq_handle(blkdev);
     else {
-        error("blkdev %s: no irq_handle", blkdev->name);
+        error("blkdev %s: no irq handler", blkdev->name);
         goto out;
     }
 

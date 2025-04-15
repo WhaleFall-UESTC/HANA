@@ -12,6 +12,11 @@
 
 struct blkdev;
 
+/**
+ * blkreq is a request for block device
+ * one alloc a struct blkreq MUST free it
+ * after the request is done
+ */
 struct blkreq
 {
     // request type
@@ -23,6 +28,7 @@ struct blkreq
 
     // request info
     sector_t sector_sta;
+    // size MUST be multiple of device SECTOR size
     uint64 size;
     /**
      * Due to consistent page mapping,
@@ -57,6 +63,9 @@ struct blkreq
         assert(__req != NULL);        \
         (void *)__req;                \
     })
+
+#define blkreq_wakeup(req) wakeup(blkreq_wait_channel(req))
+#define blkreq_sleep(req) sleep(blkreq_wait_channel(req))
 
 struct blkdev_ops;
 
@@ -139,12 +148,18 @@ void blkdev_submit_req(struct blkdev *dev, struct blkreq *request);
 void blkdev_submit_req_wait(struct blkdev *dev, struct blkreq *request);
 
 /**
+ * end lift cycle for a blkreq, MUST be called by driver
+ * when the request is done
+ */
+void blkdev_general_endio(struct blkreq *request);
+
+/**
  * wait until all requests in request list done
  */
 void blkdev_wait_all(struct blkdev *dev);
 
 /**
- * remove and free all requests in given blkdev
+ * remove and free all requests in given blkdev that are done
  */
 void blkdev_free_all(struct blkdev *dev);
 
