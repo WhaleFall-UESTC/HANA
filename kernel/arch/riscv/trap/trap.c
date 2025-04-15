@@ -51,7 +51,7 @@ trap(uint64 scause)
 void
 kernel_trap()
 {
-    log("catch kernel trap");
+    // log("catch kernel trap");
     GET_S_REGS();
 
     int res = trap(scause);
@@ -70,7 +70,7 @@ kernel_trap()
 static void
 s_mode_ecall_handler()
 {
-    log("Raise S mode ecall");
+    debug("Raise S mode ecall");
     w_sepc(r_sepc() + 4);
 }
 
@@ -94,9 +94,9 @@ void
 trap_init_hart()
 {
     w_stvec((uint64)kernelvec);
-    log("sstatus: %p", (void*)r_sstatus());
-    log("sie: %p", (void*)r_sie());
-    log("stvec: %p", (void*)r_stvec());
+    debug("sstatus: %p", (void*)r_sstatus());
+    debug("sie: %p", (void*)r_sie());
+    debug("stvec: %p", (void*)r_stvec());
 }
 
 
