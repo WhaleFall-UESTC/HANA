@@ -126,14 +126,18 @@ walkaddr(pagetable_t pgtbl, uint64 va)
 {
     if (va >= MAXVA)
         return 0;
+    if (pgtbl == kernel_pagetable)
+        return va;
 
     pte_t* pte = walk(pgtbl, va, WALK_NOALLOC);
 
-    // if (!CHECK_PTE(pte, PTE_V | PTE_U))
-    if (!CHECK_PTE(pte, PTE_V))
+    if (!CHECK_PTE(pte, PTE_V | PTE_U))
         return 0;
 
-    return (uint64) PTE2PA(*pte);
+    uint64 offset = va & (PGSIZE - 1);
+    uint64 pa = (uint64) PTE2PA(*pte) | offset;
+
+    return pa;
 }
 
 

@@ -14,6 +14,7 @@ void test() {
 
     // test_uart();
     // test_virtio();
+    test_walkaddr();
     test_virtio();
 
     PASS("test finish!!!");

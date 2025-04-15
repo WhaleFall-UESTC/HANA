@@ -22,4 +22,7 @@ void        test_virtio();
 /* test_uart.c */
 void        test_uart();
 
+/* test_walkaddr.c */
+void        test_walkaddr();
+
 #endif // __TESTDEFS_H__
