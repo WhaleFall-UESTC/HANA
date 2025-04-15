@@ -34,11 +34,11 @@ timer_init()
     // set machine trap vector
     w_mtvec((uint64)timervec); 
 
-    log("mstatus: %p", (void*)r_mstatus());
-    log("mie: %p", (void*)r_mie());
-    log("mtvec: %p", (void*)r_mtvec());
-    log("mideleg: %p", (void*)r_mideleg());
-    log("medeleg: %p", (void*)r_medeleg());
+    debug("mstatus: %p", (void*)r_mstatus());
+    debug("mie: %p", (void*)r_mie());
+    debug("mtvec: %p", (void*)r_mtvec());
+    debug("mideleg: %p", (void*)r_mideleg());
+    debug("medeleg: %p", (void*)r_medeleg());
 }
 
 void
