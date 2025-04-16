@@ -46,7 +46,9 @@ LDFLAGS = -nostdlib -T $(KERNEL_SRC)/kernel.ld
 SRC_S = $(shell find $(ARCH_SRC) -type f -name *.S)
 
 SRC_C := $(shell find kernel -type f -name '*.c' \
-			-not -path '$(KERNEL_SRC)/arch/*') \
+			-not -path '$(KERNEL_SRC)/arch/*' \
+			-not -path '$(KERNEL_SRC)/fs/*' \
+			-not -path '$(KERNEL_SRC)/lwext4/*') \
 		$(shell find $(ARCH_SRC) -type f -name *.c) \
 
 # -not -path '$(KERNEL_SRC)/drivers/virtio/*'
