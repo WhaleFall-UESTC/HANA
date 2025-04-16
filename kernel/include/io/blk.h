@@ -76,6 +76,7 @@ struct blkdev
     int devid;
     uint32 intr;
     unsigned long size; // blkdev capacity in bytes
+    uint64 sector_size;
     char name[BLKDEV_NAME_MAX_LEN];
     const struct blkdev_ops *ops;
     struct list_head blk_list; // list entry for block devices
@@ -107,6 +108,34 @@ static inline void blkreq_init(struct blkreq *request, struct blkdev *dev)
     request->endio = NULL;
 }
 
+static inline struct blkreq* blkreq_alloc(struct blkdev* blkdev, sector_t sector_sta, void* buffer, uint64 size, int write)
+{
+    struct blkreq* req = blkdev->ops->alloc(blkdev);
+
+    if(req == NULL)
+    {
+        debug("Failed to allocate block request");
+        return NULL;
+    }
+
+    if(write)
+        req->type = BLKREQ_TYPE_WRITE;
+    else
+        req->type = BLKREQ_TYPE_READ;
+
+    req->sector_sta = sector_sta;
+    req->size = size;
+    req->buffer = buffer;
+
+    return req;
+}
+
+static inline void blkreq_free(struct blkdev* blkdev, struct blkreq* req)
+{
+    assert(req != NULL);
+    blkdev->ops->free(blkdev, req);
+}
+
 /**
  * init block device management system
  */
@@ -115,14 +144,14 @@ void blocks_init(void);
 /**
  * alloc a block device and do initialization
  */
-struct blkdev *blkdev_alloc(int devid, unsigned long size, int intr,
-                            const char *name, const struct blkdev_ops *ops);
+struct blkdev *blkdev_alloc(int devid, unsigned long size, uint64 sector_size,
+                            int intr, const char *name, const struct blkdev_ops *ops);
 
 /**
  * initialize a block device
  */
-void blkdev_init(struct blkdev *dev, int devid, int intr, unsigned long size,
-                   const char *name, const struct blkdev_ops *ops);
+void blkdev_init(struct blkdev *dev, int devid, unsigned long size, uint64 sector_size,
+                 int intr, const char *name, const struct blkdev_ops *ops);
 
 /**
  * register block device in list

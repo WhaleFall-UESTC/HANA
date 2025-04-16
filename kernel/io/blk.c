@@ -14,19 +14,17 @@ void blocks_init(void)
     spinlock_init(&blkdev_list_lock, "blkdev_list_lock");
 }
 
-struct blkdev *blkdev_alloc(int devid, unsigned long size, int intr,
-                            const char *name, const struct blkdev_ops *ops)
+struct blkdev *blkdev_alloc(int devid, unsigned long size, uint64 sector_size, int intr, const char *name, const struct blkdev_ops *ops)
 {
     KALLOC(struct blkdev, dev);
     assert(dev != NULL);
 
-    blkdev_init(dev, devid, intr, size, name, ops);
+    blkdev_init(dev, devid, size, sector_size, intr, name, ops);
 
     return dev;
 }
 
-void blkdev_init(struct blkdev *dev, int devid, int intr, unsigned long size,
-                   const char *name, const struct blkdev_ops *ops)
+void blkdev_init(struct blkdev *dev, int devid, unsigned long size, uint64 sector_size, int intr, const char *name, const struct blkdev_ops *ops)
 {
     assert(dev != NULL);
     assert(name != NULL);
@@ -35,6 +33,7 @@ void blkdev_init(struct blkdev *dev, int devid, int intr, unsigned long size,
     dev->devid = devid;
     dev->intr = intr;
     dev->size = size;
+    dev->sector_size = sector_size;
     dev->ops = ops;
 
     snprintf(dev->name, BLKDEV_NAME_MAX_LEN, "%s%d", name, intr);

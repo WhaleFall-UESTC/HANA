@@ -7,7 +7,23 @@
 #include <lwext4/ext4.h>
 #include <lwext4/ext4_blockdev.h>
 
-int ext4_init(void);
+/**
+ * File system device structure.
+ */
+struct fs_dev {
+    struct ext4_blockdev ext4_blkdev;
+    struct ext4_blockdev_iface ext4_blkdev_if;
+    struct blkdev *blkdev;
+};
+
+#define get_blkdev_from_blkext4(bdev) (container_of((bdev), struct fs_dev, ext4_blkdev)->blkdev)
+
+#define debug_ext4(fmt, args...) \
+    debug("[Ext4] " fmt, ##args)
+#define error_ext4(fmt, args...) \
+    error("[Ext4] " fmt, ##args)
+
+int fs_blk_mount_ext4(struct blkdev* blkdev, const char* mountpoint);
 int dir_open(struct ext4_dir *dir, const char *path);
 int fclose(struct ext4_file *file);
 int fname(struct ext4_file *f, char *path);
