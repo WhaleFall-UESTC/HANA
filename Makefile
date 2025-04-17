@@ -12,7 +12,7 @@ else ifeq ($(ARCH), loongarch)
 # Newlib does not support LoongArch yet
 TOOLPREFIX ?= loongarch64-unknown-linux-gnu-
 QEMU ?= qemu-system-loongarch64
-LOONGARCH_CFLAGS = -march=loongarch64 -mabi=lp64
+LOONGARCH_CFLAGS = -march=loongarch64
 LOONGARCH_CFLAGS += -DARCH_LOONGARCH
 
 else
@@ -40,7 +40,7 @@ CFLAGS += -Wno-unused-variable -Wno-unused-function
 CFLAGS += -DDEBUG
 
 ASFLAGS = $(CFLAGS) -D__ASSEMBLY__
-LDFLAGS = -nostdlib -T $(KERNEL_SRC)/kernel.ld
+LDFLAGS = -nostdlib -T $(ARCH_SRC)/kernel.ld
 
 
 SRC_S = $(shell find $(ARCH_SRC) -type f -name *.S)
@@ -116,8 +116,23 @@ build: $(KERNEL)
 run: build
 	$(QEMU) $(QEMUOPTS)
 
-gdb: build .gdbinit
+gdb: build .gdbinit-$(ARCH)
 	$(QEMU) $(QEMUOPTS) -S -gdb tcp::9877
 
 
-.PHONY: all clean distclean build run gdb disk
+temp:
+	mkdir -p build/$(ARCH_SRC)/boot
+	$(CC) $(CFLAGS) -c -o build/$(ARCH_SRC)/boot/start.o $(ARCH_SRC)/boot/start.S
+	$(CC) $(CFLAGS) -c -o build/$(ARCH_SRC)/boot/main.o $(ARCH_SRC)/boot/main.S
+	$(LD) $(LDFLAGS) -o $(KERNEL) build/$(ARCH_SRC)/boot/main.o build/$(ARCH_SRC)/boot/start.o
+	$(QEMU) -S -gdb tcp::9877 -machine virt \
+			-kernel $(KERNEL) \
+			-m $(MEMORY) \
+			-smp $(SMP) \
+			-nographic \
+	
+
+	
+
+
+.PHONY: all clean distclean build run gdb disk temp
