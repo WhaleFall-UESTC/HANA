@@ -1,0 +1,12 @@
+set confirm off
+set architecture loongarch:la64
+target remote tcp:localhost:9877
+symbol-file kernel-loongarch
+set disassemble-next-line auto
+set print pretty on
+set history size 10000
+
+layout split
+b _start
+b main
+c
