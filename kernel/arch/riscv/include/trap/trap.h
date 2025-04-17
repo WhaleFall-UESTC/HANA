@@ -1,3 +1,5 @@
+#ifndef __TRAP_H__
+#define __TRAP_H__
 
 struct trapframe {
     /*   0 */ uint64 kernel_satp;   // kernel page table
@@ -158,3 +160,5 @@ log_scause(uint64 scause)
 unknown_trap:
     Log(ANSI_FG_RED, "unknown scause: %p", (void*)scause); 
 }
+
+#endif // __TRAP_H__

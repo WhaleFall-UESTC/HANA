@@ -12,16 +12,13 @@ void test_virtio() {
     char* buffer;
     struct blkdev* blkdev;
     struct blkreq* req;
-    // void* chan;
-
-    // intr_on();
     
     buffer = (char *)kalloc(1024);
     assert(buffer != NULL);
 
     blkdev = blkdev_get_by_name(VIRTIO_BLK_DEV_NAME);
     assert(blkdev != NULL);
-    log("blkdev %s found", blkdev->name);
+    PASS("blkdev %s found", blkdev->name);
 
     req = blkdev->ops->alloc(blkdev);
     assert(req != NULL);
@@ -33,20 +30,17 @@ void test_virtio() {
     req->buffer = buffer;
 
     assert(blkdev->ops->submit != NULL);
-    
-    blkdev_submit_req_wait(blkdev, req);
-    // blkdev->ops->submit(blkdev, req);
 
-    // chan = blkreq_wait_channel(req);
-    // log("blkdev %s submit write request %p", blkdev->name, chan);
+    // blkdev_submit_req_wait(blkdev, req);
+    blkdev_submit_req(blkdev, req);
     
-    // blkdev_wait_all(blkdev);
+    blkdev_wait_all(blkdev);
     if (req->status == BLKREQ_STATUS_OK) {
-        log("Write %ld bytes to sector %ld", req->size, req->sector_sta);
+        PASS("Write %ld bytes to sector %ld", req->size, req->sector_sta);
     } else {
         error("Failed to write to sector %ld", req->sector_sta);
     }
-    blkdev_free_all(blkdev);
+    // blkdev_free_all(blkdev);
     
     // blkdev->ops->free(blkdev, req);
     
@@ -60,16 +54,13 @@ void test_virtio() {
     req->size = 1024;
     req->buffer = buffer;
 
-    blkdev_submit_req_wait(blkdev, req);
+    // blkdev_submit_req_wait(blkdev, req);
+    blkdev_submit_req(blkdev, req);
 
-    // blkdev->ops->submit(blkdev, req);
-    
-    // chan = blkreq_wait_channel(req);
-    // log("blkdev %s submit read request %p", blkdev->name, chan);
-    // blkdev_wait_all(blkdev);
+    blkdev_wait_all(blkdev);
     if (req->status == BLKREQ_STATUS_OK)
     {
-        log("Read %ld bytes from sector %ld", req->size, req->sector_sta);
+        PASS("Read %ld bytes from sector %ld", req->size, req->sector_sta);
     }
     else
     {
@@ -79,7 +70,8 @@ void test_virtio() {
     // blkdev->ops->free(blkdev, req);
     // blkdev_free_all(blkdev);
 
-    assert(buffer[511] == 0x2);
+    assert(buffer[1023] == 0x2);
+    PASS("Read data: %x", buffer[1023]);
 
     kfree(buffer);
 }

@@ -12,6 +12,11 @@
 
 struct blkdev;
 
+/**
+ * blkreq is a request for block device
+ * one alloc a struct blkreq MUST free it
+ * after the request is done
+ */
 struct blkreq
 {
     // request type
@@ -23,6 +28,7 @@ struct blkreq
 
     // request info
     sector_t sector_sta;
+    // size MUST be multiple of device SECTOR size
     uint64 size;
     /**
      * Due to consistent page mapping,
@@ -58,6 +64,9 @@ struct blkreq
         (void *)__req;                \
     })
 
+#define blkreq_wakeup(req) wakeup(blkreq_wait_channel(req))
+#define blkreq_sleep(req) sleep(blkreq_wait_channel(req))
+
 struct blkdev_ops;
 
 #define BLKDEV_NAME_MAX_LEN 16
@@ -67,6 +76,7 @@ struct blkdev
     int devid;
     uint32 intr;
     unsigned long size; // blkdev capacity in bytes
+    uint64 sector_size;
     char name[BLKDEV_NAME_MAX_LEN];
     const struct blkdev_ops *ops;
     struct list_head blk_list; // list entry for block devices
@@ -98,6 +108,34 @@ static inline void blkreq_init(struct blkreq *request, struct blkdev *dev)
     request->endio = NULL;
 }
 
+static inline struct blkreq* blkreq_alloc(struct blkdev* blkdev, sector_t sector_sta, void* buffer, uint64 size, int write)
+{
+    struct blkreq* req = blkdev->ops->alloc(blkdev);
+
+    if(req == NULL)
+    {
+        debug("Failed to allocate block request");
+        return NULL;
+    }
+
+    if(write)
+        req->type = BLKREQ_TYPE_WRITE;
+    else
+        req->type = BLKREQ_TYPE_READ;
+
+    req->sector_sta = sector_sta;
+    req->size = size;
+    req->buffer = buffer;
+
+    return req;
+}
+
+static inline void blkreq_free(struct blkdev* blkdev, struct blkreq* req)
+{
+    assert(req != NULL);
+    blkdev->ops->free(blkdev, req);
+}
+
 /**
  * init block device management system
  */
@@ -106,14 +144,14 @@ void blocks_init(void);
 /**
  * alloc a block device and do initialization
  */
-struct blkdev *blkdev_alloc(int devid, unsigned long size, int intr,
-                            const char *name, const struct blkdev_ops *ops);
+struct blkdev *blkdev_alloc(int devid, unsigned long size, uint64 sector_size,
+                            int intr, const char *name, const struct blkdev_ops *ops);
 
 /**
  * initialize a block device
  */
-void blkdev_init(struct blkdev *dev, int devid, int intr, unsigned long size,
-                   const char *name, const struct blkdev_ops *ops);
+void blkdev_init(struct blkdev *dev, int devid, unsigned long size, uint64 sector_size,
+                 int intr, const char *name, const struct blkdev_ops *ops);
 
 /**
  * register block device in list
@@ -139,12 +177,18 @@ void blkdev_submit_req(struct blkdev *dev, struct blkreq *request);
 void blkdev_submit_req_wait(struct blkdev *dev, struct blkreq *request);
 
 /**
+ * end lift cycle for a blkreq, MUST be called by driver
+ * when the request is done
+ */
+void blkdev_general_endio(struct blkreq *request);
+
+/**
  * wait until all requests in request list done
  */
 void blkdev_wait_all(struct blkdev *dev);
 
 /**
- * remove and free all requests in given blkdev
+ * remove and free all requests in given blkdev that are done
  */
 void blkdev_free_all(struct blkdev *dev);
 
