@@ -67,6 +67,12 @@ typedef short int16;
 typedef char int8;
 
 typedef unsigned long sector_t;
+typedef unsigned long size_t;
+typedef long ssize_t;
+typedef long off_t;
+typedef unsigned long time_t;
+
+typedef unsigned short umode_t;
 
 #endif // __COMMON_H__
 
