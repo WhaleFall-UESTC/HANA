@@ -59,10 +59,29 @@ static inline char uart_buf_read() {
     return uart_tx_buf[(uart_tx_r++) % UART_TX_BUF_SIZE];
 }
 
+typedef int (*putchar_t)(int);
+putchar_t put_char;
+
+int uart_putc_sync(int c);
+
+#ifdef BIOS_SBI
+#include <sbi/sbi.h>
+int sbi_console_putc(int c) {
+    sbiret_t ret = sbi_console_putchar(c);
+    return ret.error == SBI_SUCCESS ? ret.value : -1;
+}
+#endif
 
 void 
 uart_init()
 {
+    #ifdef BIOS_SBI
+    put_char = sbi_console_putc;
+    return;
+    #else
+
+    put_char = uart_putc_sync;
+
     // disable interrupts
     uart_write_reg(IER, 0x00);
 
@@ -82,12 +101,13 @@ uart_init()
 
     // enable RHR, THR interrupts
     // uart_write_reg(IER, IER_RX_EN | IER_TX_EN);
+    #endif
 }
 
 // polling version, disable intr while output
 // used by kernel printf
 int
-uart_putc_sync(char c)
+uart_putc_sync(int c)
 {
     // irq_pushoff();
 
@@ -122,7 +142,7 @@ uart_start()
 
 
 void
-uart_putc(char c)
+uart_putc(int c)
 {
     // enable TX interrupt
     uart_write_reg(IER, IER_RX_EN | IER_TX_EN);

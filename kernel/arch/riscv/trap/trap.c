@@ -83,8 +83,12 @@ trap_init()
     for (int i = 0; i < NR_EXCEPTION; i++)
         exception_handler_vector[i] = NULL;
 
+    #ifdef BIOS_SBI
+    register_trap_handler(INTERRUPT, SUPERVISOR_TIMER_INTERRUPT, timer_interrupt_handler);
+    #else
     register_trap_handler(INTERRUPT, SUPERVISOR_SOFTWARE_INTERRUPT, timer_interrupt_handler);
     register_trap_handler(EXCEPTION, ENVIRONMENT_CALL_FROM_S_MODE, s_mode_ecall_handler);
+    #endif
     register_trap_handler(EXCEPTION, ENVIRONMENT_CALL_FROM_U_MODE, syscall_handler);
     register_trap_handler(INTERRUPT, SUPERVISOR_EXTERNEL_INTERRUPT, irq_response);
 }

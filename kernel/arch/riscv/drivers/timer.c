@@ -20,6 +20,32 @@ extern char timervec[];
 #define MTIMECMP(hartid) *((uint64*) CLINT_MTIMECMP(hartid))
 #define MTIME *((uint64*) CLINT_MTIME)
 
+#ifdef BIOS_SBI
+#include <sbi/sbi.h>
+
+static inline void update_time() {
+    sbi_set_timer(r_time() + INTERVAL);
+}
+
+void timer_interrupt_handler()
+{
+    log("receive timer interrupt");
+    update_time();
+
+    struct proc* p = myproc();
+    if (p && p->state == RUNNING)
+        yield();
+}
+
+void 
+timer_init() 
+{
+    update_time();
+    w_sie(r_sie() | SIE_STIE);
+}
+
+#else
+
 void
 timer_init()
 {
@@ -52,3 +78,5 @@ timer_interrupt_handler()
     if (p && p->state == RUNNING)
         yield();
 }
+
+#endif

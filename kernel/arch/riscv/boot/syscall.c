@@ -8,27 +8,7 @@
 #include <trap/context.h>
 #include <proc/proc.h>
 
-#define ARG_CASE(n) case n: return tf->a##n
-
-uint64 
-argraw(int n)
-{
-    struct proc* p = myproc();
-    struct trapframe *tf = p->trapframe;
-    switch (n) {
-        ARG_CASE(0);
-        ARG_CASE(1);
-        ARG_CASE(2);
-        ARG_CASE(3);
-        ARG_CASE(4);
-        ARG_CASE(5);
-    }
-    panic("n: %d", n);
-    return -1;
-}
-
 // extern uint64 sys_fork();
-
 
 static uint64 (*syscalls[NR_SYSCALL])(void) = {
     // [SYS_fork] sys_fork,

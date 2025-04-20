@@ -1,0 +1,75 @@
+ra             0x8000e5d8       0x8000e5d8
+sp             0x80047ec0       0x80047ec0
+gp             0x0      0x0
+tp             0x80048000       0x80048000
+t0             0x0      0
+t1             0x2      2
+t2             0x1000   4096
+fp             0x80047f00       0x80047f00
+s1             0x1      1
+a0             0x0      0                       // hartid
+a1             0x87e00000       2279604224      // phys_addr of DTB
+a2             0x7      7
+a3             0x19     25
+a4             0x80     128
+a5             0x1      1
+a6             0x1      1
+a7             0x5      5
+s2             0x80200000       2149580800
+s3             0x0      0
+s4             0x87e00000       2279604224
+s5             0x0      0
+s6             0x8000000a00006800       -9223371993905076224
+s7             0x1      1
+s8             0x2000   8192
+s9             0x80043710       2147759888
+s10            0x0      0
+s11            0x0      0
+t3             0x80047f00       2147778304
+t4             0x8001ee2c       2147610156
+t5             0xe4     228
+t6             0x4      4
+pc             0x80200000       0x80200000 <_start>
+
+sstatus        0x8000000200006000       -9223372028264816640
+// FS:0b11  SD:1  SPP:0  SIE:0  SPIE:0
+// disable intr sret will enter U mode, intr will be still off 
+sie            0x0      0
+// disable all interrupts
+stvec          0x80200000       2149580800
+scounteren     0x7      7
+senvcfg        0x0      0
+sscratch       0x0      0
+sepc           0x0      0
+scause         0x0      0
+stval          0x0      0
+sip            0x0      0
+satp           0x0      0
+// disable page table
+
+
+mstatus        0x8000000a00006080       SD:1 VM:00 MXR:0 PUM:0 MPRV:0 XS:0 FS:3 MPP:0 HPP:0 SPP:0 MPIE:1 HPIE:0 SPIE:0 UPIE:0 MIE:0 HIE:0 SIE:0 UIE:0
+// disable intr, MPP:0b00 U mode, MPIE:1
+misa           0x80000000001411ad       RV64ACDFHIMSU
+medeleg        0xf0b509 15774985
+// 0  Instruction address misaligned
+// 3  Breakpoint
+// 8  Ecall from U mode
+// 10 Illegal instruction
+// 12 Instruction page fault
+// 13 Load page fault
+// 15 Store/AMO page fault
+// 20 Instruction access fault
+mideleg        0x1666   5734
+// 1  Supervisor Software Interrupt (SSI)
+// 2  Supervisor Timer Interrupt (STI)
+// 5  Supervisor External Interrupt (SEI)
+// 9  Machine External Interrupt (MEI)
+mie            0x8      8
+mtvec          0x800004f0       2147484912
+mscratch       0x80048000       2147778560
+mepc           0x80200000       2149580800
+mcause         0x3      3
+mtval          0x800107e4       2147551204
+mip            0x0      0
+
