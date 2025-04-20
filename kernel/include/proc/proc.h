@@ -3,6 +3,7 @@
 
 #ifdef ARCH_RISCV
 #include <trap/context.h>
+#include <trap/trap.h>
 #endif
 
 #ifndef __INTERRUPT_H__

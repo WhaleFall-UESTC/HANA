@@ -74,5 +74,27 @@ typedef unsigned long time_t;
 
 typedef unsigned short umode_t;
 
+#define __same_type(a, b) __builtin_types_compatible_p(typeof(a), typeof(b))
+#define BUILD_BUG_ON_ZERO(e) ((int)(sizeof(struct { int:(-!!(e)); })))
+
+#define __force	__attribute__((force))
+
+#define metamacro_head(...) metamacro_head_(__VA_ARGS__, 0)
+#define metamacro_concat_(A, B) A ## B
+#define metamacro_concat(A, B) metamacro_concat_(A, B)
+#define metamacro_at(N,...) metamacro_concat(metamacro_at, N)(__VA_ARGS__)
+#define metamacro_inc(VAL) metamacro_at(VAL, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21)
+#define metamacro_dec(VAL) metamacro_at(VAL, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19)
+
+#define metamacro_head_(First, ...) First
+
+#define metamacro_at0(...) metamacro_head(__VA_ARGS__)
+#define metamacro_at1(_0, ...) metamacro_head(__VA_ARGS__)
+#define metamacro_at2(_0, _1, ...) metamacro_head(__VA_ARGS__)
+#define metamacro_at3(_0, _1, _2, ...) metamacro_head(__VA_ARGS__)
+#define metamacro_at4(_0, _1, _2, _3, ...) metamacro_head(__VA_ARGS__)
+#define metamacro_at5(_0, _1, _2, _3, _4, ...) metamacro_head(__VA_ARGS__)
+#define metamacro_at6(_0, _1, _2, _3, _4, _5, ...) metamacro_head(__VA_ARGS__)
+
 #endif // __COMMON_H__
 
