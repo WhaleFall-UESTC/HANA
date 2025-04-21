@@ -8,21 +8,20 @@ WhaleOS 是个暂时的名字，在将仓库移到 gitlab 之前会改
 ```bash
 sudo apt-get install autoconf automake autotools-dev curl python3 python3-pip python3-tomli libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev libexpat-dev ninja-build git cmake libglib2.0-dev libslirp-dev
 
-git clone --recursive https://github.com/riscv-collab/riscv-gnu-toolchain.git
-cd riscv-gnu-toolchain
-
-./configure --prefix=/opt/riscv
-make -j8
+git clone --recursive https://github.com/riscv-collab/riscv-gnu-toolchain.git \
+&& cd riscv-gnu-toolchain \
+&& ./configure --prefix=/opt/riscv \
+&& make -j8 \
+&& sudo make install
 ```
-然后将 `/opt/riscv/bin` 添加到 `$PATH`
-<br><br>
-亦可以选择从[中科院软件所 ISCAS 提供的镜像](https://mirror.iscas.ac.cn/riscv-toolchains/release/riscv-collab/riscv-gnu-toolchain/LatestRelease/)获取 riscv-gnu-toolchain 的夜间版本，选择 `[riscv64-elf-ubuntu-[version]-gcc-nightly-[date]-nightly.tar.xz` 一项下载然后将其 `tar -Jxvf` 到 `/opt` 下
+<br>
+亦可以选择从[中科院软件所 ISCAS 提供的镜像](https://mirror.iscas.ac.cn/riscv-toolchains/release/riscv-collab/riscv-gnu-toolchain/LatestRelease/)获取 riscv-gnu-toolchain，选择 `[riscv64-elf-ubuntu-[version]-gcc-nightly-[date]-nightly.tar.xz` 一项下载然后将其 `tar -Jxvf` 到 `/opt` 下，并添加到 PATH
 <br><br>
 
 ### qemu-system-*
 ```bash
 cd ~/Downloads
-wget https://gitlab.educg.net/wangmingjian/os-contest-2024-image/-/raw/master/qemu-9.2.1.tar.xz?inline=false -O qemu-9.2.1.tar.xz \
+wget wget https://download.qemu.org/qemu-9.2.1.tar.xz -O qemu-9.2.1.tar.xz \
     && tar xf qemu-9.2.1.tar.xz \
     && cd qemu-9.2.1 \
     && ./configure \
@@ -34,43 +33,33 @@ wget https://gitlab.educg.net/wangmingjian/os-contest-2024-image/-/raw/master/qe
 <br>
 
 ### loongarch-unknown-linux-gnu
-整个环境配资可以直接从[中科大的编译原理课程](https://ustc-compiler-principles.github.io/2023/lab3/environment/)界面获取
-<br>
-但是赛方提供了[环境](https://gitlab.educg.net/wangmingjian/os-contest-2024-image/)，~~现在才注意到~~
+赛方提供了[环境](https://gitlab.educg.net/wangmingjian/os-contest-2024-image/)
 ```bash
 cd ~/Downloads
-wget https://github.com/loongson/build-tools/releases/download/2022.05.29/loongarch64-clfs-5.0-cross-tools-gcc-full.tar.xz
-sudo tar -vxf loongarch64-clfs-5.0-cross-tools-gcc-full.tar.xz -C /opt
-echo "\n\n# loongarch cross-tools" >> $RC
-echo "CC_PREFIX=/opt/cross-tools" >> $RC
-echo "export PATH=$PATH:$CC_PREFIX/bin" >> $RC
-echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CC_PREFIX/lib" >> $RC
-echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CC_PREFIX/loongarch64-unknown-linux-gnu/lib/" >> $RC
+wget https://github.com/loongson/build-tools/releases/download/2022.05.29/loongarch64-clfs-5.0-cross-tools-gcc-full.tar.xz \
+&& sudo tar -vxf loongarch64-clfs-5.0-cross-tools-gcc-full.tar.xz -C /opt \
+&& echo "\n\n# loongarch cross-tools" >> $RC \
+&& echo "CC_PREFIX=/opt/cross-tools" >> $RC \
+&& echo 'export PATH=$PATH:$CC_PREFIX/bin' >> $RC \
+&& echo 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CC_PREFIX/lib' >> $RC \
+&& echo 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CC_PREFIX/loongarch64-unknown-linux-gnu/lib/' >> $RC \
 source $RC
 ```
 
 ### loongarch-unknown-linux-gnu-gdb
-从[中科大的云盘](https://rec.ustc.edu.cn/share/d8c57580-669d-11ee-8794-d542ef642531)下 gdb 的压缩包
 ```bash
-wget https://recstore.ustc.edu.cn/file/20230912_652adc3a749c7598bc700945169de89d?Signature=8H0F6jLz4Tn5...sition=attachment%3Bfilename%3D%22gdb.tar.gz%22&storage=moss&filename=gdb.tar.gz&download=download
 cd ~/Downloads
-sudo tar xaf gdb.tar.gz -C /opt
-echo "export PATH=$PATH:/opt/gdb/bin" >> $RC && source $RC
+git clone https://github.com/foxsen/binutils-gdb \
+&& cd inutils-gdb \
+&& git checkout loongarch-v2022-03-10 \
+&& mkdir build \
+&& cd build \
+&& ../configure --target=loongarch64-unknown-linux-gnu --prefix=/opt/gdb --disable-werror --without-python \
+&& make -j8 \
+&& make install
 ```
 <br>
 
-### qemu-system-loongarch64
-```bash
-git clone https://github.com/loongson/qemu.git -b tcg-dev
-cd qemu
-mkdir build
-cd build
-../configure --prefix=/usr --target-list=loongarch64-linux-user \
-            --disable-werror --static --disable-docs
-make -j8
-sudo make install
-```
-<br><br>
 
 ## Run & Debug
 ```bash

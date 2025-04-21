@@ -2,41 +2,77 @@
 #define __FS_H__
 
 #include <common.h>
-#include <io/blk.h>
+#include <locking/spinlock.h>
 
-#include <lwext4/ext4.h>
-#include <lwext4/ext4_blockdev.h>
-
-/**
- * File system device structure.
- */
-struct fs_dev {
-    struct ext4_blockdev ext4_blkdev;
-    struct ext4_blockdev_iface ext4_blkdev_if;
-    struct blkdev *blkdev;
+struct path {
+    int p_len;
+    char p_name[0];
 };
 
-#define get_blkdev_from_blkext4(bdev) (container_of((bdev), struct fs_dev, ext4_blkdev)->blkdev)
+struct inode_operations;
 
-#define debug_ext4(fmt, args...) \
-    debug("[Ext4] " fmt, ##args)
-#define error_ext4(fmt, args...) \
-    error("[Ext4] " fmt, ##args)
+struct inode
+{
+    umode_t i_mode; // file mode
+    off_t i_size;   // file size
 
-int fs_blk_mount_ext4(struct blkdev* blkdev, const char* mountpoint);
-int dir_open(struct ext4_dir *dir, const char *path);
-int fclose(struct ext4_file *file);
-int fname(struct ext4_file *f, char *path);
-int fopen(struct ext4_file *file, const char *path, uint32_t flags);
-int fread(struct ext4_file *file, uint64 buf, uint off, uint size, int *rcnt);
-int fseek(struct ext4_file *file, uint off, uint origin);
-int fkstatat(char *path, struct kstat *kst, int dirfd);
-int funlink(const char *path);
-int fwrite(struct ext4_file *file, uint64 buf, uint off, uint size, int *wcnt);
-int fwritev(struct ext4_file *f, struct iovec iov[], int iovcnt, uint off);
-int freadv(struct ext4_file *f, struct iovec iov[], int iovcnt, uint off);
-uint32 get_inode_type(struct ext4_file *file);
-int mkdir(const char *path);
-int dir_close(struct ext4_dir *dir);
+    const struct inode_operations *i_op; // inode operations
+
+    spinlock_t i_lock;   // inode lock
+    uint32_t i_refcount; // reference count
+
+    time_t i_atime; // last access time
+    time_t i_mtime; // last modification time
+    time_t i_ctime; // last status change time
+};
+
+struct dentry;
+
+/**
+ * TODO: Let the interfaces accept inode and dentry as a parameter rather than path
+ * This may lead to a lot of changes in lwext4
+ */
+
+struct inode_operations
+{
+    // int (*readlink) (struct dentry *, char __user *,int);
+    int (*link)(struct path *, struct inode *, struct path *);
+    int (*unlink)(struct inode *, struct path *);
+    int (*symlink)(struct inode *, struct path *, struct path *);
+    int (*mkdir)(struct inode *, struct path *, umode_t);
+    int (*rmdir)(struct inode *, struct path *);
+    int (*rename)(struct path*, struct path*);
+    // int (*rename)(struct inode *, struct path *,
+    //               struct inode *, struct path *, unsigned int);
+    // int (*setattr)(struct path *, struct iattr *);
+    int (*getattr)(const struct path *, struct stat *);
+    // ssize_t (*listxattr)(struct path *, char *, size_t);
+};
+
+// struct inode_operations {
+// int (*permission) (struct inode *, int);
+
+// 	int (*readlink) (struct dentry *, char __user *,int);
+
+// 	int (*link) (struct dentry *,struct inode *,struct dentry *);
+// 	int (*unlink) (struct inode *,struct dentry *);
+// 	int (*symlink) (struct inode *,struct dentry *,const char *);
+// 	int (*mkdir) (struct inode *,struct dentry *,umode_t);
+// 	int (*rmdir) (struct inode *,struct dentry *);
+// int (*mknod) (struct inode *,struct dentry *,umode_t,dev_t);
+// 	int (*rename) (struct inode *, struct dentry *,
+// 			struct inode *, struct dentry *, unsigned int);
+//     int (*setattr) (struct dentry *, struct iattr *);
+//     int (*getattr) (const struct path *, struct kstat *, uint32, unsigned int);
+//     ssize_t (*listxattr) (struct dentry *, char *, size_t);
+// };
+
+struct file_system
+{
+    const char *name;
+    int (*mount)(struct blkdev *, const char *);
+    // int (*umount)(const char *mount_point);
+    // int (*statfs)(const char *mount_point, struct statfs *);
+};
 
 #endif // __FS_H__

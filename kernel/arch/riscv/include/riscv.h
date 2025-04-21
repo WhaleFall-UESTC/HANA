@@ -401,4 +401,3 @@ sfence_vma()
       : "r"(&(var)), "r"(value) \
       : "memory");              \
 })
-
