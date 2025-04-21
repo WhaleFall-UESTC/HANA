@@ -31,13 +31,14 @@ KERNEL_SRC = kernel
 ARCH_SRC = $(KERNEL_SRC)/arch/$(ARCH)
 
 
-CFLAGS = -Wall -Werror -O -fno-omit-frame-pointer -ggdb
+CFLAGS = -Wall -Werror -O -fno-omit-frame-pointer -ggdb -nostdlib
 CFLAGS += $(if $(RISCV_CFLAGS),$(RISCV_CFLAGS),$(LOONGARCH_CFLAGS)) 
 CFLAGS += -I $(KERNEL_SRC)/include -I $(ARCH_SRC)/include -I $(KERNEL_SRC)/test/include
 # CFLAGS += -MD -MP -MF $(BUILD_DIR)/$(@F).d
 CFLAGS += -MD -MP -MF $@.d
 CFLAGS += -Wno-unused-variable -Wno-unused-function
-CFLAGS += -DDEBUG
+CFLAGS += -DDEBUG 
+CFLAGS += -DBIOS_SBI
 
 ASFLAGS = $(CFLAGS) -D__ASSEMBLY__
 LDFLAGS = -nostdlib -T $(ARCH_SRC)/kernel.ld
@@ -100,7 +101,7 @@ MEMORY := 128M
 SMP := 1
 QEMUOPTS = 	$(QEUMDBG) \
 			-machine virt \
-			-bios none \
+			-bios default \
 			-kernel $(KERNEL) \
 			-m $(MEMORY) \
 			-smp $(SMP) \
@@ -118,21 +119,6 @@ run: build
 
 gdb: build .gdbinit-$(ARCH)
 	$(QEMU) $(QEMUOPTS) -S -gdb tcp::9877
-
-
-temp:
-	mkdir -p build/$(ARCH_SRC)/boot
-	$(CC) $(CFLAGS) -c -o build/$(ARCH_SRC)/boot/start.o $(ARCH_SRC)/boot/start.S
-	$(CC) $(CFLAGS) -c -o build/$(ARCH_SRC)/boot/main.o $(ARCH_SRC)/boot/main.S
-	$(LD) $(LDFLAGS) -o $(KERNEL) build/$(ARCH_SRC)/boot/main.o build/$(ARCH_SRC)/boot/start.o
-	$(QEMU) -S -gdb tcp::9877 -machine virt \
-			-kernel $(KERNEL) \
-			-m $(MEMORY) \
-			-smp $(SMP) \
-			-nographic \
-	
-
-	
 
 
 .PHONY: all clean distclean build run gdb disk temp

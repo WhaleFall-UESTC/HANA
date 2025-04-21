@@ -3,6 +3,21 @@
 .section .text._start
 .global _start
 _start:
+#ifdef BIOS_SBI
+    addi tp, a0, 0
+
+    # set initial stack
+    la sp, init_stack
+    li t0, 4096
+    mul a0, tp, t0
+    add a0, a0, t0
+    add sp, sp, a0
+
+    call timer_init
+
+    j main
+
+#else
     # keep each CPU's hartid in its tp
     csrr tp, mhartid
 
@@ -45,4 +60,4 @@ _start:
 
     # enter S mode and jump to main
     mret
-
+#endif

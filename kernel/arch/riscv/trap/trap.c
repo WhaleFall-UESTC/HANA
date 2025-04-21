@@ -83,8 +83,12 @@ trap_init()
     for (int i = 0; i < NR_EXCEPTION; i++)
         exception_handler_vector[i] = NULL;
 
+    #ifdef BIOS_SBI
+    register_trap_handler(INTERRUPT, SUPERVISOR_TIMER_INTERRUPT, timer_interrupt_handler);
+    #else
     register_trap_handler(INTERRUPT, SUPERVISOR_SOFTWARE_INTERRUPT, timer_interrupt_handler);
     register_trap_handler(EXCEPTION, ENVIRONMENT_CALL_FROM_S_MODE, s_mode_ecall_handler);
+    #endif
     register_trap_handler(EXCEPTION, ENVIRONMENT_CALL_FROM_U_MODE, syscall_handler);
     register_trap_handler(INTERRUPT, SUPERVISOR_EXTERNEL_INTERRUPT, irq_response);
 }
@@ -174,4 +178,67 @@ syscall_handler()
     intr_on();
 
     syscall();
+}
+
+
+
+
+#define CASE_CAUSE(code) \
+case code: \
+    Log(ANSI_FG_RED, "unregistered scause: %s %p",  #code, (void*)scause); \
+    break
+
+
+void __attribute__((unused))
+log_scause(uint64 scause)
+{
+    uint64 code = scause;
+    if (scause & (1L << 63)) { // 中断处理
+        code &= 0xff;
+        switch (code) {
+            CASE_CAUSE(USER_SOFTWARE_INTERRUPT);
+            CASE_CAUSE(SUPERVISOR_SOFTWARE_INTERRUPT);
+            CASE_CAUSE(RESERVED_INTERRUPT_1);
+            CASE_CAUSE(MACHINE_SOFTWARE_INTERRUPT);
+            CASE_CAUSE(USER_TIMER_INTERRUPT);
+            CASE_CAUSE(SUPERVISOR_TIMER_INTERRUPT);
+            CASE_CAUSE(RESERVED_INTERRUPT_2);
+            CASE_CAUSE(MACHINE_TIMER_INTERRUPT);
+            CASE_CAUSE(USER_EXTERNAL_INTERRUPT);
+            CASE_CAUSE(SUPERVISOR_EXTERNEL_INTERRUPT);
+            CASE_CAUSE(RESERVED_INTERRUPT_3);
+            CASE_CAUSE(MACHINE_EXTERNAL_INTERRUPT);
+            CASE_CAUSE(RESERVED_INTERRUPT_4);
+            default:
+                goto unknown_trap;
+        }
+    }
+    else { 
+        switch (code) {
+            CASE_CAUSE(INTERRUPT_ADDRESS_MISALIGNED);
+            CASE_CAUSE(INSTRUCTION_ACCESS_FAULT);
+            CASE_CAUSE(ILLEGAL_INSTRUCTIONS);
+            CASE_CAUSE(BREAKPOINT);
+            CASE_CAUSE(LOAD_ADDRESS_MISSALIGNED);
+            CASE_CAUSE(LOAD_ACCESS_FAULT);
+            CASE_CAUSE(STORE_AMO_ADDRESS_MISSALIGNED);
+            CASE_CAUSE(STORE_AMO_ACCESS_FAULT);
+            CASE_CAUSE(ENVIRONMENT_CALL_FROM_U_MODE);
+            CASE_CAUSE(ENVIRONMENT_CALL_FROM_S_MODE);
+            CASE_CAUSE(RESERVED_EXCEPTION_1);
+            CASE_CAUSE(ENVIRONMENT_CALL_FROM_M_MODE);
+            CASE_CAUSE(INSTRUCTION_PAGE_FAULT);
+            CASE_CAUSE(LOAD_PAGE_FAULT);
+            CASE_CAUSE(RESERVED_EXCEPTION_2);
+            CASE_CAUSE(STORE_AMO_PAGE_FAULT);
+            CASE_CAUSE(RESERVED_EXCEPTION_3);
+            default:
+                goto unknown_trap;
+        }
+    }
+
+    return;
+
+unknown_trap:
+    Log(ANSI_FG_RED, "unknown scause: %p", (void*)scause); 
 }
