@@ -5,6 +5,11 @@
 
 static inline void find_avail_fd(struct files_struct *fdt)
 {
+    if(!fdt->nr_avail_fd) {
+        fdt->next_fd = NR_OPEN;
+        return;
+    }
+
     for(fd_t fd = 0; fd < NR_OPEN; fd++)
     {
         if (fdt->fd[fd] == NULL)
@@ -31,6 +36,9 @@ fd_t fd_alloc(struct files_struct *fdt)
         error("too much open files for porc %s", myproc()->name);
         return -1;
     }
+
+    assert(fdt->fd[fd] == NULL);
+
     fdt->fd[fd] = kcalloc(1, sizeof(struct file));
     if (fdt->fd[fd] == NULL)
     {
@@ -38,6 +46,12 @@ fd_t fd_alloc(struct files_struct *fdt)
         return -1;
     }
 
+    find_avail_fd(fdt);
+
     fdt->nr_avail_fd--;
     return fd;
+}
+
+void fd_free(struct files_struct *fdt, fd_t fd) {
+    
 }

@@ -94,15 +94,15 @@ struct mountpoint
 
 int mount(const char *blkdev_name, struct mountpoint *mount_p);
 
-extern struct mountpoint root_mp, mount_table[NR_MOUNT];
-extern int mount_count = 0;
+extern struct mountpoint mount_table[NR_MOUNT], *root_mp;
+extern int mount_count;
 
-#define mount_root(blkname, filesystem)  \
-    do                                   \
-    {                                    \
-        root_mp.mountpoint = MOUNT_ROOT; \
-        root_mp.fs = &(filesystem);      \
-        mount(blkname, &root_mp);        \
+#define mount_root(blkname, filesystem)   \
+    do                                    \
+    {                                     \
+        root_mp->mountpoint = MOUNT_ROOT; \
+        root_mp->fs = &(filesystem);      \
+        mount(blkname, root_mp);          \
     } while (0)
 #define mount_addp(blkname, filesystem, mountpoint)         \
     do                                                      \

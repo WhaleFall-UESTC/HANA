@@ -48,10 +48,17 @@ struct files_struct {
 void fdt_init(struct files_struct *files);
 
 /**
- * Allocate a file descriptor for the current process.
- * @param fdt The files_struct of the current process.
+ * Allocate a file descriptor in given files_struct.
+ * @param fdt The files_struct given.
  * @return The allocated file descriptor, or -1 on error.
  */
 fd_t fd_alloc(struct files_struct *fdt);
+
+/**
+ * Free a file descriptor in given files_struct.
+ * @param fdt The files_struct given.
+ * @param fd The file descriptor to free.
+ */
+void fd_free(struct files_struct *fdt, fd_t fd);
 
 #endif // __FILE_H__
