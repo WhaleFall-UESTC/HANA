@@ -15,7 +15,6 @@ sbiret_t sbi_ecall(int ext_id, int func_id, uint64 arg0, uint64 arg1, uint64 arg
 #define SBI_FUNC_CONSOLE_PUTCHAR 0
 #define SBI_FUNC_CONSOLE_GETCHAR 1
 #define SBI_FUNC_SET_TIMER 0
-#define SBI_FUNC_GET_TIME 1
 
 #define SBI_SUCCESS 0
 #define SBI_ERR_FAILED -1
