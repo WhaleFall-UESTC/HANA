@@ -828,9 +828,7 @@ static inline void* ext4_malloc(uint64_t size)
 
 static inline void* ext4_calloc(uint64_t count, uint64_t size)
 {
-	void* ptr = kalloc(count * size);
-	memset(ptr, 0, count * size);
-	return ptr;
+	return kcalloc(count, size);
 }
 
 static inline void ext4_free(void* ptr)

@@ -2,6 +2,7 @@
 #include <mm/buddy.h>
 #include <mm/slab.h>
 #include <debug.h>
+#include <klib.h>
 
 struct page* pages;
 
@@ -28,6 +29,14 @@ kalloc(uint64 sz)
         return buddy_alloc(sz);
     else
         return slab_alloc(sz);
+}
+
+void *
+kcalloc(uint64 nr, uint64 sz)
+{
+    void* addr = kalloc(nr*sz);
+    memset(addr, 0, nr*sz);
+    return addr;
 }
 
 void

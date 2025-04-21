@@ -17,7 +17,7 @@
 #define EXT4_BUF_SIZE 512
 
 int
-fs_blk_mount_ext4(struct blkdev * blkdev, const char *mountpoint)
+ext4_fs_mount(struct blkdev * blkdev, const char *mountpoint)
 {
 	char buffer[MAX_EXT4_BLOCKDEV_NAME + 1];
 	int ret;
@@ -73,6 +73,31 @@ fs_blk_mount_ext4(struct blkdev * blkdev, const char *mountpoint)
 		error_ext4("cache write back error! ret = %d", ret);
 		return -1;
 	}
+
+	return 0;
+}
+
+int ext4_fs_ifget(struct inode* inode, struct file* file) {
+	if ((file->f_flags & O_DIRECTORY) == O_DIRECTORY) {
+		struct ext4_dir *dir;
+		dir = (struct ext4_dir *)kalloc(sizeof(struct ext4_dir));
+		if (dir == NULL) {
+			error_ext4("ext4_dir alloc error!");
+			return -1;
+		}
+		file->f_private = (void*)dir;
+	} else {
+		struct ext4_file *ext4_file = (struct ext4_file *)kalloc(sizeof(struct ext4_file));
+		if (ext4_file == NULL) {
+			error_ext4("ext4_file alloc error!");
+			return -1;
+		}
+		file->f_private = (void*)ext4_file;
+	}
+
+	inode->i_op = &ext4_file_iops;
+	file->f_op = &ext4_file_fops;
+	file->f_inode = inode;
 
 	return 0;
 }
@@ -307,5 +332,6 @@ const struct file_operations ext4_file_fops = {
 
 const struct file_system ext4_fs = {
 	.name = "ext4",
-	.mount = fs_blk_mount_ext4
+	.mount = ext4_fs_mount,
+	.ifget = ext4_fs_ifget,
 };

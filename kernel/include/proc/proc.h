@@ -22,6 +22,7 @@ struct proc {
     struct trapframe* trapframe;
     struct context context;
 
+    struct files_struct* fdt;
 
     int killed;
     void* chan;     // proc sleep on which channel

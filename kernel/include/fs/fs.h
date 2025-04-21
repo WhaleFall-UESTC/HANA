@@ -4,7 +4,8 @@
 #include <common.h>
 #include <locking/spinlock.h>
 
-struct path {
+struct path
+{
     int p_len;
     char p_name[0];
 };
@@ -41,7 +42,7 @@ struct inode_operations
     int (*symlink)(struct inode *, struct path *, struct path *);
     int (*mkdir)(struct inode *, struct path *, umode_t);
     int (*rmdir)(struct inode *, struct path *);
-    int (*rename)(struct path*, struct path*);
+    int (*rename)(struct path *, struct path *);
     // int (*rename)(struct inode *, struct path *,
     //               struct inode *, struct path *, unsigned int);
     // int (*setattr)(struct path *, struct iattr *);
@@ -67,12 +68,49 @@ struct inode_operations
 //     ssize_t (*listxattr) (struct dentry *, char *, size_t);
 // };
 
+struct file;
+
 struct file_system
 {
     const char *name;
     int (*mount)(struct blkdev *, const char *);
     // int (*umount)(const char *mount_point);
     // int (*statfs)(const char *mount_point, struct statfs *);
+    /**
+     * get fs specific inode and file
+     * it init ops ptr and private data, but DO NOT alloc inode and file
+     */
+    int (*ifget)(struct inode *, struct file *);
 };
+
+struct mountpoint
+{
+    const char *mountpoint;
+    struct file_system *fs;
+};
+
+#define NR_MOUNT 16
+#define MOUNT_ROOT "/"
+
+int mount(const char *blkdev_name, struct mountpoint *mount_p);
+
+extern struct mountpoint root_mp, mount_table[NR_MOUNT];
+extern int mount_count = 0;
+
+#define mount_root(blkname, filesystem)  \
+    do                                   \
+    {                                    \
+        root_mp.mountpoint = MOUNT_ROOT; \
+        root_mp.fs = &(filesystem);      \
+        mount(blkname, &root_mp);        \
+    } while (0)
+#define mount_addp(blkname, filesystem, mountpoint)         \
+    do                                                      \
+    {                                                       \
+        mount_table[mount_count].mountpoint = (mountpoint); \
+        mount_table[mount_count].fs = &(filesystem);        \
+        mount(blkname, &mount_table[mount_count]);          \
+        mount_count++;                                      \
+    } while (0)
 
 #endif // __FS_H__
