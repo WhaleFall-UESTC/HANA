@@ -42,9 +42,9 @@
 
 #include <fs/ext4/lwext4/ext4_bitmap.h>
 
-void ext4_bmap_bits_free(uint8_t *bmap, uint32_t sbit, uint32_t bcnt)
+void ext4_bmap_bits_free(uint8 *bmap, uint32 sbit, uint32 bcnt)
 {
-	uint32_t i = sbit;
+	uint32 i = sbit;
 
 	while (i & 7) {
 
@@ -61,14 +61,14 @@ void ext4_bmap_bits_free(uint8_t *bmap, uint32_t sbit, uint32_t bcnt)
 
 #if CONFIG_UNALIGNED_ACCESS
 	while (bcnt >= 32) {
-		*(uint32_t *)bmap = 0;
+		*(uint32 *)bmap = 0;
 		bmap += 4;
 		bcnt -= 32;
 		sbit += 32;
 	}
 
 	while (bcnt >= 16) {
-		*(uint16_t *)bmap = 0;
+		*(uint16 *)bmap = 0;
 		bmap += 2;
 		bcnt -= 16;
 		sbit += 16;
@@ -87,11 +87,11 @@ void ext4_bmap_bits_free(uint8_t *bmap, uint32_t sbit, uint32_t bcnt)
 	}
 }
 
-int ext4_bmap_bit_find_clr(uint8_t *bmap, uint32_t sbit, uint32_t ebit,
-			   uint32_t *bit_id)
+int ext4_bmap_bit_find_clr(uint8 *bmap, uint32 sbit, uint32 ebit,
+			   uint32 *bit_id)
 {
-	uint32_t i;
-	uint32_t bcnt = ebit - sbit;
+	uint32 i;
+	uint32 bcnt = ebit - sbit;
 
 	i = sbit;
 
@@ -114,7 +114,7 @@ int ext4_bmap_bit_find_clr(uint8_t *bmap, uint32_t sbit, uint32_t ebit,
 
 #if CONFIG_UNALIGNED_ACCESS
 	while (bcnt >= 32) {
-		if (*(uint32_t *)bmap != 0xFFFFFFFF)
+		if (*(uint32 *)bmap != 0xFFFFFFFF)
 			goto finish_it;
 
 		bmap += 4;
@@ -123,7 +123,7 @@ int ext4_bmap_bit_find_clr(uint8_t *bmap, uint32_t sbit, uint32_t ebit,
 	}
 
 	while (bcnt >= 16) {
-		if (*(uint16_t *)bmap != 0xFFFF)
+		if (*(uint16 *)bmap != 0xFFFF)
 			goto finish_it;
 
 		bmap += 2;

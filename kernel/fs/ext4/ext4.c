@@ -5,6 +5,7 @@
 #include <fs/stat.h>
 #include <fs/dcache.h>
 #include <fs/file.h>
+#include <fs/dirent.h>
 
 #include <fs/ext4/ext4.h>
 #include <fs/ext4/ext4_blk.h>
@@ -24,7 +25,7 @@ ext4_fs_mount(struct blkdev * blkdev, const char *mountpoint)
 	struct ext4_blockdev *blockdev;
 	struct ext4_blockdev_iface* ext4_blockdev_if;
 
-	KALLOC(struct fs_dev, fs_dev);
+	KALLOC(struct ext4_fs_dev, fs_dev);
 
 	if (fs_dev == NULL)
 	{
@@ -43,7 +44,7 @@ ext4_fs_mount(struct blkdev * blkdev, const char *mountpoint)
 	ext4_blockdev_if->unlock = blockdev_unlock;
 	ext4_blockdev_if->ph_bsize = blkdev->sector_size;
 	ext4_blockdev_if->ph_bcnt = blkdev->size / blkdev->sector_size;
-	ext4_blockdev_if->ph_bbuf = (uint8_t*)kalloc(EXT4_BUF_SIZE);
+	ext4_blockdev_if->ph_bbuf = (uint8*)kalloc(EXT4_BUF_SIZE);
 
 	blockdev->bdif = ext4_blockdev_if;
 	blockdev->part_offset = 0;
@@ -134,7 +135,7 @@ static ssize_t ext4_read(struct file* file, char * buffer, size_t size, off_t * 
 	int ret;
 	size_t rcnt;
 
-	ret = ext4_fseek(ext4_file, offset, SEEK_SET);
+	ret = ext4_fseek(ext4_file, *offset, SEEK_SET);
 	if (ret != EOK) {
 		error_ext4("ext4_fseek error! ret: %d", ret);
 		return -1;
@@ -155,7 +156,7 @@ static ssize_t ext4_write(struct file* file, const char * buffer, size_t size, o
 	int ret;
 	size_t wcnt;
 
-	ret = ext4_fseek(ext4_file, offset, SEEK_SET);
+	ret = ext4_fseek(ext4_file, *offset, SEEK_SET);
 	if (ret != EOK) {
 		error_ext4("ext4_fseek error! ret: %d", ret);
 		return -1;
@@ -239,7 +240,7 @@ static int ext4_symlink(path_t path, path_t softlink_path) {
 	return ret;
 }
 
-static int ext4_link(path_t path, struct path *hardlink_path) {
+static int ext4_link(path_t path, path_t hardlink_path) {
 	int ret = ext4_flink(path, hardlink_path);
 	return ret;
 }
@@ -255,7 +256,7 @@ static int ext4_unlink(path_t path) {
 // 	return ret;
 // }
 
-static int ext4_getattr(const struct path * path, struct stat * stat) {
+static int ext4_getattr(path_t path, struct stat * stat) {
 	int ret;
 	uint32 ino;
 	struct ext4_inode inode;
@@ -289,6 +290,43 @@ static int ext4_getattr(const struct path * path, struct stat * stat) {
 	 */
 
 	return 0;
+}
+
+static int ext4_getdents64(struct file* file, struct dirent* buf, size_t len) {
+	struct ext4_dir *dir;
+	int ret;
+	size_t size;
+	const struct ext4_direntry *dentry = NULL;
+
+	if(!S_ISDIR(file->f_inode->i_mode)) {
+		error_ext4("not a directory");
+		return -1;
+	}
+
+	dir = (struct ext4_dir *)file->f_private;
+	
+	while((dentry = ext4_dir_entry_next(dir)) != NULL) {
+		if (dentry->inode == 0)
+			continue;
+
+		size = sizeof(struct dirent) + dentry->name_length + 1;
+		
+		if(len < size)
+			break;
+
+		buf->d_ino = dentry->inode;
+		buf->d_off = dir->next_off;
+		buf->d_type = fs_ftype_to_dtype(dentry->inode_type);
+		
+		memcpy(buf->d_name, dentry->name, dentry->name_length);
+		buf->d_reclen = size;
+
+		buf = (struct dirent*)((uint64)buf + size);
+		len -= size;
+		ret += size;
+	}
+
+	return ret;
 }
 
 static int ext4_mkdir(path_t path, umode_t mode) {
@@ -327,6 +365,8 @@ const struct file_operations ext4_file_fops = {
 };
 
 const struct fs_operations ext4_filesystem_ops = {
+	.mount = ext4_fs_mount,
+	.ifget = ext4_fs_ifget,
 	.link = ext4_link,
 	.unlink = ext4_unlink,
 	.symlink = ext4_symlink,

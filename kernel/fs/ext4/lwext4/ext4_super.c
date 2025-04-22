@@ -48,12 +48,12 @@
 #include <fs/ext4/lwext4/ext4_super.h>
 #include <fs/ext4/lwext4/ext4_crc32.h>
 
-uint32_t ext4_block_group_cnt(struct ext4_sblock *s)
+uint32 ext4_block_group_cnt(struct ext4_sblock *s)
 {
-	uint64_t blocks_count = ext4_sb_get_blocks_cnt(s);
-	uint32_t blocks_per_group = ext4_get32(s, blocks_per_group);
+	uint64 blocks_count = ext4_sb_get_blocks_cnt(s);
+	uint32 blocks_per_group = ext4_get32(s, blocks_per_group);
 
-	uint32_t block_groups_count = (uint32_t)(blocks_count / blocks_per_group);
+	uint32 block_groups_count = (uint32)(blocks_count / blocks_per_group);
 
 	if (blocks_count % blocks_per_group)
 		block_groups_count++;
@@ -61,23 +61,23 @@ uint32_t ext4_block_group_cnt(struct ext4_sblock *s)
 	return block_groups_count;
 }
 
-uint32_t ext4_blocks_in_group_cnt(struct ext4_sblock *s, uint32_t bgid)
+uint32 ext4_blocks_in_group_cnt(struct ext4_sblock *s, uint32 bgid)
 {
-	uint32_t block_group_count = ext4_block_group_cnt(s);
-	uint32_t blocks_per_group = ext4_get32(s, blocks_per_group);
-	uint64_t total_blocks = ext4_sb_get_blocks_cnt(s);
+	uint32 block_group_count = ext4_block_group_cnt(s);
+	uint32 blocks_per_group = ext4_get32(s, blocks_per_group);
+	uint64 total_blocks = ext4_sb_get_blocks_cnt(s);
 
 	if (bgid < block_group_count - 1)
 		return blocks_per_group;
 
-	return (uint32_t)(total_blocks - ((block_group_count - 1) * blocks_per_group));
+	return (uint32)(total_blocks - ((block_group_count - 1) * blocks_per_group));
 }
 
-uint32_t ext4_inodes_in_group_cnt(struct ext4_sblock *s, uint32_t bgid)
+uint32 ext4_inodes_in_group_cnt(struct ext4_sblock *s, uint32 bgid)
 {
-	uint32_t block_group_count = ext4_block_group_cnt(s);
-	uint32_t inodes_per_group = ext4_get32(s, inodes_per_group);
-	uint32_t total_inodes = ext4_get32(s, inodes_count);
+	uint32 block_group_count = ext4_block_group_cnt(s);
+	uint32 inodes_per_group = ext4_get32(s, inodes_per_group);
+	uint32 total_inodes = ext4_get32(s, inodes_count);
 
 	if (bgid < block_group_count - 1)
 		return inodes_per_group;
@@ -86,7 +86,7 @@ uint32_t ext4_inodes_in_group_cnt(struct ext4_sblock *s, uint32_t bgid)
 }
 
 #if CONFIG_META_CSUM_ENABLE
-static uint32_t ext4_sb_csum(struct ext4_sblock *s)
+static uint32 ext4_sb_csum(struct ext4_sblock *s)
 {
 
 	return ext4_crc32c(EXT4_CRC32_INIT, s,
@@ -163,7 +163,7 @@ bool ext4_sb_check(struct ext4_sblock *s)
 	return true;
 }
 
-static inline int is_power_of(uint32_t a, uint32_t b)
+static inline int is_power_of(uint32 a, uint32 b)
 {
 	while (1) {
 		if (a < b)
@@ -176,7 +176,7 @@ static inline int is_power_of(uint32_t a, uint32_t b)
 	}
 }
 
-bool ext4_sb_sparse(uint32_t group)
+bool ext4_sb_sparse(uint32 group)
 {
 	if (group <= 1)
 		return 1;
@@ -188,7 +188,7 @@ bool ext4_sb_sparse(uint32_t group)
 		is_power_of(group, 3));
 }
 
-bool ext4_sb_is_super_in_bg(struct ext4_sblock *s, uint32_t group)
+bool ext4_sb_is_super_in_bg(struct ext4_sblock *s, uint32 group)
 {
 	if (ext4_sb_feature_ro_com(s, EXT4_FRO_COM_SPARSE_SUPER) &&
 	    !ext4_sb_sparse(group))
@@ -196,28 +196,28 @@ bool ext4_sb_is_super_in_bg(struct ext4_sblock *s, uint32_t group)
 	return true;
 }
 
-static uint32_t ext4_bg_num_gdb_meta(struct ext4_sblock *s, uint32_t group)
+static uint32 ext4_bg_num_gdb_meta(struct ext4_sblock *s, uint32 group)
 {
-	uint32_t dsc_per_block =
+	uint32 dsc_per_block =
 	    ext4_sb_get_block_size(s) / ext4_sb_get_desc_size(s);
 
-	uint32_t metagroup = group / dsc_per_block;
-	uint32_t first = metagroup * dsc_per_block;
-	uint32_t last = first + dsc_per_block - 1;
+	uint32 metagroup = group / dsc_per_block;
+	uint32 first = metagroup * dsc_per_block;
+	uint32 last = first + dsc_per_block - 1;
 
 	if (group == first || group == first + 1 || group == last)
 		return 1;
 	return 0;
 }
 
-static uint32_t ext4_bg_num_gdb_nometa(struct ext4_sblock *s, uint32_t group)
+static uint32 ext4_bg_num_gdb_nometa(struct ext4_sblock *s, uint32 group)
 {
 	if (!ext4_sb_is_super_in_bg(s, group))
 		return 0;
-	uint32_t dsc_per_block =
+	uint32 dsc_per_block =
 	    ext4_sb_get_block_size(s) / ext4_sb_get_desc_size(s);
 
-	uint32_t db_count =
+	uint32 db_count =
 	    (ext4_block_group_cnt(s) + dsc_per_block - 1) / dsc_per_block;
 
 	if (ext4_sb_feature_incom(s, EXT4_FINCOM_META_BG))
@@ -226,12 +226,12 @@ static uint32_t ext4_bg_num_gdb_nometa(struct ext4_sblock *s, uint32_t group)
 	return db_count;
 }
 
-uint32_t ext4_bg_num_gdb(struct ext4_sblock *s, uint32_t group)
+uint32 ext4_bg_num_gdb(struct ext4_sblock *s, uint32 group)
 {
-	uint32_t dsc_per_block =
+	uint32 dsc_per_block =
 	    ext4_sb_get_block_size(s) / ext4_sb_get_desc_size(s);
-	uint32_t first_meta_bg = ext4_sb_first_meta_bg(s);
-	uint32_t metagroup = group / dsc_per_block;
+	uint32 first_meta_bg = ext4_sb_first_meta_bg(s);
+	uint32 metagroup = group / dsc_per_block;
 
 	if (!ext4_sb_feature_incom(s,EXT4_FINCOM_META_BG) ||
 	    metagroup < first_meta_bg)
@@ -240,11 +240,11 @@ uint32_t ext4_bg_num_gdb(struct ext4_sblock *s, uint32_t group)
 	return ext4_bg_num_gdb_meta(s, group);
 }
 
-uint32_t ext4_num_base_meta_clusters(struct ext4_sblock *s,
-				     uint32_t block_group)
+uint32 ext4_num_base_meta_clusters(struct ext4_sblock *s,
+				     uint32 block_group)
 {
-	uint32_t num;
-	uint32_t dsc_per_block =
+	uint32 num;
+	uint32 dsc_per_block =
 	    ext4_sb_get_block_size(s) / ext4_sb_get_desc_size(s);
 
 	num = ext4_sb_is_super_in_bg(s, block_group);
@@ -259,9 +259,9 @@ uint32_t ext4_num_base_meta_clusters(struct ext4_sblock *s,
 		num += ext4_bg_num_gdb(s, block_group);
 	}
 
-	uint32_t clustersize = 1024 << ext4_get32(s, log_cluster_size);
-	uint32_t cluster_ratio = clustersize / ext4_sb_get_block_size(s);
-	uint32_t v =
+	uint32 clustersize = 1024 << ext4_get32(s, log_cluster_size);
+	uint32 cluster_ratio = clustersize / ext4_sb_get_block_size(s);
+	uint32 v =
 	    (num + cluster_ratio - 1) >> ext4_get32(s, log_cluster_size);
 
 	return v;

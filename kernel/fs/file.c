@@ -15,7 +15,6 @@ static inline void find_avail_fd(struct files_struct *fdt)
         if (fdt->fd[fd] == NULL)
         {
             fdt->next_fd = fd;
-            return fd;
         }
     }
     fdt->next_fd = NR_OPEN;
@@ -54,5 +53,12 @@ fd_t fd_alloc(struct files_struct *fdt, struct file* file)
 }
 
 void fd_free(struct files_struct *fdt, fd_t fd) {
-    
+    if(fd < 0 || fd >= NR_OPEN)
+        return;
+
+    if(fdt->fd[fd] != NULL) {
+        fdt->fd[fd] = NULL;
+        fdt->nr_avail_fd++;
+        find_avail_fd(fdt);
+    }
 }

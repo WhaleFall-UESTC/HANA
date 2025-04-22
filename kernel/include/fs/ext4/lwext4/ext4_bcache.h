@@ -43,8 +43,7 @@ extern "C" {
 
 #include <fs/ext4/lwext4/ext4_config.h>
 
-#include <stdint.h>
-#include <stdbool.h>
+#include <common.h>
 #include <fs/ext4/lwext4/misc/tree.h>
 #include <fs/ext4/lwext4/misc/queue.h>
 
@@ -54,13 +53,13 @@ extern "C" {
 /**@brief   Single block descriptor*/
 struct ext4_block {
 	/**@brief   Logical block ID*/
-	uint64_t lb_id;
+	uint64 lb_id;
 
 	/**@brief   Buffer */
 	struct ext4_buf *buf;
 
 	/**@brief   Data buffer.*/
-	uint8_t *data;
+	uint8 *data;
 };
 
 struct ext4_bcache;
@@ -71,19 +70,19 @@ struct ext4_buf {
 	int flags;
 
 	/**@brief   Logical block address*/
-	uint64_t lba;
+	uint64 lba;
 
 	/**@brief   Data buffer.*/
-	uint8_t *data;
+	uint8 *data;
 
 	/**@brief   LRU priority. (unused) */
-	uint32_t lru_prio;
+	uint32 lru_prio;
 
 	/**@brief   LRU id.*/
-	uint32_t lru_id;
+	uint32 lru_id;
 
 	/**@brief   Reference count table*/
-	uint32_t refctr;
+	uint32 refctr;
 
 	/**@brief   The block cache this buffer belongs to. */
 	struct ext4_bcache *bc;
@@ -118,19 +117,19 @@ struct ext4_buf {
 struct ext4_bcache {
 
 	/**@brief   Item count in block cache*/
-	uint32_t cnt;
+	uint32 cnt;
 
 	/**@brief   Item size in block cache*/
-	uint32_t itemsize;
+	uint32 itemsize;
 
 	/**@brief   Last recently used counter*/
-	uint32_t lru_ctr;
+	uint32 lru_ctr;
 
 	/**@brief   Currently referenced datablocks*/
-	uint32_t ref_blocks;
+	uint32 ref_blocks;
 
 	/**@brief   Maximum referenced datablocks*/
-	uint32_t max_ref_blocks;
+	uint32 max_ref_blocks;
 
 	/**@brief   The blockdev binded to this block cache*/
 	struct ext4_blockdev *bdev;
@@ -217,8 +216,8 @@ ext4_bcache_remove_dirty_node(struct ext4_bcache *bc, struct ext4_buf *buf) {
  * @param   cnt items count in block cache
  * @param   itemsize single item size (in bytes)
  * @return  standard error code*/
-int ext4_bcache_init_dynamic(struct ext4_bcache *bc, uint32_t cnt,
-			     uint32_t itemsize);
+int ext4_bcache_init_dynamic(struct ext4_bcache *bc, uint32 cnt,
+			     uint32 itemsize);
 
 /**@brief   Do cleanup works on block cache.
  * @param   bc block cache descriptor.*/
@@ -250,8 +249,8 @@ void ext4_bcache_invalidate_buf(struct ext4_bcache *bc,
  * @param   from starting lba
  * @param   cnt block counts*/
 void ext4_bcache_invalidate_lba(struct ext4_bcache *bc,
-				uint64_t from,
-				uint32_t cnt);
+				uint64 from,
+				uint32 cnt);
 
 /**@brief   Find existing buffer from block cache memory.
  *          Unreferenced block allocation is based on LRU
@@ -262,7 +261,7 @@ void ext4_bcache_invalidate_lba(struct ext4_bcache *bc,
  * @return  block cache buffer */
 struct ext4_buf *
 ext4_bcache_find_get(struct ext4_bcache *bc, struct ext4_block *b,
-		     uint64_t lba);
+		     uint64 lba);
 
 /**@brief   Allocate block from block cache memory.
  *          Unreferenced block allocation is based on LRU

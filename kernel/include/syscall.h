@@ -43,7 +43,6 @@
 #define SYS_gettimeofday 169
 #define SYS_nanosleep 101
 
-
 typedef uint64 (*syscall_func_t)(void);
 
 #define _PARAM1(x, type, arg, ...) type, __sys_get_register(x)
@@ -80,12 +79,19 @@ typedef uint64 (*syscall_func_t)(void);
 #define SYSCALL_DEFINE5(name, ...) _SYSCALL_DEFINEx(5, _##name, __VA_ARGS__)
 #define SYSCALL_DEFINE6(name, ...) _SYSCALL_DEFINEx(6, _##name, __VA_ARGS__)
 
+#define SYSCALL_KERNEL_DEFINE(x, name, ...)                                  \
+    uint64 call_sys##name(__MAP(x, __SC_DECL, __VA_ARGS__))                  \
+    {                                                                        \
+        return __do_sys##name(__MAP(x, __SC_CAST, _PARAMS(x, __VA_ARGS__))); \
+    }
+
 #define _SYSCALL_DEFINEx(x, name, ...)                                       \
     static inline uint64 __do_sys##name(__MAP(x, __SC_DECL, __VA_ARGS__));   \
     uint64 sys##name(void)                                                   \
     {                                                                        \
         return __do_sys##name(__MAP(x, __SC_CAST, _PARAMS(x, __VA_ARGS__))); \
     }                                                                        \
+    SYSCALL_KERNEL_DEFINE(x, name, __VA_ARGS__)                              \
     static inline uint64 __do_sys##name(__MAP(x, __SC_DECL, __VA_ARGS__))
 
 void syscall();

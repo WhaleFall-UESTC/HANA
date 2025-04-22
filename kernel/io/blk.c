@@ -113,8 +113,8 @@ void blkdev_wait_all(struct blkdev *dev)
 
         if(request->status == BLKREQ_STATUS_OK)
         {
-            debug("Request completed successfully, sector=%ld, size=%ld, in device %s",
-                request->sector_sta, request->size, dev->name);
+            // debug("Request completed successfully, sector=%ld, size=%ld, in device %s",
+            //     request->sector_sta, request->size, dev->name);
         }
         else
         {

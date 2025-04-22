@@ -30,28 +30,35 @@
 #include <fs/ext4/lwext4/ext4_config.h>
 #include <fs/ext4/lwext4/ext4_blockdev.h>
 #include <fs/ext4/lwext4/ext4_errno.h>
+#include <fs/ext4/ext4.h>
 
 #include <io/blk.h>
 #include <mm/mm.h>
 #include <debug.h>
 #include <fs/fs.h>
 
+#define get_blkdev_from_blkext4(bdev) \
+	container_of(bdev, struct ext4_fs_dev, ext4_blkdev)->blkdev
+
 int blockdev_open(struct ext4_blockdev *bdev)
 {
 	/**
 	 * For now this function needs no implementation
 	 */
+	debug("blockdev_open");
 	return EOK;
 }
 
-int blockdev_bread(struct ext4_blockdev *bdev, void *buf, uint64_t blk_id,
-			 uint32_t blk_cnt)
+int blockdev_bread(struct ext4_blockdev *bdev, void *buf, uint64 blk_id,
+			 uint32 blk_cnt)
 {
 	struct blkdev* blkdev = get_blkdev_from_blkext4(bdev);
 	struct blkreq* req;
 	int ret = EOK;
 
 	assert(blkdev != NULL);
+
+	debug("blockdev_bread: %s", blkdev->name);
 
 	req = blkreq_alloc(blkdev, blk_id, (void *)buf,
 			   blk_cnt * blkdev->sector_size, 0);
@@ -77,13 +84,15 @@ out:
 }
 
 int blockdev_bwrite(struct ext4_blockdev *bdev, const void *buf,
-			  uint64_t blk_id, uint32_t blk_cnt)
+			  uint64 blk_id, uint32 blk_cnt)
 {
 	struct blkdev* blkdev = get_blkdev_from_blkext4(bdev);
 	struct blkreq* req;
 	int ret = EOK;
 
 	assert(blkdev != NULL);
+
+	debug("blockdev_bwrite: %s", blkdev->name);
 
 	req = blkreq_alloc(blkdev, blk_id, (void *)buf,
 			   blk_cnt * blkdev->sector_size, 1);
@@ -113,6 +122,7 @@ int blockdev_close(struct ext4_blockdev *bdev)
 	/**
 	 * For now this function needs no implementation
 	 */
+	debug("blockdev_close");
 	return EOK;
 }
 
@@ -121,6 +131,7 @@ int blockdev_lock(struct ext4_blockdev *bdev)
 	/**
 	 * For now this function needs no implementation
 	 */
+	debug("blockdev_lock");
 	return EOK;
 }
 
@@ -129,6 +140,7 @@ int blockdev_unlock(struct ext4_blockdev *bdev)
 	/**
 	 * For now this function needs no implementation
 	 */
+	debug("blockdev_unlock");
 	return EOK;
 }
 

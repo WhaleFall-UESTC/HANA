@@ -50,8 +50,7 @@ extern "C" {
 #include <fs/ext4/lwext4/ext4_types.h>
 #include <fs/ext4/lwext4/ext4_misc.h>
 
-#include <stdint.h>
-#include <stdbool.h>
+#include <common.h>
 
 struct ext4_fs {
 	bool read_only;
@@ -59,10 +58,10 @@ struct ext4_fs {
 	struct ext4_blockdev *bdev;
 	struct ext4_sblock sb;
 
-	uint64_t inode_block_limits[4];
-	uint64_t inode_blocks_per_level[4];
+	uint64 inode_block_limits[4];
+	uint64 inode_blocks_per_level[4];
 
-	uint32_t last_inode_bg_id;
+	uint32 last_inode_bg_id;
 
 	struct jbd_fs *jbd_fs;
 	struct jbd_journal *jbd_journal;
@@ -73,7 +72,7 @@ struct ext4_block_group_ref {
 	struct ext4_block block;
 	struct ext4_bgroup *block_group;
 	struct ext4_fs *fs;
-	uint32_t index;
+	uint32 index;
 	bool dirty;
 };
 
@@ -81,7 +80,7 @@ struct ext4_inode_ref {
 	struct ext4_block block;
 	struct ext4_inode *inode;
 	struct ext4_fs *fs;
-	uint32_t index;
+	uint32 index;
 	bool dirty;
 };
 
@@ -91,7 +90,7 @@ struct ext4_inode_ref {
  * @param baddr Block number to convert
  * @return Relative number of block
  */
-static inline uint32_t ext4_fs_addr_to_idx_bg(struct ext4_sblock *s,
+static inline uint32 ext4_fs_addr_to_idx_bg(struct ext4_sblock *s,
 						     ext4_fsblk_t baddr)
 {
 	if (ext4_get32(s, first_data_block) && baddr)
@@ -107,8 +106,8 @@ static inline uint32_t ext4_fs_addr_to_idx_bg(struct ext4_sblock *s,
  * @return Absolute block address
  */
 static inline ext4_fsblk_t ext4_fs_bg_idx_to_addr(struct ext4_sblock *s,
-						     uint32_t index,
-						     uint32_t bgid)
+						     uint32 index,
+						     uint32 bgid)
 {
 	if (ext4_get32(s, first_data_block))
 		index++;
@@ -118,9 +117,9 @@ static inline ext4_fsblk_t ext4_fs_bg_idx_to_addr(struct ext4_sblock *s,
 
 /**@brief TODO: */
 static inline ext4_fsblk_t ext4_fs_first_bg_block_no(struct ext4_sblock *s,
-						 uint32_t bgid)
+						 uint32 bgid)
 {
-	return (uint64_t)bgid * ext4_get32(s, blocks_per_group) +
+	return (uint64)bgid * ext4_get32(s, blocks_per_group) +
 	       ext4_get32(s, first_data_block);
 }
 
@@ -155,7 +154,7 @@ int ext4_fs_check_features(struct ext4_fs *fs, bool *read_only);
  * @param ref  Output pointer for reference
  * @return Error code
  */
-int ext4_fs_get_block_group_ref(struct ext4_fs *fs, uint32_t bgid,
+int ext4_fs_get_block_group_ref(struct ext4_fs *fs, uint32 bgid,
 				struct ext4_block_group_ref *ref);
 
 /**@brief Put reference to block group.
@@ -170,7 +169,7 @@ int ext4_fs_put_block_group_ref(struct ext4_block_group_ref *ref);
  * @param ref   Output pointer for reference
  * @return Error code
  */
-int ext4_fs_get_inode_ref(struct ext4_fs *fs, uint32_t index,
+int ext4_fs_get_inode_ref(struct ext4_fs *fs, uint32 index,
 			  struct ext4_inode_ref *ref);
 
 /**@brief Reset blocks field of i-node.
@@ -190,7 +189,7 @@ int ext4_fs_put_inode_ref(struct ext4_inode_ref *ref);
  * @param filetype File type
  * @return inode mode
  */
-uint32_t ext4_fs_correspond_inode_mode(int filetype);
+uint32 ext4_fs_correspond_inode_mode(int filetype);
 
 /**@brief Allocate new i-node in the filesystem.
  * @param fs        Filesystem to allocated i-node on
@@ -212,7 +211,7 @@ int ext4_fs_free_inode(struct ext4_inode_ref *inode_ref);
  * @param new_size  New size of inode (must be < current size)
  * @return Error code
  */
-int ext4_fs_truncate_inode(struct ext4_inode_ref *inode_ref, uint64_t new_size);
+int ext4_fs_truncate_inode(struct ext4_inode_ref *inode_ref, uint64 new_size);
 
 /**@brief Compute 'goal' for inode index
  * @param inode_ref Reference to inode, to allocate block for

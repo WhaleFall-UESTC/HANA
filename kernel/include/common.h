@@ -1,7 +1,7 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
-#include <stddef.h>
+
 #include <stdarg.h>
 #include <stdbool.h>
 
@@ -73,11 +73,56 @@ typedef long off_t;
 typedef unsigned long time_t;
 
 typedef unsigned short umode_t;
+typedef unsigned int fmode_t;
+
+typedef long int ptrdiff_t;
+
+#define bool _Bool
+#define true 1
+#define false 0
+
+#define PRId32 "d"
+#define PRIdLEAST32 "d"
+#define PRIdFAST32 "d"
+#define PRIi32 "i"
+#define PRIiLEAST32 "i"
+#define PRIiFAST32 "i"
+#define PRIo32 "o"
+#define PRIoLEAST32 "o"
+#define PRIoFAST32 "o"
+#define PRIu32 "u"
+#define PRIuLEAST32 "u"
+#define PRIuFAST32 "u"
+#define PRIx32 "x"
+#define PRIxLEAST32 "x"
+#define PRIxFAST32 "x"
+#define PRIX32 "X"
+#define PRIXLEAST32 "X"
+#define PRIXFAST32 "X"
+
+#define SCNd32 "d"
+#define SCNdLEAST32 "d"
+#define SCNdFAST32 "d"
+#define SCNi32 "i"
+#define SCNiLEAST32 "i"
+#define SCNiFAST32 "i"
+#define SCNo32 "o"
+#define SCNoLEAST32 "o"
+#define SCNoFAST32 "o"
+#define SCNu32 "u"
+#define SCNuLEAST32 "u"
+#define SCNuFAST32 "u"
+#define SCNx32 "x"
+#define SCNxLEAST32 "x"
+#define SCNxFAST32 "x"
+
+#define NULL ((void *)0)
 
 #define __same_type(a, b) __builtin_types_compatible_p(typeof(a), typeof(b))
 #define BUILD_BUG_ON_ZERO(e) ((int)(sizeof(struct { int:(-!!(e)); })))
 
-#define __force	__attribute__((force))
+// #define __force	__attribute__((force))
+#define __force
 
 #define metamacro_head(...) metamacro_head_(__VA_ARGS__, 0)
 #define metamacro_concat_(A, B) A ## B

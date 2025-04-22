@@ -385,7 +385,7 @@ sfence_vma()
   })
 
 #define __READ64(var) ({ \
-  uint64_t _val;        \
+  uint64 _val;        \
   asm volatile(         \
       "ld %0, 0(%1)"    \
       : "=r"(_val)      \

@@ -3,27 +3,32 @@
 
 #include <common.h>
 #include <fs/fs.h>
+#include <fs/dirent.h>
 #include <klib.h>
 #include <locking/spinlock.h>
 
 struct file_operations;
 
-struct file {
-    unsigned int f_flags;
-    const struct file_operations *f_op;
-    struct inode *f_inode;
+struct file
+{
+	unsigned int f_flags;
+	// fmode_t f_mode;
+	const struct file_operations *f_op;
+	struct inode *f_inode;
 
-    off_t f_ops;
+	off_t f_ops;
 
-    void* f_private;
+	void *f_private;
 };
 
-struct file_operations {
-	off_t (*llseek) (struct file *, off_t, int);
-	ssize_t (*read) (struct file *, char *, size_t, off_t *);
-	ssize_t (*write) (struct file *, const char *, size_t, off_t *);
-	int (*open) (struct file *, path_t, uint32);
-	int (*close) (struct file *);
+struct file_operations
+{
+	off_t (*llseek)(struct file *, off_t, int);
+	ssize_t (*read)(struct file *, char *, size_t, off_t *);
+	ssize_t (*write)(struct file *, const char *, size_t, off_t *);
+	int (*open)(struct file *, path_t, uint32);
+	int (*close)(struct file *);
+	int(*getdents64)(struct file *, struct dirent *, size_t);
 	// int (*flush) (struct file *, fl_owner_t id);
 	// int (*fsync) (struct file *, off_t, off_t, int datasync);
 };
@@ -32,13 +37,13 @@ typedef unsigned int fd_t;
 
 #define NR_OPEN 1024
 
-struct files_struct {
+struct files_struct
+{
 	struct file *fd[NR_OPEN];
 	unsigned int next_fd; // we maintain a next_fd after any fd inc/dec
 	unsigned int nr_avail_fd;
 	spinlock_t fdt_lock; // lock for fd table
 };
-
 
 /**
  * Initialize the file descriptor table.

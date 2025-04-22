@@ -67,7 +67,7 @@
 #include <fs/ext4/lwext4/ext4_errno.h>
 #include <fs/ext4/lwext4/ext4_debug.h>
 
-#include <string.h>
+#include <klib.h>
 
 /* F, G, and H are MD4 functions */
 #define F(x, y, z) (((x) & (y)) | ((~x) & (z)))
@@ -90,14 +90,14 @@
 
 #define GG(a, b, c, d, x, s)                                                   \
 	{                                                                      \
-		(a) += G((b), (c), (d)) + (x) + (uint32_t)0x5A827999;          \
+		(a) += G((b), (c), (d)) + (x) + (uint32)0x5A827999;          \
 		(a) = ROTATE_LEFT((a), (s));                                   \
 	\
 }
 
 #define HH(a, b, c, d, x, s)                                                   \
 	{                                                                      \
-		(a) += H((b), (c), (d)) + (x) + (uint32_t)0x6ED9EBA1;          \
+		(a) += H((b), (c), (d)) + (x) + (uint32)0x6ED9EBA1;          \
 		(a) = ROTATE_LEFT((a), (s));                                   \
 	\
 }
@@ -109,13 +109,13 @@
  * index.  This function is derived from the RSA Data Security, Inc. MD4
  * Message-Digest Algorithm and was modified as necessary.
  *
- * The return value of this function is uint32_t in Linux, but actually we don't
+ * The return value of this function is uint32 in Linux, but actually we don't
  * need to check this value, so in our version this function doesn't return any
  * value.
  */
-static void ext2_half_md4(uint32_t hash[4], uint32_t data[8])
+static void ext2_half_md4(uint32 hash[4], uint32 data[8])
 {
-	uint32_t a = hash[0], b = hash[1], c = hash[2], d = hash[3];
+	uint32 a = hash[0], b = hash[1], c = hash[2], d = hash[3];
 
 	/* Round 1 */
 	FF(a, b, c, d, data[0], 3);
@@ -156,11 +156,11 @@ static void ext2_half_md4(uint32_t hash[4], uint32_t data[8])
 /*
  * Tiny Encryption Algorithm.
  */
-static void ext2_tea(uint32_t hash[4], uint32_t data[8])
+static void ext2_tea(uint32 hash[4], uint32 data[8])
 {
-	uint32_t tea_delta = 0x9E3779B9;
-	uint32_t sum;
-	uint32_t x = hash[0], y = hash[1];
+	uint32 tea_delta = 0x9E3779B9;
+	uint32 sum;
+	uint32 x = hash[0], y = hash[1];
 	int n = 16;
 	int i = 1;
 
@@ -175,10 +175,10 @@ static void ext2_tea(uint32_t hash[4], uint32_t data[8])
 	hash[1] += y;
 }
 
-static uint32_t ext2_legacy_hash(const char *name, int len, int unsigned_char)
+static uint32 ext2_legacy_hash(const char *name, int len, int unsigned_char)
 {
-	uint32_t h0, h1 = 0x12A3FE2D, h2 = 0x37ABE8F9;
-	uint32_t multi = 0x6D22F5;
+	uint32 h0, h1 = 0x12A3FE2D, h2 = 0x37ABE8F9;
+	uint32 multi = 0x6D22F5;
 	const unsigned char *uname = (const unsigned char *)name;
 	const signed char *sname = (const signed char *)name;
 	int val, i;
@@ -199,17 +199,17 @@ static uint32_t ext2_legacy_hash(const char *name, int len, int unsigned_char)
 	return (h1 << 1);
 }
 
-static void ext2_prep_hashbuf(const char *src, uint32_t slen, uint32_t *dst,
+static void ext2_prep_hashbuf(const char *src, uint32 slen, uint32 *dst,
 			      int dlen, int unsigned_char)
 {
-	uint32_t padding = slen | (slen << 8) | (slen << 16) | (slen << 24);
-	uint32_t buf_val;
+	uint32 padding = slen | (slen << 8) | (slen << 16) | (slen << 24);
+	uint32 buf_val;
 	int len, i;
 	int buf_byte;
 	const unsigned char *ubuf = (const unsigned char *)src;
 	const signed char *sbuf = (const signed char *)src;
 
-	if (slen > (uint32_t)dlen)
+	if (slen > (uint32)dlen)
 		len = dlen;
 	else
 		len = slen;
@@ -230,29 +230,29 @@ static void ext2_prep_hashbuf(const char *src, uint32_t slen, uint32_t *dst,
 
 		if ((i % 4) == 3) {
 			*dst++ = buf_val;
-			dlen -= sizeof(uint32_t);
+			dlen -= sizeof(uint32);
 			buf_val = padding;
 		}
 	}
 
-	dlen -= sizeof(uint32_t);
+	dlen -= sizeof(uint32);
 	if (dlen >= 0)
 		*dst++ = buf_val;
 
-	dlen -= sizeof(uint32_t);
+	dlen -= sizeof(uint32);
 	while (dlen >= 0) {
 		*dst++ = padding;
-		dlen -= sizeof(uint32_t);
+		dlen -= sizeof(uint32);
 	}
 }
 
-int ext2_htree_hash(const char *name, int len, const uint32_t *hash_seed,
-		    int hash_version, uint32_t *hash_major,
-		    uint32_t *hash_minor)
+int ext2_htree_hash(const char *name, int len, const uint32 *hash_seed,
+		    int hash_version, uint32 *hash_major,
+		    uint32 *hash_minor)
 {
-	uint32_t hash[4];
-	uint32_t data[8];
-	uint32_t major = 0, minor = 0;
+	uint32 hash[4];
+	uint32 data[8];
+	uint32 major = 0, minor = 0;
 	int unsigned_char = 0;
 
 	if (!name || !hash_major)

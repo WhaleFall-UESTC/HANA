@@ -25,4 +25,7 @@ void        test_uart();
 /* test_walkaddr.c */
 void        test_walkaddr();
 
+/* test_fs.c */
+void        test_fs();
+
 #endif // __TESTDEFS_H__

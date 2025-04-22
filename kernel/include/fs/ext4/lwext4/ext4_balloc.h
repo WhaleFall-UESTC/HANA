@@ -50,15 +50,14 @@ extern "C" {
 
 #include <fs/ext4/lwext4/ext4_fs.h>
 
-#include <stdint.h>
-#include <stdbool.h>
+#include <common.h>
 
 /**@brief Compute number of block group from block address.
  * @param s superblock pointer.
  * @param baddr Absolute address of block.
  * @return Block group index
  */
-uint32_t ext4_balloc_get_bgid_of_block(struct ext4_sblock *s,
+uint32 ext4_balloc_get_bgid_of_block(struct ext4_sblock *s,
 				       ext4_fsblk_t baddr);
 
 /**@brief Compute the starting block address of a block group
@@ -67,7 +66,7 @@ uint32_t ext4_balloc_get_bgid_of_block(struct ext4_sblock *s,
  * @return Block address
  */
 ext4_fsblk_t ext4_balloc_get_block_of_bgid(struct ext4_sblock *s,
-					   uint32_t bgid);
+					   uint32 bgid);
 
 /**@brief Calculate and set checksum of block bitmap.
  * @param sb superblock pointer.
@@ -91,7 +90,7 @@ int ext4_balloc_free_block(struct ext4_inode_ref *inode_ref,
  * @param   count block count
  * @return  standard error code*/
 int ext4_balloc_free_blocks(struct ext4_inode_ref *inode_ref,
-			    ext4_fsblk_t first, uint32_t count);
+			    ext4_fsblk_t first, uint32 count);
 
 /**@brief   Allocate block procedure.
  * @param   inode_ref inode reference

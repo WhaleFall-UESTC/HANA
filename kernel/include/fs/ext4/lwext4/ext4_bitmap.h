@@ -43,13 +43,12 @@ extern "C" {
 
 #include <fs/ext4/lwext4/ext4_config.h>
 
-#include <stdint.h>
-#include <stdbool.h>
+#include <common.h>
 
 /**@brief   Set bitmap bit.
  * @param   bmap bitmap
  * @param   bit bit to set*/
-static inline void ext4_bmap_bit_set(uint8_t *bmap, uint32_t bit)
+static inline void ext4_bmap_bit_set(uint8 *bmap, uint32 bit)
 {
 	*(bmap + (bit >> 3)) |= (1 << (bit & 7));
 }
@@ -57,7 +56,7 @@ static inline void ext4_bmap_bit_set(uint8_t *bmap, uint32_t bit)
 /**@brief   Clear bitmap bit.
  * @param   bmap bitmap buffer
  * @param   bit bit to clear*/
-static inline void ext4_bmap_bit_clr(uint8_t *bmap, uint32_t bit)
+static inline void ext4_bmap_bit_clr(uint8 *bmap, uint32 bit)
 {
 	*(bmap + (bit >> 3)) &= ~(1 << (bit & 7));
 }
@@ -65,7 +64,7 @@ static inline void ext4_bmap_bit_clr(uint8_t *bmap, uint32_t bit)
 /**@brief   Check if the bitmap bit is set.
  * @param   bmap bitmap buffer
  * @param   bit bit to check*/
-static inline bool ext4_bmap_is_bit_set(uint8_t *bmap, uint32_t bit)
+static inline bool ext4_bmap_is_bit_set(uint8 *bmap, uint32 bit)
 {
 	return (*(bmap + (bit >> 3)) & (1 << (bit & 7)));
 }
@@ -73,7 +72,7 @@ static inline bool ext4_bmap_is_bit_set(uint8_t *bmap, uint32_t bit)
 /**@brief   Check if the bitmap bit is clear.
  * @param   bmap bitmap buffer
  * @param   bit bit to check*/
-static inline bool ext4_bmap_is_bit_clr(uint8_t *bmap, uint32_t bit)
+static inline bool ext4_bmap_is_bit_clr(uint8 *bmap, uint32 bit)
 {
 	return !ext4_bmap_is_bit_set(bmap, bit);
 }
@@ -82,15 +81,15 @@ static inline bool ext4_bmap_is_bit_clr(uint8_t *bmap, uint32_t bit)
  * @param   bmap bitmap buffer
  * @param   sbit start bit
  * @param   bcnt bit count*/
-void ext4_bmap_bits_free(uint8_t *bmap, uint32_t sbit, uint32_t bcnt);
+void ext4_bmap_bits_free(uint8 *bmap, uint32 sbit, uint32 bcnt);
 
 /**@brief   Find first clear bit in bitmap.
  * @param   sbit start bit of search
  * @param   ebit end bit of search
  * @param   bit_id output parameter (first free bit)
  * @return  standard error code*/
-int ext4_bmap_bit_find_clr(uint8_t *bmap, uint32_t sbit, uint32_t ebit,
-			   uint32_t *bit_id);
+int ext4_bmap_bit_find_clr(uint8 *bmap, uint32 sbit, uint32 ebit,
+			   uint32 *bit_id);
 
 #ifdef __cplusplus
 }

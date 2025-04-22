@@ -66,7 +66,7 @@ int ext4_trans_set_block_dirty(struct ext4_buf *buf)
 
 int ext4_trans_block_get_noread(struct ext4_blockdev *bdev,
 			  struct ext4_block *b,
-			  uint64_t lba)
+			  uint64 lba)
 {
 	int r = ext4_block_get_noread(bdev, b, lba);
 	if (r != EOK)
@@ -77,7 +77,7 @@ int ext4_trans_block_get_noread(struct ext4_blockdev *bdev,
 
 int ext4_trans_block_get(struct ext4_blockdev *bdev,
 		   struct ext4_block *b,
-		   uint64_t lba)
+		   uint64 lba)
 {
 	int r = ext4_block_get(bdev, b, lba);
 	if (r != EOK)
@@ -87,7 +87,7 @@ int ext4_trans_block_get(struct ext4_blockdev *bdev,
 }
 
 int ext4_trans_try_revoke_block(struct ext4_blockdev *bdev __unused,
-			        uint64_t lba __unused)
+			        uint64 lba __unused)
 {
 	int r = EOK;
 #if CONFIG_JOURNALING_ENABLE

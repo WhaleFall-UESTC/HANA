@@ -18,7 +18,7 @@ SYSCALL_DEFINE3(open, const char *, filename, int, flags, umode_t, mode) {
 static inline uint64 __do_sys_open(const char * filename, int flags, umode_t mode);
 uint64 sys_open(void)
 {
-    return __do_sys_open((__attribute__((force)) const char *) myproc()->trapframe->a0, (__attribute__((force)) int) myproc()->trapframe->a1, (__attribute__((force)) umode_t) myproc()->trapframe->a2);
+    return __do_sys_open((const char *) myproc()->trapframe->a0, (int) myproc()->trapframe->a1, (umode_t) myproc()->trapframe->a2);
 }
 static inline uint64 __do_sys_open(const char * filename, int flags, umode_t mode)
 {

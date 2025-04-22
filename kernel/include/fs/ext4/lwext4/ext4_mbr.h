@@ -57,10 +57,10 @@ struct ext4_mbr_parts {
 	/**@brief Percentage division tab:
 	 *  - {50, 20, 10, 20}
 	 * Sum of all 4 elements must be <= 100*/
-	uint8_t division[4];
+	uint8 division[4];
 };
 
-int ext4_mbr_write(struct ext4_blockdev *parent, struct ext4_mbr_parts *parts, uint32_t disk_id);
+int ext4_mbr_write(struct ext4_blockdev *parent, struct ext4_mbr_parts *parts, uint32 disk_id);
 
 #ifdef __cplusplus
 }

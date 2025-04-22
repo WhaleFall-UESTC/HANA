@@ -55,7 +55,7 @@ struct jbd_fs {
 };
 
 struct jbd_buf {
-	uint32_t jbd_lba;
+	uint32 jbd_lba;
 	struct ext4_block block;
 	struct jbd_trans *trans;
 	struct jbd_block_rec *block_rec;
@@ -77,12 +77,12 @@ struct jbd_block_rec {
 };
 
 struct jbd_trans {
-	uint32_t trans_id;
+	uint32 trans_id;
 
-	uint32_t start_iblock;
+	uint32 start_iblock;
 	int alloc_blocks;
 	int data_cnt;
-	uint32_t data_csum;
+	uint32 data_csum;
 	int written_cnt;
 	int error;
 
@@ -95,13 +95,13 @@ struct jbd_trans {
 };
 
 struct jbd_journal {
-	uint32_t first;
-	uint32_t start;
-	uint32_t last;
-	uint32_t trans_id;
-	uint32_t alloc_trans_id;
+	uint32 first;
+	uint32 start;
+	uint32 last;
+	uint32 trans_id;
+	uint32 alloc_trans_id;
 
-	uint32_t block_size;
+	uint32 block_size;
 
 	TAILQ_HEAD(jbd_cp_queue, jbd_trans) cp_queue;
 	RB_HEAD(jbd_block, jbd_block_rec) block_rec_root;

@@ -41,8 +41,8 @@
 #include <fs/ext4/lwext4/ext4_debug.h>
 #include <fs/ext4/lwext4/ext4_errno.h>
 
-#include <string.h>
-#include <stdlib.h>
+#include <common.h>
+#include <klib.h>
 
 static int ext4_bcache_lba_compare(struct ext4_buf *a, struct ext4_buf *b)
 {
@@ -67,8 +67,8 @@ RB_GENERATE_INTERNAL(ext4_buf_lba, ext4_buf, lba_node,
 RB_GENERATE_INTERNAL(ext4_buf_lru, ext4_buf, lru_node,
 		     ext4_bcache_lru_compare, static inline)
 
-int ext4_bcache_init_dynamic(struct ext4_bcache *bc, uint32_t cnt,
-			     uint32_t itemsize)
+int ext4_bcache_init_dynamic(struct ext4_bcache *bc, uint32 cnt,
+			     uint32 itemsize)
 {
 	ext4_assert(bc && cnt && itemsize);
 
@@ -117,7 +117,7 @@ int ext4_bcache_fini_dynamic(struct ext4_bcache *bc)
  */
 
 static struct ext4_buf *
-ext4_buf_alloc(struct ext4_bcache *bc, uint64_t lba)
+ext4_buf_alloc(struct ext4_bcache *bc, uint64 lba)
 {
 	void *data;
 	struct ext4_buf *buf;
@@ -144,7 +144,7 @@ static void ext4_buf_free(struct ext4_buf *buf)
 }
 
 static struct ext4_buf *
-ext4_buf_lookup(struct ext4_bcache *bc, uint64_t lba)
+ext4_buf_lookup(struct ext4_bcache *bc, uint64 lba)
 {
 	struct ext4_buf tmp = {
 		.lba = lba
@@ -192,10 +192,10 @@ void ext4_bcache_invalidate_buf(struct ext4_bcache *bc,
 }
 
 void ext4_bcache_invalidate_lba(struct ext4_bcache *bc,
-				uint64_t from,
-				uint32_t cnt)
+				uint64 from,
+				uint32 cnt)
 {
-	uint64_t end = from + cnt - 1;
+	uint64 end = from + cnt - 1;
 	struct ext4_buf *tmp = ext4_buf_lookup(bc, from), *buf;
 	RB_FOREACH_FROM(buf, ext4_buf_lba, tmp) {
 		if (buf->lba > end)
@@ -207,7 +207,7 @@ void ext4_bcache_invalidate_lba(struct ext4_bcache *bc,
 
 struct ext4_buf *
 ext4_bcache_find_get(struct ext4_bcache *bc, struct ext4_block *b,
-		     uint64_t lba)
+		     uint64 lba)
 {
 	struct ext4_buf *buf = ext4_buf_lookup(bc, lba);
 	if (buf) {
