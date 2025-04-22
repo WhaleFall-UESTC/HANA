@@ -15,7 +15,7 @@ void test_walkaddr() {
     uint64 start_va = KERNELBASE;
     uint64 end_va = PHYSTOP;
 
-    for (uint64 addr = start_va; addr < PHYSTOP; addr+= PGSIZE) {
+    for (uint64 addr = start_va; addr < end_va; addr+= PGSIZE) {
         uint64 pa1 = walkaddr(kernel_pagetable, addr);
         Assert(pa1 == addr, "pa1: %lx, va: %lx", pa1, addr);
         uint64 pa2 = walkaddr(kernel_pagetable, addr + 1);

@@ -5,10 +5,10 @@
 *.dtb
 *.dts
 
-kernel-riscv
-kernel-loongarch
-kernel-riscv.objdump
-kernel-loongarch.objdump
+kernel-rv
+kernel-la
+kernel-rv.asm
+kernel-la.asm
 
 references/*
 build/
