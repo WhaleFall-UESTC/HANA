@@ -9,6 +9,7 @@ extern pagetable_t kernel_pagetable;
 
 void        kinit();
 void*       kalloc(uint64 sz);
+void*       kcalloc(uint64 nr, uint64 sz);
 void        kfree(void *addr);
 
 void        kvminit();

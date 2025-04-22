@@ -14,6 +14,7 @@ static uint64 (*syscalls[NR_SYSCALL])(void) = {
     // [SYS_fork] sys_fork,
 };
 
+// syscall_func_t syscalls[NR_SYSCALL];
 
 void
 syscall()

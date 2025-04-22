@@ -17,7 +17,7 @@
 #define EXT4_BUF_SIZE 512
 
 int
-fs_blk_mount_ext4(struct blkdev * blkdev, const char *mountpoint)
+ext4_fs_mount(struct blkdev * blkdev, const char *mountpoint)
 {
 	char buffer[MAX_EXT4_BLOCKDEV_NAME + 1];
 	int ret;
@@ -73,6 +73,33 @@ fs_blk_mount_ext4(struct blkdev * blkdev, const char *mountpoint)
 		error_ext4("cache write back error! ret = %d", ret);
 		return -1;
 	}
+
+	return 0;
+}
+
+int ext4_fs_ifget(struct mountpoint *mp, struct inode *inode, struct file *file)
+{
+	if ((file->f_flags & O_DIRECTORY) == O_DIRECTORY) {
+		struct ext4_dir *dir;
+		dir = (struct ext4_dir *)kalloc(sizeof(struct ext4_dir));
+		if (dir == NULL) {
+			error_ext4("ext4_dir alloc error!");
+			return -1;
+		}
+		file->f_private = (void*)dir;
+	} else {
+		struct ext4_file *ext4_file = (struct ext4_file *)kalloc(sizeof(struct ext4_file));
+		if (ext4_file == NULL) {
+			error_ext4("ext4_file alloc error!");
+			return -1;
+		}
+		file->f_private = (void*)ext4_file;
+	}
+
+	file->f_op = &ext4_file_fops;
+	file->f_inode = inode;
+
+	inode->i_mp = mp;
 
 	return 0;
 }
@@ -144,7 +171,7 @@ static ssize_t ext4_write(struct file* file, const char * buffer, size_t size, o
 	return wcnt;
 }
 
-static int ext4_open(struct file* file, struct path* path, uint32 flags) {
+static int ext4_open(struct file* file, path_t path, uint32 flags) {
 	struct ext4_file *ext4_file;
 	struct ext4_dir *dir;
 	int ret;
@@ -170,7 +197,7 @@ static int ext4_open(struct file* file, struct path* path, uint32 flags) {
 	else {
 		ext4_file = (struct ext4_file *)file->f_private;
 
-		ret = ext4_fopen2(ext4_file, path->p_name, flags);
+		ret = ext4_fopen2(ext4_file, path, flags);
 		if (ret != EOK) {
 			error_ext4("ext4_fopen2 error! ret: %d", ret);
 			return -1;
@@ -207,18 +234,18 @@ static int ext4_close(struct file* file) {
 	return ret;
 }
 
-static int ext4_symlink(struct inode* inode, struct path* path, struct path* softlink_path) {
-	int ret = ext4_fsymlink(path->p_name, softlink_path->p_name);
+static int ext4_symlink(path_t path, path_t softlink_path) {
+	int ret = ext4_fsymlink(path, softlink_path);
 	return ret;
 }
 
-static int ext4_link(struct path* path, struct inode* inode, struct path *hardlink_path) {
-	int ret = ext4_flink(path->p_name, hardlink_path->p_name);
+static int ext4_link(path_t path, struct path *hardlink_path) {
+	int ret = ext4_flink(path, hardlink_path);
 	return ret;
 }
 
-static int ext4_unlink(struct inode* inode, struct path* path) {
-	int ret = ext4_fremove(path->p_name);
+static int ext4_unlink(path_t path) {
+	int ret = ext4_fremove(path);
 	return ret;
 }
 
@@ -235,14 +262,14 @@ static int ext4_getattr(const struct path * path, struct stat * stat) {
 
 	assert(stat != NULL);
 
-	if((ret = ext4_raw_inode_fill(path->p_name, &ino, &inode)) != EOK){
+	if((ret = ext4_raw_inode_fill(path, &ino, &inode)) != EOK){
 		error_ext4("ext4_raw_inode_fill error, ret: %d", ret);
 		return -1;
 	}
 
 	stat->st_dev = 0;
 	stat->st_ino = ino;
-	stat->st_mode = inode.mode; /* TODO: fix the error during du, ls */
+	stat->st_mode = inode.mode;
 	stat->st_nlink = inode.links_count;
 	stat->st_uid = 0;
 	stat->st_gid = 0;
@@ -250,18 +277,22 @@ static int ext4_getattr(const struct path * path, struct stat * stat) {
 	stat->st_size = inode.size_lo;
 	stat->st_blksize = 512;
 	stat->st_blocks = (uint64)inode.blocks_count_lo;
-	stat->st_atime = 0;
+	stat->st_atime = inode.access_time;
 	stat->st_atime_nsec = 0;
-	stat->st_ctime = 0;
+	stat->st_ctime = inode.change_inode_time;
 	stat->st_ctime_nsec = 0;
-	stat->st_mtime = 0;
+	stat->st_mtime = inode.modification_time;
 	stat->st_mtime_nsec = 0;
+
+	/**
+	 * TODO: add st_xtime_nsecs and st_dev
+	 */
 
 	return 0;
 }
 
-static int ext4_mkdir(struct inode* inode, struct path* path, umode_t mode) {
-	int ret = ext4_dir_mk(path->p_name);
+static int ext4_mkdir(path_t path, umode_t mode) {
+	int ret = ext4_dir_mk(path);
 	if(ret != EOK){
 		error_ext4("mkdir error! ret=%d", ret);
 		return -1;
@@ -269,8 +300,8 @@ static int ext4_mkdir(struct inode* inode, struct path* path, umode_t mode) {
 	return ret;
 }
 
-static int ext4_rmdir(struct inode* inode, struct path* path) {
-	int ret = ext4_dir_rm(path->p_name);
+static int ext4_rmdir(path_t path) {
+	int ret = ext4_dir_rm(path);
 	if(ret != EOK){
 		error_ext4("rmdir error! ret=%d", ret);
 		return -1;
@@ -278,24 +309,14 @@ static int ext4_rmdir(struct inode* inode, struct path* path) {
 	return ret;
 }
 
-static int ext4_rename(struct path* path, struct path* new_path) {
-	int ret = ext4_frename(path->p_name, new_path->p_name);
+static int ext4_rename(path_t path, path_t new_path) {
+	int ret = ext4_frename(path, new_path);
 	if(ret != EOK){
 		error_ext4("rename error! ret=%d", ret);
 		return -1;
 	}
 	return ret;
 }
-
-const struct inode_operations ext4_file_iops = {
-	.link = ext4_link,
-	.unlink = ext4_unlink,
-	.symlink = ext4_symlink,
-	.mkdir = ext4_mkdir,
-	.rmdir = ext4_rmdir,
-	.rename = ext4_rename,
-	.getattr = ext4_getattr,
-};
 
 const struct file_operations ext4_file_fops = {
 	.llseek = ext4_llseek,
@@ -305,7 +326,17 @@ const struct file_operations ext4_file_fops = {
 	.close = ext4_close,
 };
 
+const struct fs_operations ext4_filesystem_ops = {
+	.link = ext4_link,
+	.unlink = ext4_unlink,
+	.symlink = ext4_symlink,
+	.mkdir = ext4_mkdir,
+	.rmdir = ext4_rmdir,
+	.rename = ext4_rename,
+	.getattr = ext4_getattr,
+};
+
 const struct file_system ext4_fs = {
 	.name = "ext4",
-	.mount = fs_blk_mount_ext4
+	.fs_op = &ext4_filesystem_ops,
 };

@@ -22,6 +22,8 @@ struct proc {
     struct trapframe* trapframe;
     struct context context;
 
+    struct files_struct* fdt;
+    char* cwd; // current working directory
 
     int killed;
     void* chan;     // proc sleep on which channel
