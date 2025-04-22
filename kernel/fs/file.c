@@ -28,9 +28,16 @@ void fdt_init(struct files_struct *files)
     files->nr_avail_fd = NR_OPEN;
 }
 
-fd_t fd_alloc(struct files_struct *fdt)
+fd_t fd_alloc(struct files_struct *fdt, struct file* file)
 {
     fd_t fd = fdt->next_fd;
+    
+    if(file == NULL)
+    {
+        error("file is NULL");
+        return -1;
+    }
+
     if (fd >= NR_OPEN)
     {
         error("too much open files for porc %s", myproc()->name);
@@ -39,13 +46,7 @@ fd_t fd_alloc(struct files_struct *fdt)
 
     assert(fdt->fd[fd] == NULL);
 
-    fdt->fd[fd] = kcalloc(1, sizeof(struct file));
-    if (fdt->fd[fd] == NULL)
-    {
-        error("alloc file error");
-        return -1;
-    }
-
+    fdt->fd[fd] = file;
     find_avail_fd(fdt);
 
     fdt->nr_avail_fd--;

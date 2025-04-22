@@ -22,7 +22,7 @@ struct file_operations {
 	off_t (*llseek) (struct file *, off_t, int);
 	ssize_t (*read) (struct file *, char *, size_t, off_t *);
 	ssize_t (*write) (struct file *, const char *, size_t, off_t *);
-	int (*open) (struct file *, struct path *, uint32);
+	int (*open) (struct file *, path_t, uint32);
 	int (*close) (struct file *);
 	// int (*flush) (struct file *, fl_owner_t id);
 	// int (*fsync) (struct file *, off_t, off_t, int datasync);
@@ -50,9 +50,10 @@ void fdt_init(struct files_struct *files);
 /**
  * Allocate a file descriptor in given files_struct.
  * @param fdt The files_struct given.
+ * @param file The struct file to be filled in fdt_i.
  * @return The allocated file descriptor, or -1 on error.
  */
-fd_t fd_alloc(struct files_struct *fdt);
+fd_t fd_alloc(struct files_struct *fdt, struct file *file);
 
 /**
  * Free a file descriptor in given files_struct.

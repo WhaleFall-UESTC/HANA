@@ -4,13 +4,17 @@
 #include <common.h>
 #include <locking/spinlock.h>
 
-struct path
-{
-    int p_len;
-    char p_name[0];
-};
+// struct path
+// {
+//     int p_len;
+//     char p_name[0];
+// };
+
+#define MAX_PATH_LEN 256
+typedef const char* path_t;
 
 struct inode_operations;
+struct mountpoint;
 
 struct inode
 {
@@ -19,12 +23,17 @@ struct inode
 
     const struct inode_operations *i_op; // inode operations
 
+    char i_path[MAX_PATH_LEN]; // path to the file
+    uint32 i_ino;              // inode number
+
     spinlock_t i_lock;   // inode lock
     uint32_t i_refcount; // reference count
 
     time_t i_atime; // last access time
     time_t i_mtime; // last modification time
     time_t i_ctime; // last status change time
+
+    struct mountpoint *i_mp; // mountpoint
 };
 
 struct dentry;
@@ -34,21 +43,14 @@ struct dentry;
  * This may lead to a lot of changes in lwext4
  */
 
-struct inode_operations
-{
+// struct inode_operations
+// {
     // int (*readlink) (struct dentry *, char __user *,int);
-    int (*link)(struct path *, struct inode *, struct path *);
-    int (*unlink)(struct inode *, struct path *);
-    int (*symlink)(struct inode *, struct path *, struct path *);
-    int (*mkdir)(struct inode *, struct path *, umode_t);
-    int (*rmdir)(struct inode *, struct path *);
-    int (*rename)(struct path *, struct path *);
-    // int (*rename)(struct inode *, struct path *,
-    //               struct inode *, struct path *, unsigned int);
-    // int (*setattr)(struct path *, struct iattr *);
-    int (*getattr)(const struct path *, struct stat *);
-    // ssize_t (*listxattr)(struct path *, char *, size_t);
-};
+    // int (*rename)(struct inode *, path_t,
+    //               struct inode *, path_t, unsigned int);
+    // int (*setattr)(path_t, struct iattr *);
+    // ssize_t (*listxattr)(path_t, char *, size_t);
+// };
 
 // struct inode_operations {
 // int (*permission) (struct inode *, int);
@@ -64,15 +66,14 @@ struct inode_operations
 // 	int (*rename) (struct inode *, struct dentry *,
 // 			struct inode *, struct dentry *, unsigned int);
 //     int (*setattr) (struct dentry *, struct iattr *);
-//     int (*getattr) (const struct path *, struct kstat *, uint32, unsigned int);
+//     int (*getattr) (const path_t, struct kstat *, uint32, unsigned int);
 //     ssize_t (*listxattr) (struct dentry *, char *, size_t);
 // };
 
 struct file;
 
-struct file_system
+struct fs_operations
 {
-    const char *name;
     int (*mount)(struct blkdev *, const char *);
     // int (*umount)(const char *mount_point);
     // int (*statfs)(const char *mount_point, struct statfs *);
@@ -80,7 +81,20 @@ struct file_system
      * get fs specific inode and file
      * it init ops ptr and private data, but DO NOT alloc inode and file
      */
-    int (*ifget)(struct inode *, struct file *);
+    int (*ifget)(struct mountpoint *, struct inode *, struct file *);
+    int (*link)(path_t, path_t);
+    int (*unlink)(path_t);
+    int (*symlink)(path_t, path_t);
+    int (*mkdir)(path_t, umode_t);
+    int (*rmdir)(path_t);
+    int (*rename)(path_t, path_t);
+    int (*getattr)(const path_t, struct stat *);
+};
+
+struct file_system
+{
+    const char *name;
+    const struct fs_operations *fs_op;
 };
 
 struct mountpoint
