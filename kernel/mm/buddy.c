@@ -11,7 +11,7 @@ get_order(uint64 size)
 {
     size >>= PGSHIFT;
     int order = 0;
-    while (size >>= 1)
+    while (size > (1 << order))
         order++;
     return order;
 }
@@ -148,6 +148,7 @@ buddy_alloc(uint64 sz)
     assert(sz > 0);
     uint64 size = PGROUNDUP(sz);
     int order = get_order(size);
+    assert(sz <= (PGSIZE << order));
 
     if (zone.free_area[order].nr_free) {
         struct block* free_block = zone.free_area[order].free_list.prev;
