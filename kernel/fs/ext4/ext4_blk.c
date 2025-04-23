@@ -37,7 +37,7 @@
 #include <debug.h>
 #include <fs/fs.h>
 
-#define DBG_EXT4BLK
+// #define DBG_EXT4BLK
 
 #define get_blkdev_from_blkext4(bdev) \
 	container_of(bdev, struct ext4_fs_dev, ext4_blkdev)->blkdev
@@ -83,8 +83,6 @@ int blockdev_bread(struct ext4_blockdev *bdev, void *buf, uint64 blk_id,
 			ret = ENOMEM;
 			goto out;
 		}
-
-		bendio(req);
 
 #ifdef DBG_EXT4BLK
 		req->endio = bendio;

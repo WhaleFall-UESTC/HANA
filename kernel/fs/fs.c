@@ -408,7 +408,6 @@ SYSCALL_DEFINE1(unlink, const char*, path) {
 SYSCALL_DEFINE3(getdents64, int, fd, struct dirent *, buf, size_t, len) {
     struct file* file;
     struct files_struct* fdt = myproc()->fdt;
-    int ret;
 
     if (fd < 0 || fd >= NR_OPEN)
         return -1;
@@ -417,11 +416,7 @@ SYSCALL_DEFINE3(getdents64, int, fd, struct dirent *, buf, size_t, len) {
     if (file == NULL)
         return -1;
 
-    ret = file->f_op->getdents64(file, buf, len);
-    if (ret < 0)
-        return -1;
-
-    return ret;
+    return file->f_op->getdents64(file, buf, len);
 }
 
 SYSCALL_DEFINE2(mkdir, const char*, path, umode_t, mode) {

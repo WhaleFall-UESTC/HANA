@@ -60,7 +60,10 @@ void test_fs(void) {
         error("open directory failed");
         return;
     }
-    else PASS("open directory success");
+    else {
+        PASS("open directory success");
+        log("open directory fd: %d", fd);
+    }
 
     ret = call_sys_getdents64(fd, (struct dirent*)buf, 1000);
     if (ret < 0) {

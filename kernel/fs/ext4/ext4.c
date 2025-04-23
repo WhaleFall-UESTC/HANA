@@ -287,7 +287,7 @@ static int ext4_getattr(path_t path, struct stat * stat) {
 
 static int ext4_getdents64(struct file* file, struct dirent* buf, size_t len) {
 	struct ext4_dir *dir;
-	int ret;
+	int ret = 0;
 	size_t size;
 	const struct ext4_direntry *dentry = NULL;
 
@@ -355,6 +355,7 @@ const struct file_operations ext4_file_fops = {
 	.write = ext4_write,
 	.open = ext4_open,
 	.close = ext4_close,
+	.getdents64 = ext4_getdents64,
 };
 
 const struct fs_operations ext4_filesystem_ops = {
