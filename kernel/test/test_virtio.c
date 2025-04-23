@@ -6,72 +6,134 @@
 #include <klib.h>
 #include <riscv.h>
 #include <mm/mm.h>
+
 #define VIRTIO_BLK_DEV_NAME "virtio-blk1"
+#define TEST_CYCLES 10
+#define BLOCK_SIZE 512
+#define BLOCKS_PER_TEST 10
+#define TEST_DATA_SIZE (BLOCK_SIZE * BLOCKS_PER_TEST)
 
-void test_virtio() {
-    char* buffer;
-    struct blkdev* blkdev;
-    struct blkreq* req;
-    
-    buffer = (char *)kalloc(1024);
-    assert(buffer != NULL);
+static uint32 rand_state = 1;
 
-    blkdev = blkdev_get_by_name(VIRTIO_BLK_DEV_NAME);
-    assert(blkdev != NULL);
-    PASS("blkdev %s found", blkdev->name);
+/* Random number generator implementation */
+void srand(uint32 seed)
+{
+    rand_state = seed ? seed : 1;
+}
 
-    req = blkdev->ops->alloc(blkdev);
-    assert(req != NULL);
+uint32 krand(void)
+{
+    rand_state = (uint32)((uint64)rand_state * 279470273UL) % 4294967291UL;
+    return rand_state;
+}
 
-    req->type = BLKREQ_TYPE_WRITE;
-    req->sector_sta = 0;
-    req->size = 1024;
-    memset(buffer, 0x02, 1024);
-    req->buffer = buffer;
+void init_random()
+{
+    uint32 seed;
+    __asm__ __volatile__("csrr %0, cycle" : "=r"(seed));
+    srand(seed);
+}
 
-    assert(blkdev->ops->submit != NULL);
+void test_virtio()
+{
+    char *write_buf = NULL;
+    char *read_buf = NULL;
+    struct blkdev *blkdev = NULL;
+    uint64 nr_sectors;
+    uint64 sectors[BLOCKS_PER_TEST];
 
-    // blkdev_submit_req_wait(blkdev, req);
-    blkdev_submit_req(blkdev, req);
-    
-    blkdev_wait_all(blkdev);
-    if (req->status == BLKREQ_STATUS_OK) {
-        PASS("Write %ld bytes to sector %ld", req->size, req->sector_sta);
-    } else {
-        error("Failed to write to sector %ld", req->sector_sta);
-    }
-    // blkdev_free_all(blkdev);
-    
-    // blkdev->ops->free(blkdev, req);
-    
-    memset(buffer, 0, 1024);
-    
-    req = blkdev->ops->alloc(blkdev);
-    assert(req != NULL);
-    
-    req->type = BLKREQ_TYPE_READ;
-    req->sector_sta = 0;
-    req->size = 1024;
-    req->buffer = buffer;
+    init_random();
 
-    // blkdev_submit_req_wait(blkdev, req);
-    blkdev_submit_req(blkdev, req);
+    log("Starting enhanced virtio block device test...");
 
-    blkdev_wait_all(blkdev);
-    if (req->status == BLKREQ_STATUS_OK)
+    if (!(write_buf = kalloc(TEST_DATA_SIZE)) || !(read_buf = kalloc(TEST_DATA_SIZE)))
     {
-        PASS("Read %ld bytes from sector %ld", req->size, req->sector_sta);
+        error("Memory allocation failed");
+        goto cleanup;
     }
-    else
+
+    if (!(blkdev = blkdev_get_by_name(VIRTIO_BLK_DEV_NAME)))
     {
-        error("Failed to read from sector %ld", req->sector_sta);
+        error("Device not found");
+        goto cleanup;
     }
 
-    // blkdev->ops->free(blkdev, req);
-    // blkdev_free_all(blkdev);
+    nr_sectors = blkdev->size / BLOCK_SIZE;
 
-    assert(buffer[1023] == 0x2);
-    PASS("Read data: %x", buffer[1023]);
+    for (int cycle = 0; cycle < TEST_CYCLES; cycle++)
+    {
+        // Generate 10 unique random sectors
+        for (int i = 0; i < BLOCKS_PER_TEST; i++)
+        {
+            sectors[i] = krand() % nr_sectors;
+            log("Cycle %d: Sector %d - %lu", cycle, i, sectors[i]);
+        }
 
-    kfree(buffer);
+        // Generate unique random data for each sector
+        for (int i = 0; i < TEST_DATA_SIZE; i++)
+        {
+            write_buf[i] = (char)(krand() & 0xFF);
+        }
+
+        /*---------- Random Write Phase ----------*/
+        for (int i = 0; i < BLOCKS_PER_TEST; i++)
+        {
+            struct blkreq *req = blkreq_alloc(blkdev, sectors[i],
+                                              write_buf + i * BLOCK_SIZE, BLOCK_SIZE, 1);
+
+            if (!req)
+            {
+                error("Write req failed: cycle %d sector %lu", cycle, sectors[i]);
+                goto cleanup;
+            }
+            blkdev_submit_req(blkdev, req);
+        }
+
+        if (blkdev_wait_all(blkdev) > 0)
+        {
+            error("Write errors in cycle %d", cycle);
+            blkdev_free_all(blkdev);
+            goto cleanup;
+        }
+        blkdev_free_all(blkdev);
+
+        /*---------- Random Read & Verify Phase ----------*/
+        memset(read_buf, 0, TEST_DATA_SIZE);
+
+        for (int i = 0; i < BLOCKS_PER_TEST; i++)
+        {
+            struct blkreq *req = blkreq_alloc(blkdev, sectors[i],
+                                              read_buf + i * BLOCK_SIZE, BLOCK_SIZE, 0);
+
+            if (!req)
+            {
+                error("Read req failed: cycle %d sector %lu", cycle, sectors[i]);
+                goto cleanup;
+            }
+            blkdev_submit_req(blkdev, req);
+        }
+
+        if (blkdev_wait_all(blkdev) > 0)
+        {
+            error("Read errors in cycle %d", cycle);
+            blkdev_free_all(blkdev);
+            goto cleanup;
+        }
+        blkdev_free_all(blkdev);
+
+        // Verify all sectors
+        if (memcmp(write_buf, read_buf, TEST_DATA_SIZE) != 0)
+        {
+            error("Data mismatch in cycle %d", cycle);
+            goto cleanup;
+        }
+    }
+
+    PASS("Completed %d cycles with random sector access", TEST_CYCLES);
+
+cleanup:
+    if (write_buf)
+        kfree(write_buf);
+    if (read_buf)
+        kfree(read_buf);
 }
