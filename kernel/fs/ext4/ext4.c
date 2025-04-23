@@ -52,7 +52,7 @@ ext4_fs_mount(struct blkdev * blkdev, const char *mountpoint)
 
 	fs_dev->blkdev = blkdev;
 
-	sprintf(buffer, "ext4_%s", blkdev->name);
+	sprintf(buffer, "ext4-%s", blkdev->name);
 
 	ret = ext4_device_register(blockdev, buffer);
 	if (ret != EOK)
@@ -61,6 +61,7 @@ ext4_fs_mount(struct blkdev * blkdev, const char *mountpoint)
 		return -1;
 	}
 
+	debug("ext4 device mount name = %s, mountp = %s", buffer, mountpoint);
 	ret = ext4_mount(buffer, mountpoint, false);
 	if (ret != EOK)
 	{

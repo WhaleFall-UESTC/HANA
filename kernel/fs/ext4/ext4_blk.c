@@ -45,7 +45,7 @@ int blockdev_open(struct ext4_blockdev *bdev)
 	/**
 	 * For now this function needs no implementation
 	 */
-	debug("blockdev_open");
+	// debug("blockdev_open");
 	return EOK;
 }
 
@@ -80,6 +80,7 @@ out_free:
 	blkreq_free(blkdev, req);
 
 out:
+	debug("bread finished, ret = %d", ret);
 	return ret;
 }
 
@@ -114,6 +115,7 @@ out_free:
 	blkreq_free(blkdev, req);
 
 out:
+	debug("bwrite finished, ret = %d", ret);
 	return ret;
 }
 
@@ -122,7 +124,7 @@ int blockdev_close(struct ext4_blockdev *bdev)
 	/**
 	 * For now this function needs no implementation
 	 */
-	debug("blockdev_close");
+	// debug("blockdev_close");
 	return EOK;
 }
 
@@ -131,7 +133,7 @@ int blockdev_lock(struct ext4_blockdev *bdev)
 	/**
 	 * For now this function needs no implementation
 	 */
-	debug("blockdev_lock");
+	// debug("blockdev_lock");
 	return EOK;
 }
 
@@ -140,7 +142,7 @@ int blockdev_unlock(struct ext4_blockdev *bdev)
 	/**
 	 * For now this function needs no implementation
 	 */
-	debug("blockdev_unlock");
+	// debug("blockdev_unlock");
 	return EOK;
 }
 

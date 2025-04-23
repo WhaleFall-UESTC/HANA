@@ -26,7 +26,9 @@ void test_fs(void) {
     int ret;
     fd_t fd;
 
-    char* buf[1024];
+    char buf[1024];
+
+    log("test fs");
 
     ret = mount_root(EXT4_BLK_DEV, &ext4_fs);
     if (ret != 0) {
@@ -42,7 +44,16 @@ void test_fs(void) {
     }
     else PASS("mkdir success");
 
-    fd = call_sys_open("/", O_RDONLY | O_DIRECTORY);
+    ret = call_sys_mkdir("/test/aaa", 0777);
+    if (ret != 0)
+    {
+        error("mkdir failed");
+        return;
+    }
+    else
+        PASS("mkdir success");
+
+    fd = call_sys_open("/test", O_RDONLY | O_DIRECTORY);
     if (fd < 0) {
         error("open directory failed");
         return;

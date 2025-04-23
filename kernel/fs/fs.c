@@ -51,7 +51,7 @@ static int mountpoint_match_prefix(const char* path, struct mountpoint* mount_p)
 
 static int mountpoint_find(const char* path)
 {
-    int max_len = 0, res = -1;
+    int max_len = -1, res = -1;
 
     for(int i = 0; i < mount_count; i++)
     {
@@ -152,6 +152,8 @@ SYSCALL_DEFINE2(open, const char*, path, unsigned int, flags) {
     struct files_struct* fdt = myproc()->fdt;
     struct stat stat;
 
+    debug("open path: %s, flags: %d", path, flags);
+
     ret = get_absolute_path(path, full_path);
     if (ret < 0)
     {
@@ -184,12 +186,14 @@ SYSCALL_DEFINE2(open, const char*, path, unsigned int, flags) {
     }
     
     file->f_flags = flags;
+    debug("file->f_flags: %d", file->f_flags);
     ret = mount_p->fs->fs_op->ifget(mount_p, inode, file);
     if(ret < 0) {
         error("ifget error");
         goto out_inode;
     }
 
+    debug("open file %s, flags: %d", full_path, flags);
     ret = file->f_op->open(file, full_path, flags);
     if(ret != EOK) {
         error("open error, ret: %d", ret);
@@ -442,6 +446,7 @@ SYSCALL_DEFINE2(mkdir, const char*, path, umode_t, mode) {
     mount_p = &mount_table[mp_index];
     assert(mount_p->fs != NULL);
 
+    debug("mkdir %s, mode = %d", full_path, mode);
     ret = mount_p->fs->fs_op->mkdir(full_path, mode);
     if(ret < 0) {
         error("mkdir error");
