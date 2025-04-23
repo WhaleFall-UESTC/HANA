@@ -5,7 +5,6 @@
 #include <fs/fs.h>
 #include <fs/dirent.h>
 #include <klib.h>
-#include <locking/spinlock.h>
 
 struct file_operations;
 
@@ -48,9 +47,10 @@ struct files_struct
 /**
  * Initialize the file descriptor table.
  * @param files The files_struct given.
+ * @param name The name given to lock.
  * @return 0 on success, -1 on error.
  */
-void fdt_init(struct files_struct *files);
+void fdt_init(struct files_struct *files, char* name);
 
 /**
  * Allocate a file descriptor in given files_struct.

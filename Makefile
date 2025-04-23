@@ -62,9 +62,7 @@ LDFLAGS = -nostdlib -T $(ARCH_SRC)/kernel.ld
 SRC_S = $(shell find $(ARCH_SRC) -type f -name *.S)
 
 SRC_C := $(shell find $(KERNEL_SRC) -type f -name '*.c' \
-			-not -path '$(KERNEL_SRC)/fs/*' \
-			-not -path '$(KERNEL_SRC)/lwext4/*' \
-			-not -path '$(KERNEL_SRC)/arch/*') \    # do not delete this line
+			-not -path '$(KERNEL_SRC)/arch/*') \
 		$(shell find $(ARCH_SRC) -type f -name *.c) \
 
 OBJS = $(addprefix $(BUILD_DIR)/, $(SRC_C:.c=.o) $(SRC_S:.S=.o))
@@ -94,6 +92,7 @@ clean:
 
 $(FS):
 	qemu-img create -f raw $(FS) 2G
+	mkfs.ext4 $(FS)
 	@echo "[DISK] Created root filesystem image: $(FS)"
 
 $(DISK): $(FS)
@@ -107,13 +106,15 @@ $(KERNELDUMP): $(KERNEL)
 distclean: clean
 	rm -f $(KERNEL) $(KERNELDUMP) $(DISK) $(FS)
 
-build: $(KERNELDUMP) $(DISK) 
+build: $(KERNEL) $(DISK) 
 	@echo "[BUILD] Kernel and disk images are ready."
+
+build_all: $(KERNELDUMP) $(DISK)
 
 run: build
 	$(QEMU) $(QEMUOPTS)
 
-gdb: build .gdbinit-$(ARCH)
+gdb: build_all .gdbinit-$(ARCH)
 	$(QEMU) $(QEMUOPTS) -S -gdb tcp::9877
 
 

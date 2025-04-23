@@ -28,6 +28,8 @@ struct virtqueue *virtq_create()
 	assert(virtq != NULL);
 	memset(virtq, 0, sizeof(struct virtqueue));
 
+	debug("virtq_create: virtq=0x%lx", (uint64)virtq);
+
 	virtq->avail.idx = 0;
 	virtq->used.idx = 0;
 
@@ -253,4 +255,5 @@ void virtio_init(void)
 {
 	for (int i = 0; i < 1; i++)
 		virtio_dev_init(VIRT_VIRTIO + VIRT_VIRTIO_SIZE * i, i + 1);
+	// blkdev_get_by_name("virtio-blk1")->ops->status(blkdev_get_by_name("virtio-blk1"));
 }

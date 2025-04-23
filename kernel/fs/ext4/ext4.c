@@ -178,15 +178,7 @@ static int ext4_open(struct file* file, path_t path, uint32 flags) {
 	struct ext4_dir *dir;
 	int ret;
 
-	if(S_ISDIR(file->f_inode->i_mode)){
-		/**
-		 * TODO: it seems not beautiful to check it here
-		 */
-		if((flags & O_DIRECTORY) != O_DIRECTORY) {
-			error_ext4("open directory without a directory flag");
-			return -1;
-		}
-
+	if(flags & O_DIRECTORY) {
 		dir = (struct ext4_dir *)file->f_private;
 
 		ret = ext4_dir_open(dir, path);

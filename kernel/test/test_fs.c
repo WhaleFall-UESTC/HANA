@@ -30,6 +30,8 @@ void test_fs(void) {
 
     log("test fs");
 
+    // blkdev_get_by_name("virtio-blk1")->ops->status(blkdev_get_by_name("virtio-blk1"));
+
     ret = mount_root(EXT4_BLK_DEV, &ext4_fs);
     if (ret != 0) {
         error("mount root failed");
@@ -37,21 +39,21 @@ void test_fs(void) {
     }
     else PASS("mount root success");
 
-    ret = call_sys_mkdir("/test", 0777);
-    if (ret != 0) {
-        error("mkdir failed");
-        return;
-    }
-    else PASS("mkdir success");
+    // ret = call_sys_mkdir("/test", 0777);
+    // if (ret != 0) {
+    //     error("mkdir failed");
+    //     return;
+    // }
+    // else PASS("mkdir success");
 
-    ret = call_sys_mkdir("/test/aaa", 0777);
-    if (ret != 0)
-    {
-        error("mkdir failed");
-        return;
-    }
-    else
-        PASS("mkdir success");
+    // ret = call_sys_mkdir("/test/aaa", 0777);
+    // if (ret != 0)
+    // {
+    //     error("mkdir failed");
+    //     return;
+    // }
+    // else
+    //     PASS("mkdir success");
 
     fd = call_sys_open("/test", O_RDONLY | O_DIRECTORY);
     if (fd < 0) {

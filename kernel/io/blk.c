@@ -36,11 +36,13 @@ void blkdev_init(struct blkdev *dev, int devid, unsigned long size, uint64 secto
     dev->sector_size = sector_size;
     dev->ops = ops;
 
-    snprintf(dev->name, BLKDEV_NAME_MAX_LEN, "%s%d", name, intr);
+    snprintf(dev->name, BLKDEV_NAME_MAX_LEN, "%s%d-rql", name, intr);
+    spinlock_init(&dev->rq_list_lock, dev->name);
 
+    snprintf(dev->name, BLKDEV_NAME_MAX_LEN, "%s%d", name, intr);
     INIT_LIST_HEAD(dev->blk_list);
     INIT_LIST_HEAD(dev->rq_list);
-    spinlock_init(&dev->rq_list_lock, dev->name);
+    spinlock_init(&dev->blk_lock, dev->name);
 }
 
 void blkdev_register(struct blkdev *blkdev)
@@ -98,9 +100,10 @@ void blkdev_general_endio(struct blkreq *request)
     wakeup(blkreq_wait_channel(request));
 }
 
-void blkdev_wait_all(struct blkdev *dev)
+int blkdev_wait_all(struct blkdev *dev)
 {
     struct blkreq *request;
+    int ret = 0;
     
     spinlock_acquire(&dev->rq_list_lock);
     list_for_each_entry(request, &dev->rq_list, rq_head)
@@ -120,9 +123,11 @@ void blkdev_wait_all(struct blkdev *dev)
         {
             error("Request failed, sector=%ld, size=%ld, in device %s",
                   request->sector_sta, request->size, dev->name);
+            ret ++;
         }
     }
     spinlock_release(&dev->rq_list_lock);
+    return ret;
 }
 
 void blkdev_free_all(struct blkdev *dev) {

@@ -37,6 +37,8 @@
 #include <debug.h>
 #include <fs/fs.h>
 
+#define DBG_EXT4BLK
+
 #define get_blkdev_from_blkext4(bdev) \
 	container_of(bdev, struct ext4_fs_dev, ext4_blkdev)->blkdev
 
@@ -49,37 +51,57 @@ int blockdev_open(struct ext4_blockdev *bdev)
 	return EOK;
 }
 
+#ifdef DBG_EXT4BLK
+static void bendio(struct blkreq * req) {
+	debug("\nbendio: %s", req->rq_dev->name);
+	debug("bendio: req: 0x%p", req);
+	debug("bendio: buf: 0x%p", req->buffer);
+	debug("bendio: %lu", req->sector_sta);
+	debug("bendio: %lu\n", req->size);
+}
+#endif
+
 int blockdev_bread(struct ext4_blockdev *bdev, void *buf, uint64 blk_id,
 			 uint32 blk_cnt)
 {
 	struct blkdev* blkdev = get_blkdev_from_blkext4(bdev);
 	struct blkreq* req;
-	int ret = EOK;
+	int ret = EOK, nr;
+	uint64 i;
+	uint64 buf_ptr = (uint64)buf;
 
 	assert(blkdev != NULL);
 
 	debug("blockdev_bread: %s", blkdev->name);
 
-	req = blkreq_alloc(blkdev, blk_id, (void *)buf,
-			   blk_cnt * blkdev->sector_size, 0);
-	if(req == NULL) {
-		error_ext4("Failed to allocate block request");
-		ret = EIO;
-		goto out;
+	for(i = 0; i < blk_cnt; i++) {
+
+		req = blkreq_alloc(blkdev, blk_id + i, (void *)buf_ptr, blkdev->sector_size, BLKREQ_READ);
+
+		if(req == NULL) {
+			error_ext4("Failed to allocate block request");
+			ret = ENOMEM;
+			goto out;
+		}
+
+		bendio(req);
+
+#ifdef DBG_EXT4BLK
+		req->endio = bendio;
+#endif
+
+		blkdev_submit_req(blkdev, req);
+
+		buf_ptr += blkdev->sector_size;
 	}
-
-	blkdev_submit_req_wait(blkdev, req);
-
-	if(req->status != BLKREQ_STATUS_OK) {
-		error_ext4("Failed to read from block device");
-		ret = EIO;
-		goto out_free;
-	}
-
-out_free:
-	blkreq_free(blkdev, req);
 
 out:
+	nr = blkdev_wait_all(blkdev);
+	if(ret == EOK && nr)
+		ret = EIO;
+
+	blkdev_free_all(blkdev);
+
 	debug("bread finished, ret = %d", ret);
 	return ret;
 }
@@ -89,32 +111,36 @@ int blockdev_bwrite(struct ext4_blockdev *bdev, const void *buf,
 {
 	struct blkdev* blkdev = get_blkdev_from_blkext4(bdev);
 	struct blkreq* req;
-	int ret = EOK;
+	int ret = EOK, nr;
+	uint32 i;
+	uint64 buf_ptr = (uint64)buf;
 
 	assert(blkdev != NULL);
 
 	debug("blockdev_bwrite: %s", blkdev->name);
 
-	req = blkreq_alloc(blkdev, blk_id, (void *)buf,
-			   blk_cnt * blkdev->sector_size, 1);
-	if(req == NULL) {
-		error_ext4("Failed to allocate block request");
-		ret = EIO;
-		goto out;
+	for(i = 0; i < blk_cnt; i++) {
+
+		req = blkreq_alloc(blkdev, blk_id + i, (void *)buf_ptr, blkdev->sector_size, BLKREQ_WRITE);
+
+		if(req == NULL) {
+			error_ext4("Failed to allocate block request");
+			ret = ENOMEM;
+			goto out;
+		}
+
+		blkdev_submit_req(blkdev, req);
+
+		buf_ptr += blkdev->sector_size;
 	}
-
-	blkdev_submit_req_wait(blkdev, req);
-
-	if(req->status != BLKREQ_STATUS_OK) {
-		error_ext4("Failed to read from block device");
-		ret = EIO;
-		goto out_free;
-	}
-
-out_free:
-	blkreq_free(blkdev, req);
 
 out:
+	nr = blkdev_wait_all(blkdev);
+	if(ret == EOK && nr)
+		ret = EIO;
+
+	blkdev_free_all(blkdev);
+
 	debug("bwrite finished, ret = %d", ret);
 	return ret;
 }
@@ -130,18 +156,18 @@ int blockdev_close(struct ext4_blockdev *bdev)
 
 int blockdev_lock(struct ext4_blockdev *bdev)
 {
-	/**
-	 * For now this function needs no implementation
-	 */
+	struct blkdev* blkdev = get_blkdev_from_blkext4(bdev);
+
+	spinlock_acquire(&blkdev->blk_lock);
 	// debug("blockdev_lock");
 	return EOK;
 }
 
 int blockdev_unlock(struct ext4_blockdev *bdev)
 {
-	/**
-	 * For now this function needs no implementation
-	 */
+	struct blkdev* blkdev = get_blkdev_from_blkext4(bdev);
+
+	spinlock_release(&blkdev->blk_lock);
 	// debug("blockdev_unlock");
 	return EOK;
 }

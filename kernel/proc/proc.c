@@ -13,6 +13,7 @@
 #include <proc/sched.h>
 #include <mm/mm.h>
 #include <mm/memlayout.h>
+#include <fs/file.h>
 
 extern struct proc* proc_list;
 
@@ -57,6 +58,12 @@ alloc_proc()
     
     p->next = NULL;
     p->parent = NULL;
+
+    p->cwd = "/";
+
+    p->fdt = (struct files_struct*) kalloc(sizeof(struct files_struct));
+    Assert(p->fdt, "out of memory");
+    fdt_init(p->fdt, "fdt_lock");
 
     return p;
 }

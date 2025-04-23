@@ -82,6 +82,7 @@ struct blkdev
     struct list_head blk_list; // list entry for block devices
     struct list_head rq_list;  // list head for requests
     spinlock_t rq_list_lock;
+    spinlock_t blk_lock;
 };
 
 struct blkdev_ops
@@ -110,6 +111,8 @@ static inline void blkreq_init(struct blkreq *request, struct blkdev *dev)
 
 static inline struct blkreq* blkreq_alloc(struct blkdev* blkdev, sector_t sector_sta, void* buffer, uint64 size, int write)
 {
+#define BLKREQ_READ 0
+#define BLKREQ_WRITE 1
     struct blkreq* req = blkdev->ops->alloc(blkdev);
 
     if(req == NULL)
@@ -184,8 +187,9 @@ void blkdev_general_endio(struct blkreq *request);
 
 /**
  * wait until all requests in request list done
+ * @return: nr of unsuccessful requests
  */
-void blkdev_wait_all(struct blkdev *dev);
+int blkdev_wait_all(struct blkdev *dev);
 
 /**
  * remove and free all requests in given blkdev that are done
