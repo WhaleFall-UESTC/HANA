@@ -8,13 +8,10 @@
 #include <trap/context.h>
 #include <proc/proc.h>
 
-// extern uint64 sys_fork();
 
-static uint64 (*syscalls[NR_SYSCALL])(void) = {
-    // [SYS_fork] sys_fork,
+syscall_func_t syscalls[] = {
+
 };
-
-// syscall_func_t syscalls[NR_SYSCALL];
 
 void
 syscall()
@@ -22,9 +19,7 @@ syscall()
     struct proc* p = myproc();
     int code = p->trapframe->a7;
 
-    if (code > 0 && code < NR_SYSCALL) {
-        if (syscalls[code] == NULL)
-            panic("unregistered syscall %d", code);
+    if (code > 0 && syscalls[code]) {
         p->trapframe->a0 = syscalls[code]();
     }
     else {

@@ -1,3 +1,7 @@
+#define PALEN 48
+#define VALEN 48
+#define MAXVA (1UL << VALEN)
+
 /* 基础控制寄存器 */
 #define CSR_CRMD        0x0    // 当前模式信息
 #define CSR_PRMD        0x1    // 例外前模式信息
@@ -357,3 +361,33 @@
 #define CSR_MSGIR_Null        (0x1 << 31)   // 无效请求标志 R
 #define CSR_MSGIE_PT          (0xFF << 0)   // 优先级阈值 RW
 
+
+static inline uint64 
+csr_read(uint64 csr)
+{
+    uint64 val;
+    asm volatile("csrrd %0, %1" : "=r"(val) : "i"(csr));
+    return val;
+}
+
+static inline void 
+csr_write(uint64 csr, uint64 val)
+{
+    asm volatile("csrwr %0, %1" : : "r"(val), "i"(csr));
+}
+
+// set csr bits
+static inline void 
+csr_set(uint64 csr, uint64 val)
+{
+    asm volatile("csrxchg $zero, %0, %1" : : "r"(val), "i"(csr));
+}
+
+
+static inline void intr_on() {
+    asm volatile("csrxchg $zero, %0, %1" : : "r"(CSR_CRMD_IE), "i"(CSR_CRMD));
+}
+
+
+// Invalidate TLB Entry
+#define invtlb() asm volatile("invtlb  0x0, $zero, $zero")
