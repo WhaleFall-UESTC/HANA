@@ -59,11 +59,11 @@ ASFLAGS = $(CFLAGS) -D__ASSEMBLY__
 LDFLAGS = -nostdlib -T $(ARCH_SRC)/kernel.ld
 
 
-SRC_S = $(shell find $(ARCH_SRC) -type f -name *.S)
+SRC_S = $(shell find $(ARCH_SRC) -type f -name '*.S')
 
-SRC_C := $(shell find $(KERNEL_SRC) -type f -name '*.c' \
-			-not -path '$(KERNEL_SRC)/arch/*') \
-		$(shell find $(ARCH_SRC) -type f -name *.c) \
+SRC_C := $(shell find $(ARCH_SRC) -type f -name '*.c') \
+		 $(shell find $(KERNEL_SRC) -type f -name '*.c' \
+			-not -path '$(KERNEL_SRC)/arch/*')   # do not delete this line
 
 OBJS = $(addprefix $(BUILD_DIR)/, $(SRC_C:.c=.o) $(SRC_S:.S=.o))
 

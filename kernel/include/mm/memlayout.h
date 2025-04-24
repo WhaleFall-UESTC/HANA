@@ -3,9 +3,16 @@
 
 #include <platform.h>
 
-/* kernel va and pa will ba the same */
-#define KERNELBASE  0x80000000L
-#define PHYSTOP     0x86400000L
+
+#ifdef ARCH_RISCV
+/* kernel va and pa will be the same */
+#define KERNELBASE  0x80200000L
+#elif defined(ARCH_LOONGARCH)
+#define KERNELBASE  0x9000000000000000UL
+#define MAXVA       (1UL << 63)
+#endif
+
+#define PHYSTOP     (KERNELBASE + MEMORY_SIZE)
 
 #define TRAMPOLINE  (MAXVA - PGSIZE)
 #define TRAPFRAME   (TRAMPOLINE - PGSIZE)
