@@ -9,7 +9,7 @@
  */
 #ifndef __LIST_H__
 #define __LIST_H__
-#include <stddef.h>
+
 
 /**
  * struct list_head: Embed this into your structs which will be part of a list

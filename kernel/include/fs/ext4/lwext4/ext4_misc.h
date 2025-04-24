@@ -42,7 +42,7 @@
 extern "C" {
 #endif
 
-#include <stdint.h>
+#include <common.h>
 
 /**************************************************************/
 
@@ -51,7 +51,7 @@ extern "C" {
 
 /****************************Endian conversion*****************/
 
-static inline uint64_t reorder64(uint64_t n)
+static inline uint64 reorder64(uint64 n)
 {
 	return  ((n & 0xff) << 56) |
 		((n & 0xff00) << 40) |
@@ -63,7 +63,7 @@ static inline uint64_t reorder64(uint64_t n)
 		((n & 0xff00000000000000LL) >> 56);
 }
 
-static inline uint32_t reorder32(uint32_t n)
+static inline uint32 reorder32(uint32 n)
 {
 	return  ((n & 0xff) << 24) |
 		((n & 0xff00) << 8) |
@@ -71,7 +71,7 @@ static inline uint32_t reorder32(uint32_t n)
 		((n & 0xff000000) >> 24);
 }
 
-static inline uint16_t reorder16(uint16_t n)
+static inline uint16 reorder16(uint16 n)
 {
 	return  ((n & 0xff) << 8) |
 		((n & 0xff00) >> 8);

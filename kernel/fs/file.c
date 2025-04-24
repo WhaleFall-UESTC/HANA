@@ -15,17 +15,20 @@ static inline void find_avail_fd(struct files_struct *fdt)
         if (fdt->fd[fd] == NULL)
         {
             fdt->next_fd = fd;
-            return fd;
+            return;
         }
     }
     fdt->next_fd = NR_OPEN;
 }
 
-void fdt_init(struct files_struct *files)
+void fdt_init(struct files_struct *files, char* name)
 {
-    memset(files, 0, sizeof(*files));
+    debug("fdt addr: 0x%lx", (uint64)files);
+    debug("sizeof fdt: %lu", sizeof(struct files_struct));
+    memset(files, 0, sizeof(struct files_struct));
     files->next_fd = 0;
     files->nr_avail_fd = NR_OPEN;
+    spinlock_init(&files->fdt_lock, name);
 }
 
 fd_t fd_alloc(struct files_struct *fdt, struct file* file)
@@ -54,5 +57,12 @@ fd_t fd_alloc(struct files_struct *fdt, struct file* file)
 }
 
 void fd_free(struct files_struct *fdt, fd_t fd) {
-    
+    if(fd < 0 || fd >= NR_OPEN)
+        return;
+
+    if(fdt->fd[fd] != NULL) {
+        fdt->fd[fd] = NULL;
+        fdt->nr_avail_fd++;
+        find_avail_fd(fdt);
+    }
 }

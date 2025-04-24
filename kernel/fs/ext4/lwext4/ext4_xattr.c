@@ -32,8 +32,7 @@
 #include <fs/ext4/lwext4/ext4_trans.h>
 #include <fs/ext4/lwext4/ext4_xattr.h>
 
-#include <stdlib.h>
-#include <string.h>
+#include <klib.h>
 
 #if CONFIG_XATTR_ENABLE
 
@@ -83,33 +82,33 @@
 #define EXT4_XATTR_BHDR(block) ((struct ext4_xattr_header *)((block)->data))
 #define EXT4_XATTR_ENTRY(ptr) ((struct ext4_xattr_entry *)(ptr))
 #define EXT4_XATTR_BFIRST(block) EXT4_XATTR_ENTRY(EXT4_XATTR_BHDR(block) + 1)
-#define EXT4_XATTR_IS_LAST_ENTRY(entry) (*(uint32_t *)(entry) == 0)
+#define EXT4_XATTR_IS_LAST_ENTRY(entry) (*(uint32 *)(entry) == 0)
 
 #define EXT4_ZERO_XATTR_VALUE ((void *)-1)
 
 #pragma pack(push, 1)
 
 struct ext4_xattr_header {
-    uint32_t h_magic;   /* magic number for identification */
-    uint32_t h_refcount;    /* reference count */
-    uint32_t h_blocks;  /* number of disk blocks used */
-    uint32_t h_hash;        /* hash value of all attributes */
-    uint32_t h_checksum;    /* crc32c(uuid+id+xattrblock) */
+    uint32 h_magic;   /* magic number for identification */
+    uint32 h_refcount;    /* reference count */
+    uint32 h_blocks;  /* number of disk blocks used */
+    uint32 h_hash;        /* hash value of all attributes */
+    uint32 h_checksum;    /* crc32c(uuid+id+xattrblock) */
                 /* id = inum if refcount=1, blknum otherwise */
-    uint32_t h_reserved[3]; /* zero right now */
+    uint32 h_reserved[3]; /* zero right now */
 };
 
 struct ext4_xattr_ibody_header {
-    uint32_t h_magic;   /* magic number for identification */
+    uint32 h_magic;   /* magic number for identification */
 };
 
 struct ext4_xattr_entry {
-    uint8_t e_name_len; /* length of name */
-    uint8_t e_name_index;   /* attribute name index */
-    uint16_t e_value_offs;  /* offset in disk block of value */
-    uint32_t e_value_block; /* disk block attribute is stored on (n/i) */
-    uint32_t e_value_size;  /* size of attribute value */
-    uint32_t e_hash;        /* hash value of name and value */
+    uint8 e_name_len; /* length of name */
+    uint8 e_name_index;   /* attribute name index */
+    uint16 e_value_offs;  /* offset in disk block of value */
+    uint32 e_value_block; /* disk block attribute is stored on (n/i) */
+    uint32 e_value_size;  /* size of attribute value */
+    uint32 e_hash;        /* hash value of name and value */
 };
 
 #pragma pack(pop)
@@ -121,7 +120,7 @@ struct ext4_xattr_entry {
 static inline void ext4_xattr_compute_hash(struct ext4_xattr_header *header,
 					   struct ext4_xattr_entry *entry)
 {
-	uint32_t hash = 0;
+	uint32 hash = 0;
 	char *name = EXT4_XATTR_NAME(entry);
 	int n;
 
@@ -131,8 +130,8 @@ static inline void ext4_xattr_compute_hash(struct ext4_xattr_header *header,
 	}
 
 	if (entry->e_value_block == 0 && entry->e_value_size != 0) {
-		uint32_t *value =
-		    (uint32_t *)((char *)header + to_le16(entry->e_value_offs));
+		uint32 *value =
+		    (uint32 *)((char *)header + to_le16(entry->e_value_offs));
 		for (n = (to_le32(entry->e_value_size) + EXT4_XATTR_ROUND) >>
 			 EXT4_XATTR_PAD_BITS;
 		     n; n--) {
@@ -155,7 +154,7 @@ static void ext4_xattr_rehash(struct ext4_xattr_header *header,
 			      struct ext4_xattr_entry *entry)
 {
 	struct ext4_xattr_entry *here;
-	uint32_t hash = 0;
+	uint32 hash = 0;
 
 	ext4_xattr_compute_hash(header, entry);
 	here = EXT4_XATTR_ENTRY(header + 1);
@@ -174,16 +173,16 @@ static void ext4_xattr_rehash(struct ext4_xattr_header *header,
 }
 
 #if CONFIG_META_CSUM_ENABLE
-static uint32_t ext4_xattr_block_checksum(struct ext4_inode_ref *inode_ref,
+static uint32 ext4_xattr_block_checksum(struct ext4_inode_ref *inode_ref,
 					  ext4_fsblk_t blocknr,
 					  struct ext4_xattr_header *header)
 {
-	uint32_t checksum = 0;
-	uint64_t le64_blocknr = blocknr;
+	uint32 checksum = 0;
+	uint64 le64_blocknr = blocknr;
 	struct ext4_sblock *sb = &inode_ref->fs->sb;
 
 	if (ext4_sb_feature_ro_com(sb, EXT4_FRO_COM_METADATA_CSUM)) {
-		uint32_t orig_checksum;
+		uint32 orig_checksum;
 
 		/* Preparation: temporarily set bg checksum to 0 */
 		orig_checksum = header->h_checksum;
@@ -220,7 +219,7 @@ static void ext4_xattr_set_block_checksum(struct ext4_inode_ref *inode_ref,
 
 struct xattr_prefix {
 	const char *prefix;
-	uint8_t name_index;
+	uint8 name_index;
 };
 
 static const struct xattr_prefix prefix_tbl[] = {
@@ -235,7 +234,7 @@ static const struct xattr_prefix prefix_tbl[] = {
 };
 
 const char *ext4_extract_xattr_name(const char *full_name, size_t full_name_len,
-				    uint8_t *name_index, size_t *name_len,
+				    uint8 *name_index, size_t *name_len,
 				    bool *found)
 {
 	int i;
@@ -277,7 +276,7 @@ const char *ext4_extract_xattr_name(const char *full_name, size_t full_name_len,
 	return NULL;
 }
 
-const char *ext4_get_xattr_name_prefix(uint8_t name_index,
+const char *ext4_get_xattr_name_prefix(uint8 name_index,
 				       size_t *ret_prefix_len)
 {
 	int i;
@@ -333,7 +332,7 @@ static int ext4_xattr_set_entry(struct ext4_xattr_info *i,
 	}
 
 	/* Calculate free space in the block. */
-	free = min_offs - ((char *)last - (char *)s->base) - sizeof(uint32_t);
+	free = min_offs - ((char *)last - (char *)s->base) - sizeof(uint32);
 	if (!s->not_found)
 		free += EXT4_XATTR_SIZE(s->here->e_value_size) +
 			EXT4_XATTR_LEN(s->here->e_name_len);
@@ -403,7 +402,7 @@ static int ext4_xattr_set_entry(struct ext4_xattr_info *i,
 			here->e_value_size = to_le32(i->value_len);
 		} else {
 			/* Insert a new entry */
-			last->e_name_len = (uint8_t)name_len;
+			last->e_name_len = (uint8)name_len;
 			last->e_name_index = i->name_index;
 			last->e_value_offs = to_le16(value_offs);
 			last->e_value_block = 0;
@@ -411,7 +410,7 @@ static int ext4_xattr_set_entry(struct ext4_xattr_info *i,
 			memcpy(EXT4_XATTR_NAME(last), i->name, name_len);
 
 			/* Set valid last entry indicator */
-			*(uint32_t *)EXT4_XATTR_NEXT(last) = 0;
+			*(uint32 *)EXT4_XATTR_NEXT(last) = 0;
 
 			s->here = last;
 		}
@@ -434,11 +433,11 @@ static int ext4_xattr_set_entry(struct ext4_xattr_info *i,
 		/* Remove the whole entry */
 		shift_offs = (char *)EXT4_XATTR_NEXT(s->here) - (char *)s->here;
 		memmove(s->here, EXT4_XATTR_NEXT(s->here),
-			(char *)last + sizeof(uint32_t) -
+			(char *)last + sizeof(uint32) -
 			    (char *)EXT4_XATTR_NEXT(s->here));
 
 		/* Zero the gap created */
-		memset((char *)last - shift_offs + sizeof(uint32_t), 0,
+		memset((char *)last - shift_offs + sizeof(uint32), 0,
 		       shift_offs);
 
 		s->here = NULL;
@@ -545,7 +544,7 @@ static bool ext4_xattr_is_block_valid(struct ext4_inode_ref *inode_ref,
 		 * also there should be an 4-byte zero entry at the
 		 * end.
 		 */
-		if ((char *)EXT4_XATTR_NEXT(entry) + sizeof(uint32_t) >
+		if ((char *)EXT4_XATTR_NEXT(entry) + sizeof(uint32) >
 		    (char *)end)
 			return false;
 
@@ -558,7 +557,7 @@ static bool ext4_xattr_is_block_valid(struct ext4_inode_ref *inode_ref,
 	/*
 	 * Entry field and data field do not override each other.
 	 */
-	if ((char *)base + min_offs < (char *)entry + sizeof(uint32_t))
+	if ((char *)base + min_offs < (char *)entry + sizeof(uint32))
 		return false;
 
 	return true;
@@ -612,7 +611,7 @@ static bool ext4_xattr_is_ibody_valid(struct ext4_inode_ref *inode_ref)
 		 * also there should be an 4-byte zero entry at the
 		 * end.
 		 */
-		if ((char *)EXT4_XATTR_NEXT(entry) + sizeof(uint32_t) >
+		if ((char *)EXT4_XATTR_NEXT(entry) + sizeof(uint32) >
 		    (char *)end)
 			return false;
 
@@ -625,7 +624,7 @@ static bool ext4_xattr_is_ibody_valid(struct ext4_inode_ref *inode_ref)
 	/*
 	 * Entry field and data field do not override each other.
 	 */
-	if ((char *)base + min_offs < (char *)entry + sizeof(uint32_t))
+	if ((char *)base + min_offs < (char *)entry + sizeof(uint32))
 		return false;
 
 	return true;
@@ -993,7 +992,7 @@ out:
  *
  * @return Error code
  */
-int ext4_xattr_get(struct ext4_inode_ref *inode_ref, uint8_t name_index,
+int ext4_xattr_get(struct ext4_inode_ref *inode_ref, uint8 name_index,
 		   const char *name, size_t name_len, void *buf, size_t buf_len,
 		   size_t *data_len)
 {
@@ -1167,7 +1166,7 @@ out:
  *
  * @return Error code
  */
-int ext4_xattr_remove(struct ext4_inode_ref *inode_ref, uint8_t name_index,
+int ext4_xattr_remove(struct ext4_inode_ref *inode_ref, uint8 name_index,
 		      const char *name, size_t name_len)
 {
 	int ret = EOK;
@@ -1481,7 +1480,7 @@ out:
  *
  * @return Error code
  */
-int ext4_xattr_set(struct ext4_inode_ref *inode_ref, uint8_t name_index,
+int ext4_xattr_set(struct ext4_inode_ref *inode_ref, uint8 name_index,
 		   const char *name, size_t name_len, const void *value,
 		   size_t value_len)
 {

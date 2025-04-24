@@ -43,6 +43,7 @@
 #define SYS_gettimeofday 169
 #define SYS_nanosleep 101
 
+#define NR_SYSCALL 30
 
 typedef uint64 (*syscall_func_t)(void);
 
@@ -71,6 +72,7 @@ typedef uint64 (*syscall_func_t)(void);
 #define __TYPE_IS_LL(t) (__TYPE_AS(t, 0LL) || __TYPE_AS(t, 0ULL))
 #define __SC_LONG(t, a) __typeof(__builtin_choose_expr(__TYPE_IS_LL(t), 0LL, 0L)) a
 #define __SC_CAST(t, a) (__force t) a
+#define __SC_RESERVE(t, a) a
 
 #define SYSCALL_DEFINE0(name) _SYSCALL_DEFINEx(0, _##name)
 #define SYSCALL_DEFINE1(name, ...) _SYSCALL_DEFINEx(1, _##name, __VA_ARGS__)
@@ -80,12 +82,19 @@ typedef uint64 (*syscall_func_t)(void);
 #define SYSCALL_DEFINE5(name, ...) _SYSCALL_DEFINEx(5, _##name, __VA_ARGS__)
 #define SYSCALL_DEFINE6(name, ...) _SYSCALL_DEFINEx(6, _##name, __VA_ARGS__)
 
+#define SYSCALL_KERNEL_DEFINE(x, name, ...)                         \
+    uint64 call_sys##name(__MAP(x, __SC_DECL, __VA_ARGS__))         \
+    {                                                               \
+        return __do_sys##name(__MAP(x, __SC_RESERVE, __VA_ARGS__)); \
+    }
+
 #define _SYSCALL_DEFINEx(x, name, ...)                                       \
     static inline uint64 __do_sys##name(__MAP(x, __SC_DECL, __VA_ARGS__));   \
     uint64 sys##name(void)                                                   \
     {                                                                        \
         return __do_sys##name(__MAP(x, __SC_CAST, _PARAMS(x, __VA_ARGS__))); \
     }                                                                        \
+    SYSCALL_KERNEL_DEFINE(x, name, __VA_ARGS__)                              \
     static inline uint64 __do_sys##name(__MAP(x, __SC_DECL, __VA_ARGS__))
 
 void syscall();

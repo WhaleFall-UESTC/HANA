@@ -50,14 +50,14 @@ extern "C" {
 #include <fs/ext4/lwext4/ext4_blockdev.h>
 #include <fs/ext4/lwext4/misc/tree.h>
 
-#include <stddef.h>
-#include <stdint.h>
+
+#include <common.h>
 
 /*
  * Types of blocks.
  */
-typedef uint32_t ext4_lblk_t;
-typedef uint64_t ext4_fsblk_t;
+typedef uint32 ext4_lblk_t;
+typedef uint64 ext4_fsblk_t;
 
 
 #define EXT4_CHECKSUM_CRC32C 1
@@ -70,112 +70,112 @@ typedef uint64_t ext4_fsblk_t;
  * Structure of the super block
  */
 struct ext4_sblock {
-	uint32_t inodes_count;		   /* I-nodes count */
-	uint32_t blocks_count_lo;	  /* Blocks count */
-	uint32_t reserved_blocks_count_lo; /* Reserved blocks count */
-	uint32_t free_blocks_count_lo;     /* Free blocks count */
-	uint32_t free_inodes_count;	/* Free inodes count */
-	uint32_t first_data_block;	 /* First Data Block */
-	uint32_t log_block_size;	   /* Block size */
-	uint32_t log_cluster_size;	 /* Obsoleted fragment size */
-	uint32_t blocks_per_group;	 /* Number of blocks per group */
-	uint32_t frags_per_group;	  /* Obsoleted fragments per group */
-	uint32_t inodes_per_group;	 /* Number of inodes per group */
-	uint32_t mount_time;		   /* Mount time */
-	uint32_t write_time;		   /* Write time */
-	uint16_t mount_count;		   /* Mount count */
-	uint16_t max_mount_count;	  /* Maximal mount count */
-	uint16_t magic;			   /* Magic signature */
-	uint16_t state;			   /* File system state */
-	uint16_t errors;		   /* Behavior when detecting errors */
-	uint16_t minor_rev_level;	  /* Minor revision level */
-	uint32_t last_check_time;	  /* Time of last check */
-	uint32_t check_interval;	   /* Maximum time between checks */
-	uint32_t creator_os;		   /* Creator OS */
-	uint32_t rev_level;		   /* Revision level */
-	uint16_t def_resuid;		   /* Default uid for reserved blocks */
-	uint16_t def_resgid;		   /* Default gid for reserved blocks */
+	uint32 inodes_count;		   /* I-nodes count */
+	uint32 blocks_count_lo;	  /* Blocks count */
+	uint32 reserved_blocks_count_lo; /* Reserved blocks count */
+	uint32 free_blocks_count_lo;     /* Free blocks count */
+	uint32 free_inodes_count;	/* Free inodes count */
+	uint32 first_data_block;	 /* First Data Block */
+	uint32 log_block_size;	   /* Block size */
+	uint32 log_cluster_size;	 /* Obsoleted fragment size */
+	uint32 blocks_per_group;	 /* Number of blocks per group */
+	uint32 frags_per_group;	  /* Obsoleted fragments per group */
+	uint32 inodes_per_group;	 /* Number of inodes per group */
+	uint32 mount_time;		   /* Mount time */
+	uint32 write_time;		   /* Write time */
+	uint16 mount_count;		   /* Mount count */
+	uint16 max_mount_count;	  /* Maximal mount count */
+	uint16 magic;			   /* Magic signature */
+	uint16 state;			   /* File system state */
+	uint16 errors;		   /* Behavior when detecting errors */
+	uint16 minor_rev_level;	  /* Minor revision level */
+	uint32 last_check_time;	  /* Time of last check */
+	uint32 check_interval;	   /* Maximum time between checks */
+	uint32 creator_os;		   /* Creator OS */
+	uint32 rev_level;		   /* Revision level */
+	uint16 def_resuid;		   /* Default uid for reserved blocks */
+	uint16 def_resgid;		   /* Default gid for reserved blocks */
 
 	/* Fields for EXT4_DYNAMIC_REV superblocks only. */
-	uint32_t first_inode;	 /* First non-reserved inode */
-	uint16_t inode_size;	  /* Size of inode structure */
-	uint16_t block_group_index;   /* Block group index of this superblock */
-	uint32_t features_compatible; /* Compatible feature set */
-	uint32_t features_incompatible;  /* Incompatible feature set */
-	uint32_t features_read_only;     /* Readonly-compatible feature set */
-	uint8_t uuid[UUID_SIZE];		 /* 128-bit uuid for volume */
+	uint32 first_inode;	 /* First non-reserved inode */
+	uint16 inode_size;	  /* Size of inode structure */
+	uint16 block_group_index;   /* Block group index of this superblock */
+	uint32 features_compatible; /* Compatible feature set */
+	uint32 features_incompatible;  /* Incompatible feature set */
+	uint32 features_read_only;     /* Readonly-compatible feature set */
+	uint8 uuid[UUID_SIZE];		 /* 128-bit uuid for volume */
 	char volume_name[16];		 /* Volume name */
 	char last_mounted[64];		 /* Directory where last mounted */
-	uint32_t algorithm_usage_bitmap; /* For compression */
+	uint32 algorithm_usage_bitmap; /* For compression */
 
 	/*
 	 * Performance hints. Directory preallocation should only
 	 * happen if the EXT4_FEATURE_COMPAT_DIR_PREALLOC flag is on.
 	 */
-	uint8_t s_prealloc_blocks; /* Number of blocks to try to preallocate */
-	uint8_t s_prealloc_dir_blocks;  /* Number to preallocate for dirs */
-	uint16_t s_reserved_gdt_blocks; /* Per group desc for online growth */
+	uint8 s_prealloc_blocks; /* Number of blocks to try to preallocate */
+	uint8 s_prealloc_dir_blocks;  /* Number to preallocate for dirs */
+	uint16 s_reserved_gdt_blocks; /* Per group desc for online growth */
 
 	/*
 	 * Journaling support valid if EXT4_FEATURE_COMPAT_HAS_JOURNAL set.
 	 */
-	uint8_t journal_uuid[UUID_SIZE];      /* UUID of journal superblock */
-	uint32_t journal_inode_number; /* Inode number of journal file */
-	uint32_t journal_dev;	  /* Device number of journal file */
-	uint32_t last_orphan;	  /* Head of list of inodes to delete */
-	uint32_t hash_seed[4];	 /* HTREE hash seed */
-	uint8_t default_hash_version;  /* Default hash version to use */
-	uint8_t journal_backup_type;
-	uint16_t desc_size;	  /* Size of group descriptor */
-	uint32_t default_mount_opts; /* Default mount options */
-	uint32_t first_meta_bg;      /* First metablock block group */
-	uint32_t mkfs_time;	  /* When the filesystem was created */
-	uint32_t journal_blocks[17]; /* Backup of the journal inode */
+	uint8 journal_uuid[UUID_SIZE];      /* UUID of journal superblock */
+	uint32 journal_inode_number; /* Inode number of journal file */
+	uint32 journal_dev;	  /* Device number of journal file */
+	uint32 last_orphan;	  /* Head of list of inodes to delete */
+	uint32 hash_seed[4];	 /* HTREE hash seed */
+	uint8 default_hash_version;  /* Default hash version to use */
+	uint8 journal_backup_type;
+	uint16 desc_size;	  /* Size of group descriptor */
+	uint32 default_mount_opts; /* Default mount options */
+	uint32 first_meta_bg;      /* First metablock block group */
+	uint32 mkfs_time;	  /* When the filesystem was created */
+	uint32 journal_blocks[17]; /* Backup of the journal inode */
 
 	/* 64bit support valid if EXT4_FEATURE_COMPAT_64BIT */
-	uint32_t blocks_count_hi;	  /* Blocks count */
-	uint32_t reserved_blocks_count_hi; /* Reserved blocks count */
-	uint32_t free_blocks_count_hi;     /* Free blocks count */
-	uint16_t min_extra_isize;    /* All inodes have at least # bytes */
-	uint16_t want_extra_isize;   /* New inodes should reserve # bytes */
-	uint32_t flags;		     /* Miscellaneous flags */
-	uint16_t raid_stride;	/* RAID stride */
-	uint16_t mmp_interval;       /* # seconds to wait in MMP checking */
-	uint64_t mmp_block;	  /* Block for multi-mount protection */
-	uint32_t raid_stripe_width;  /* Blocks on all data disks (N * stride) */
-	uint8_t log_groups_per_flex; /* FLEX_BG group size */
-	uint8_t checksum_type;
-	uint16_t reserved_pad;
-	uint64_t kbytes_written; /* Number of lifetime kilobytes written */
-	uint32_t snapshot_inum;  /* I-node number of active snapshot */
-	uint32_t snapshot_id;    /* Sequential ID of active snapshot */
-	uint64_t
+	uint32 blocks_count_hi;	  /* Blocks count */
+	uint32 reserved_blocks_count_hi; /* Reserved blocks count */
+	uint32 free_blocks_count_hi;     /* Free blocks count */
+	uint16 min_extra_isize;    /* All inodes have at least # bytes */
+	uint16 want_extra_isize;   /* New inodes should reserve # bytes */
+	uint32 flags;		     /* Miscellaneous flags */
+	uint16 raid_stride;	/* RAID stride */
+	uint16 mmp_interval;       /* # seconds to wait in MMP checking */
+	uint64 mmp_block;	  /* Block for multi-mount protection */
+	uint32 raid_stripe_width;  /* Blocks on all data disks (N * stride) */
+	uint8 log_groups_per_flex; /* FLEX_BG group size */
+	uint8 checksum_type;
+	uint16 reserved_pad;
+	uint64 kbytes_written; /* Number of lifetime kilobytes written */
+	uint32 snapshot_inum;  /* I-node number of active snapshot */
+	uint32 snapshot_id;    /* Sequential ID of active snapshot */
+	uint64
 	    snapshot_r_blocks_count; /* Reserved blocks for active snapshot's
 					future use */
-	uint32_t
+	uint32
 	    snapshot_list; /* I-node number of the head of the on-disk snapshot
 			      list */
-	uint32_t error_count;	 /* Number of file system errors */
-	uint32_t first_error_time;    /* First time an error happened */
-	uint32_t first_error_ino;     /* I-node involved in first error */
-	uint64_t first_error_block;   /* Block involved of first error */
-	uint8_t first_error_func[32]; /* Function where the error happened */
-	uint32_t first_error_line;    /* Line number where error happened */
-	uint32_t last_error_time;     /* Most recent time of an error */
-	uint32_t last_error_ino;      /* I-node involved in last error */
-	uint32_t last_error_line;     /* Line number where error happened */
-	uint64_t last_error_block;    /* Block involved of last error */
-	uint8_t last_error_func[32];  /* Function where the error happened */
-	uint8_t mount_opts[64];
-	uint32_t usr_quota_inum;	/* inode for tracking user quota */
-	uint32_t grp_quota_inum;	/* inode for tracking group quota */
-	uint32_t overhead_clusters;	/* overhead blocks/clusters in fs */
-	uint32_t backup_bgs[2];	/* groups with sparse_super2 SBs */
-	uint8_t  encrypt_algos[4];	/* Encryption algorithms in use  */
-	uint8_t  encrypt_pw_salt[16];	/* Salt used for string2key algorithm */
-	uint32_t lpf_ino;		/* Location of the lost+found inode */
-	uint32_t padding[100];	/* Padding to the end of the block */
-	uint32_t checksum;		/* crc32c(superblock) */
+	uint32 error_count;	 /* Number of file system errors */
+	uint32 first_error_time;    /* First time an error happened */
+	uint32 first_error_ino;     /* I-node involved in first error */
+	uint64 first_error_block;   /* Block involved of first error */
+	uint8 first_error_func[32]; /* Function where the error happened */
+	uint32 first_error_line;    /* Line number where error happened */
+	uint32 last_error_time;     /* Most recent time of an error */
+	uint32 last_error_ino;      /* I-node involved in last error */
+	uint32 last_error_line;     /* Line number where error happened */
+	uint64 last_error_block;    /* Block involved of last error */
+	uint8 last_error_func[32];  /* Function where the error happened */
+	uint8 mount_opts[64];
+	uint32 usr_quota_inum;	/* inode for tracking user quota */
+	uint32 grp_quota_inum;	/* inode for tracking group quota */
+	uint32 overhead_clusters;	/* overhead blocks/clusters in fs */
+	uint32 backup_bgs[2];	/* groups with sparse_super2 SBs */
+	uint8  encrypt_algos[4];	/* Encryption algorithms in use  */
+	uint8  encrypt_pw_salt[16];	/* Salt used for string2key algorithm */
+	uint32 lpf_ino;		/* Location of the lost+found inode */
+	uint32 padding[100];	/* Padding to the end of the block */
+	uint32 checksum;		/* crc32c(superblock) */
 };
 
 #pragma pack(pop)
@@ -321,30 +321,30 @@ struct ext4_sblock {
  * Structure of a blocks group descriptor
  */
 struct ext4_bgroup {
-	uint32_t block_bitmap_lo;	    /* Blocks bitmap block */
-	uint32_t inode_bitmap_lo;	    /* Inodes bitmap block */
-	uint32_t inode_table_first_block_lo; /* Inodes table block */
-	uint16_t free_blocks_count_lo;       /* Free blocks count */
-	uint16_t free_inodes_count_lo;       /* Free inodes count */
-	uint16_t used_dirs_count_lo;	 /* Directories count */
-	uint16_t flags;		       /* EXT4_BG_flags (INODE_UNINIT, etc) */
-	uint32_t exclude_bitmap_lo;    /* Exclude bitmap for snapshots */
-	uint16_t block_bitmap_csum_lo; /* crc32c(s_uuid+grp_num+bbitmap) LE */
-	uint16_t inode_bitmap_csum_lo; /* crc32c(s_uuid+grp_num+ibitmap) LE */
-	uint16_t itable_unused_lo;     /* Unused inodes count */
-	uint16_t checksum;	     /* crc16(sb_uuid+group+desc) */
+	uint32 block_bitmap_lo;	    /* Blocks bitmap block */
+	uint32 inode_bitmap_lo;	    /* Inodes bitmap block */
+	uint32 inode_table_first_block_lo; /* Inodes table block */
+	uint16 free_blocks_count_lo;       /* Free blocks count */
+	uint16 free_inodes_count_lo;       /* Free inodes count */
+	uint16 used_dirs_count_lo;	 /* Directories count */
+	uint16 flags;		       /* EXT4_BG_flags (INODE_UNINIT, etc) */
+	uint32 exclude_bitmap_lo;    /* Exclude bitmap for snapshots */
+	uint16 block_bitmap_csum_lo; /* crc32c(s_uuid+grp_num+bbitmap) LE */
+	uint16 inode_bitmap_csum_lo; /* crc32c(s_uuid+grp_num+ibitmap) LE */
+	uint16 itable_unused_lo;     /* Unused inodes count */
+	uint16 checksum;	     /* crc16(sb_uuid+group+desc) */
 
-	uint32_t block_bitmap_hi;	    /* Blocks bitmap block MSB */
-	uint32_t inode_bitmap_hi;	    /* I-nodes bitmap block MSB */
-	uint32_t inode_table_first_block_hi; /* I-nodes table block MSB */
-	uint16_t free_blocks_count_hi;       /* Free blocks count MSB */
-	uint16_t free_inodes_count_hi;       /* Free i-nodes count MSB */
-	uint16_t used_dirs_count_hi;	 /* Directories count MSB */
-	uint16_t itable_unused_hi;	   /* Unused inodes count MSB */
-	uint32_t exclude_bitmap_hi;	  /* Exclude bitmap block MSB */
-	uint16_t block_bitmap_csum_hi; /* crc32c(s_uuid+grp_num+bbitmap) BE */
-	uint16_t inode_bitmap_csum_hi; /* crc32c(s_uuid+grp_num+ibitmap) BE */
-	uint32_t reserved;	     /* Padding */
+	uint32 block_bitmap_hi;	    /* Blocks bitmap block MSB */
+	uint32 inode_bitmap_hi;	    /* I-nodes bitmap block MSB */
+	uint32 inode_table_first_block_hi; /* I-nodes table block MSB */
+	uint16 free_blocks_count_hi;       /* Free blocks count MSB */
+	uint16 free_inodes_count_hi;       /* Free i-nodes count MSB */
+	uint16 used_dirs_count_hi;	 /* Directories count MSB */
+	uint16 itable_unused_hi;	   /* Unused inodes count MSB */
+	uint32 exclude_bitmap_hi;	  /* Exclude bitmap block MSB */
+	uint16 block_bitmap_csum_hi; /* crc32c(s_uuid+grp_num+bbitmap) BE */
+	uint16 inode_bitmap_csum_hi; /* crc32c(s_uuid+grp_num+ibitmap) BE */
+	uint32 reserved;	     /* Padding */
 };
 
 
@@ -371,51 +371,51 @@ struct ext4_bgroup {
  * Structure of an inode on the disk
  */
 struct ext4_inode {
-	uint16_t mode;		    /* File mode */
-	uint16_t uid;		    /* Low 16 bits of owner uid */
-	uint32_t size_lo;	   /* Size in bytes */
-	uint32_t access_time;       /* Access time */
-	uint32_t change_inode_time; /* I-node change time */
-	uint32_t modification_time; /* Modification time */
-	uint32_t deletion_time;     /* Deletion time */
-	uint16_t gid;		    /* Low 16 bits of group id */
-	uint16_t links_count;       /* Links count */
-	uint32_t blocks_count_lo;   /* Blocks count */
-	uint32_t flags;		    /* File flags */
-	uint32_t unused_osd1;       /* OS dependent - not used in HelenOS */
-	uint32_t blocks[EXT4_INODE_BLOCKS]; /* Pointers to blocks */
-	uint32_t generation;		    /* File version (for NFS) */
-	uint32_t file_acl_lo;		    /* File ACL */
-	uint32_t size_hi;
-	uint32_t obso_faddr; /* Obsoleted fragment address */
+	uint16 mode;		    /* File mode */
+	uint16 uid;		    /* Low 16 bits of owner uid */
+	uint32 size_lo;	   /* Size in bytes */
+	uint32 access_time;       /* Access time */
+	uint32 change_inode_time; /* I-node change time */
+	uint32 modification_time; /* Modification time */
+	uint32 deletion_time;     /* Deletion time */
+	uint16 gid;		    /* Low 16 bits of group id */
+	uint16 links_count;       /* Links count */
+	uint32 blocks_count_lo;   /* Blocks count */
+	uint32 flags;		    /* File flags */
+	uint32 unused_osd1;       /* OS dependent - not used in HelenOS */
+	uint32 blocks[EXT4_INODE_BLOCKS]; /* Pointers to blocks */
+	uint32 generation;		    /* File version (for NFS) */
+	uint32 file_acl_lo;		    /* File ACL */
+	uint32 size_hi;
+	uint32 obso_faddr; /* Obsoleted fragment address */
 
 	union {
 		struct {
-			uint16_t blocks_high;
-			uint16_t file_acl_high;
-			uint16_t uid_high;
-			uint16_t gid_high;
-			uint16_t checksum_lo; /* crc32c(uuid+inum+inode) LE */
-			uint16_t reserved2;
+			uint16 blocks_high;
+			uint16 file_acl_high;
+			uint16 uid_high;
+			uint16 gid_high;
+			uint16 checksum_lo; /* crc32c(uuid+inum+inode) LE */
+			uint16 reserved2;
 		} linux2;
 		struct {
-			uint16_t reserved1;
-			uint16_t mode_high;
-			uint16_t uid_high;
-			uint16_t gid_high;
-			uint32_t author;
+			uint16 reserved1;
+			uint16 mode_high;
+			uint16 uid_high;
+			uint16 gid_high;
+			uint32 author;
 		} hurd2;
 	} osd2;
 
-	uint16_t extra_isize;
-	uint16_t checksum_hi;	/* crc32c(uuid+inum+inode) BE */
-	uint32_t ctime_extra; /* Extra change time (nsec << 2 | epoch) */
-	uint32_t mtime_extra; /* Extra Modification time (nsec << 2 | epoch) */
-	uint32_t atime_extra; /* Extra Access time (nsec << 2 | epoch) */
-	uint32_t crtime;      /* File creation time */
-	uint32_t
+	uint16 extra_isize;
+	uint16 checksum_hi;	/* crc32c(uuid+inum+inode) BE */
+	uint32 ctime_extra; /* Extra change time (nsec << 2 | epoch) */
+	uint32 mtime_extra; /* Extra Modification time (nsec << 2 | epoch) */
+	uint32 atime_extra; /* Extra Access time (nsec << 2 | epoch) */
+	uint32 crtime;      /* File creation time */
+	uint32
 	    crtime_extra;    /* Extra file creation time (nsec << 2 | epoch) */
-	uint32_t version_hi; /* High 32 bits for 64-bit version */
+	uint32 version_hi; /* High 32 bits for 64-bit version */
 };
 
 #pragma pack(pop)
@@ -482,48 +482,48 @@ enum { EXT4_DE_UNKNOWN = 0,
 #pragma pack(push, 1)
 
 union ext4_dir_en_internal {
-	uint8_t name_length_high; /* Higher 8 bits of name length */
-	uint8_t inode_type;       /* Type of referenced inode (in rev >= 0.5) */
+	uint8 name_length_high; /* Higher 8 bits of name length */
+	uint8 inode_type;       /* Type of referenced inode (in rev >= 0.5) */
 };
 
 /**
  * Linked list directory entry structure
  */
 struct ext4_dir_en {
-	uint32_t inode;	/* I-node for the entry */
-	uint16_t entry_len; /* Distance to the next directory entry */
-	uint8_t name_len;   /* Lower 8 bits of name length */
+	uint32 inode;	/* I-node for the entry */
+	uint16 entry_len; /* Distance to the next directory entry */
+	uint8 name_len;   /* Lower 8 bits of name length */
 
 	union ext4_dir_en_internal in;
-	uint8_t name[]; /* Entry name */
+	uint8 name[]; /* Entry name */
 };
 
 /* Structures for indexed directory */
 
 struct ext4_dir_idx_climit {
-	uint16_t limit;
-	uint16_t count;
+	uint16 limit;
+	uint16 count;
 };
 
 struct ext4_dir_idx_dot_en {
-	uint32_t inode;
-	uint16_t entry_length;
-	uint8_t name_length;
-	uint8_t inode_type;
-	uint8_t name[4];
+	uint32 inode;
+	uint16 entry_length;
+	uint8 name_length;
+	uint8 inode_type;
+	uint8 name[4];
 };
 
 struct ext4_dir_idx_rinfo {
-	uint32_t reserved_zero;
-	uint8_t hash_version;
-	uint8_t info_length;
-	uint8_t indirect_levels;
-	uint8_t unused_flags;
+	uint32 reserved_zero;
+	uint8 hash_version;
+	uint8 info_length;
+	uint8 indirect_levels;
+	uint8 unused_flags;
 };
 
 struct ext4_dir_idx_entry {
-	uint32_t hash;
-	uint32_t block;
+	uint32 hash;
+	uint32 block;
 };
 
 struct ext4_dir_idx_root {
@@ -533,10 +533,10 @@ struct ext4_dir_idx_root {
 };
 
 struct ext4_fake_dir_entry {
-	uint32_t inode;
-	uint16_t entry_length;
-	uint8_t name_length;
-	uint8_t inode_type;
+	uint32 inode;
+	uint16 entry_length;
+	uint8 name_length;
+	uint8 inode_type;
 };
 
 struct ext4_dir_idx_node {
@@ -548,8 +548,8 @@ struct ext4_dir_idx_node {
  * This goes at the end of each htree block.
  */
 struct ext4_dir_idx_tail {
-	uint32_t reserved;
-	uint32_t checksum;	/* crc32c(uuid+inum+dirblock) */
+	uint32 reserved;
+	uint32 checksum;	/* crc32c(uuid+inum+dirblock) */
 };
 
 /*
@@ -557,11 +557,11 @@ struct ext4_dir_idx_tail {
  * records checksums.
  */
 struct ext4_dir_entry_tail {
-	uint32_t reserved_zero1;	/* Pretend to be unused */
-	uint16_t rec_len;		/* 12 */
-	uint8_t reserved_zero2;	/* Zero name length */
-	uint8_t reserved_ft;	/* 0xDE, fake file type */
-	uint32_t checksum;		/* crc32c(uuid+inum+dirblock) */
+	uint32 reserved_zero1;	/* Pretend to be unused */
+	uint16 rec_len;		/* 12 */
+	uint8 reserved_zero2;	/* Zero name length */
+	uint8 reserved_ft;	/* 0xDE, fake file type */
+	uint32 checksum;		/* crc32c(uuid+inum+dirblock) */
 };
 
 #pragma pack(pop)
@@ -624,9 +624,9 @@ struct ext4_dir_entry_tail {
  * Standard header for all descriptor blocks:
  */
 struct jbd_bhdr {
-	uint32_t		magic;
-	uint32_t		blocktype;
-	uint32_t		sequence;
+	uint32		magic;
+	uint32		blocktype;
+	uint32		sequence;
 };
 
 #pragma pack(pop)
@@ -641,7 +641,7 @@ struct jbd_bhdr {
 
 #define JBD_CRC32_CHKSUM_SIZE 4
 
-#define JBD_CHECKSUM_BYTES (32 / sizeof(uint32_t))
+#define JBD_CHECKSUM_BYTES (32 / sizeof(uint32))
 
 #pragma pack(push, 1)
 
@@ -666,29 +666,29 @@ struct jbd_bhdr {
 
 struct jbd_commit_header {
 	struct jbd_bhdr header;
-	uint8_t chksum_type;
-	uint8_t chksum_size;
-	uint8_t padding[2];
-	uint32_t		chksum[JBD_CHECKSUM_BYTES];
-	uint64_t		commit_sec;
-	uint32_t		commit_nsec;
+	uint8 chksum_type;
+	uint8 chksum_size;
+	uint8 padding[2];
+	uint32		chksum[JBD_CHECKSUM_BYTES];
+	uint64		commit_sec;
+	uint32		commit_nsec;
 };
 
 /*
  * The block tag: used to describe a single buffer in the journal
  */
 struct jbd_block_tag3 {
-	uint32_t		blocknr;	/* The on-disk block number */
-	uint32_t		flags;	/* See below */
-	uint32_t		blocknr_high; /* most-significant high 32bits. */
-	uint32_t		checksum;	/* crc32c(uuid+seq+block) */
+	uint32		blocknr;	/* The on-disk block number */
+	uint32		flags;	/* See below */
+	uint32		blocknr_high; /* most-significant high 32bits. */
+	uint32		checksum;	/* crc32c(uuid+seq+block) */
 };
 
 struct jbd_block_tag {
-	uint32_t		blocknr;	/* The on-disk block number */
-	uint16_t		checksum;	/* truncated crc32c(uuid+seq+block) */
-	uint16_t		flags;	/* See below */
-	uint32_t		blocknr_high; /* most-significant high 32bits. */
+	uint32		blocknr;	/* The on-disk block number */
+	uint16		checksum;	/* truncated crc32c(uuid+seq+block) */
+	uint16		flags;	/* See below */
+	uint32		blocknr_high; /* most-significant high 32bits. */
 };
 
 #pragma pack(pop)
@@ -703,7 +703,7 @@ struct jbd_block_tag {
 
 /* Tail of descriptor block, for checksumming */
 struct jbd_block_tail {
-	uint32_t	checksum;
+	uint32	checksum;
 };
 
 /*
@@ -712,12 +712,12 @@ struct jbd_block_tail {
  */
 struct jbd_revoke_header {
 	struct jbd_bhdr  header;
-	uint32_t	 count;	/* Count of bytes used in the block */
+	uint32	 count;	/* Count of bytes used in the block */
 };
 
 /* Tail of revoke block, for checksumming */
 struct jbd_revoke_tail {
-	uint32_t		checksum;
+	uint32		checksum;
 };
 
 #pragma pack(pop)
@@ -736,44 +736,44 @@ struct jbd_sb {
 
 /* 0x000C */
 	/* Static information describing the journal */
-	uint32_t	blocksize;		/* journal device blocksize */
-	uint32_t	maxlen;		/* total blocks in journal file */
-	uint32_t	first;		/* first block of log information */
+	uint32	blocksize;		/* journal device blocksize */
+	uint32	maxlen;		/* total blocks in journal file */
+	uint32	first;		/* first block of log information */
 
 /* 0x0018 */
 	/* Dynamic information describing the current state of the log */
-	uint32_t	sequence;		/* first commit ID expected in log */
-	uint32_t	start;		/* blocknr of start of log */
+	uint32	sequence;		/* first commit ID expected in log */
+	uint32	start;		/* blocknr of start of log */
 
 /* 0x0020 */
 	/* Error value, as set by journal_abort(). */
-	int32_t 	error_val;
+	int32 	error_val;
 
 /* 0x0024 */
 	/* Remaining fields are only valid in a version-2 superblock */
-	uint32_t	feature_compat; 	/* compatible feature set */
-	uint32_t	feature_incompat; 	/* incompatible feature set */
-	uint32_t	feature_ro_compat; 	/* readonly-compatible feature set */
+	uint32	feature_compat; 	/* compatible feature set */
+	uint32	feature_incompat; 	/* incompatible feature set */
+	uint32	feature_ro_compat; 	/* readonly-compatible feature set */
 /* 0x0030 */
-	uint8_t 	uuid[UUID_SIZE];		/* 128-bit uuid for journal */
+	uint8 	uuid[UUID_SIZE];		/* 128-bit uuid for journal */
 
 /* 0x0040 */
-	uint32_t	nr_users;		/* Nr of filesystems sharing log */
+	uint32	nr_users;		/* Nr of filesystems sharing log */
 
-	uint32_t	dynsuper;		/* Blocknr of dynamic superblock copy*/
+	uint32	dynsuper;		/* Blocknr of dynamic superblock copy*/
 
 /* 0x0048 */
-	uint32_t	max_transaction;	/* Limit of journal blocks per trans.*/
-	uint32_t	max_trandata;	/* Limit of data blocks per trans. */
+	uint32	max_transaction;	/* Limit of journal blocks per trans.*/
+	uint32	max_trandata;	/* Limit of data blocks per trans. */
 
 /* 0x0050 */
-	uint8_t 	checksum_type;	/* checksum type */
-	uint8_t 	padding2[3];
-	uint32_t	padding[42];
-	uint32_t	checksum;		/* crc32c(superblock) */
+	uint8 	checksum_type;	/* checksum type */
+	uint8 	padding2[3];
+	uint32	padding[42];
+	uint32	checksum;		/* crc32c(superblock) */
 
 /* 0x0100 */
-	uint8_t 	users[JBD_USERS_SIZE];		/* ids of all fs'es sharing the log */
+	uint8 	users[JBD_USERS_SIZE];		/* ids of all fs'es sharing the log */
 
 /* 0x0400 */
 };
@@ -821,12 +821,12 @@ struct jbd_sb {
 
 #include <mm/mm.h>
 
-static inline void* ext4_malloc(uint64_t size)
+static inline void* ext4_malloc(uint64 size)
 {
 	return kalloc(size);
 }
 
-static inline void* ext4_calloc(uint64_t count, uint64_t size)
+static inline void* ext4_calloc(uint64 count, uint64 size)
 {
 	return kcalloc(count, size);
 }

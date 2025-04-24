@@ -58,13 +58,13 @@
  * @param baddr Absolute address of block.
  * @return Block group index
  */
-uint32_t ext4_balloc_get_bgid_of_block(struct ext4_sblock *s,
-				       uint64_t baddr)
+uint32 ext4_balloc_get_bgid_of_block(struct ext4_sblock *s,
+				       uint64 baddr)
 {
 	if (ext4_get32(s, first_data_block) && baddr)
 		baddr--;
 
-	return (uint32_t)(baddr / ext4_get32(s, blocks_per_group));
+	return (uint32)(baddr / ext4_get32(s, blocks_per_group));
 }
 
 /**@brief Compute the starting block address of a block group
@@ -72,10 +72,10 @@ uint32_t ext4_balloc_get_bgid_of_block(struct ext4_sblock *s,
  * @param bgid block group index
  * @return Block address
  */
-uint64_t ext4_balloc_get_block_of_bgid(struct ext4_sblock *s,
-				       uint32_t bgid)
+uint64 ext4_balloc_get_block_of_bgid(struct ext4_sblock *s,
+				       uint32 bgid)
 {
-	uint64_t baddr = 0;
+	uint64 baddr = 0;
 	if (ext4_get32(s, first_data_block))
 		baddr++;
 
@@ -84,12 +84,12 @@ uint64_t ext4_balloc_get_block_of_bgid(struct ext4_sblock *s,
 }
 
 #if CONFIG_META_CSUM_ENABLE
-static uint32_t ext4_balloc_bitmap_csum(struct ext4_sblock *sb,
+static uint32 ext4_balloc_bitmap_csum(struct ext4_sblock *sb,
 					void *bitmap)
 {
-	uint32_t checksum = 0;
+	uint32 checksum = 0;
 	if (ext4_sb_feature_ro_com(sb, EXT4_FRO_COM_METADATA_CSUM)) {
-		uint32_t blocks_per_group = ext4_get32(sb, blocks_per_group);
+		uint32 blocks_per_group = ext4_get32(sb, blocks_per_group);
 
 		/* First calculate crc32 checksum against fs uuid */
 		checksum = ext4_crc32c(EXT4_CRC32_INIT, sb->uuid,
@@ -108,8 +108,8 @@ void ext4_balloc_set_bitmap_csum(struct ext4_sblock *sb,
 				 void *bitmap __unused)
 {
 	int desc_size = ext4_sb_get_desc_size(sb);
-	uint32_t checksum = ext4_balloc_bitmap_csum(sb, bitmap);
-	uint16_t lo_checksum = to_le16(checksum & 0xFFFF),
+	uint32 checksum = ext4_balloc_bitmap_csum(sb, bitmap);
+	uint16 lo_checksum = to_le16(checksum & 0xFFFF),
 		 hi_checksum = to_le16(checksum >> 16);
 
 	if (!ext4_sb_feature_ro_com(sb, EXT4_FRO_COM_METADATA_CSUM))
@@ -129,8 +129,8 @@ ext4_balloc_verify_bitmap_csum(struct ext4_sblock *sb,
 			       void *bitmap __unused)
 {
 	int desc_size = ext4_sb_get_desc_size(sb);
-	uint32_t checksum = ext4_balloc_bitmap_csum(sb, bitmap);
-	uint16_t lo_checksum = to_le16(checksum & 0xFFFF),
+	uint32 checksum = ext4_balloc_bitmap_csum(sb, bitmap);
+	uint16 lo_checksum = to_le16(checksum & 0xFFFF),
 		 hi_checksum = to_le16(checksum >> 16);
 
 	if (!ext4_sb_feature_ro_com(sb, EXT4_FRO_COM_METADATA_CSUM))
@@ -154,8 +154,8 @@ int ext4_balloc_free_block(struct ext4_inode_ref *inode_ref, ext4_fsblk_t baddr)
 	struct ext4_fs *fs = inode_ref->fs;
 	struct ext4_sblock *sb = &fs->sb;
 
-	uint32_t bg_id = ext4_balloc_get_bgid_of_block(sb, baddr);
-	uint32_t index_in_group = ext4_fs_addr_to_idx_bg(sb, baddr);
+	uint32 bg_id = ext4_balloc_get_bgid_of_block(sb, baddr);
+	uint32 index_in_group = ext4_fs_addr_to_idx_bg(sb, baddr);
 
 	/* Load block group reference */
 	struct ext4_block_group_ref bg_ref;
@@ -197,21 +197,21 @@ int ext4_balloc_free_block(struct ext4_inode_ref *inode_ref, ext4_fsblk_t baddr)
 		return rc;
 	}
 
-	uint32_t block_size = ext4_sb_get_block_size(sb);
+	uint32 block_size = ext4_sb_get_block_size(sb);
 
 	/* Update superblock free blocks count */
-	uint64_t sb_free_blocks = ext4_sb_get_free_blocks_cnt(sb);
+	uint64 sb_free_blocks = ext4_sb_get_free_blocks_cnt(sb);
 	sb_free_blocks++;
 	ext4_sb_set_free_blocks_cnt(sb, sb_free_blocks);
 
 	/* Update inode blocks count */
-	uint64_t ino_blocks = ext4_inode_get_blocks_count(sb, inode_ref->inode);
+	uint64 ino_blocks = ext4_inode_get_blocks_count(sb, inode_ref->inode);
 	ino_blocks -= block_size / EXT4_INODE_BLOCK_SIZE;
 	ext4_inode_set_blocks_count(sb, inode_ref->inode, ino_blocks);
 	inode_ref->dirty = true;
 
 	/* Update block group free blocks count */
-	uint32_t free_blocks = ext4_bg_get_free_blocks_count(bg, sb);
+	uint32 free_blocks = ext4_bg_get_free_blocks_count(bg, sb);
 	free_blocks++;
 	ext4_bg_set_free_blocks_count(bg, sb, free_blocks);
 
@@ -231,19 +231,19 @@ int ext4_balloc_free_block(struct ext4_inode_ref *inode_ref, ext4_fsblk_t baddr)
 }
 
 int ext4_balloc_free_blocks(struct ext4_inode_ref *inode_ref,
-			    ext4_fsblk_t first, uint32_t count)
+			    ext4_fsblk_t first, uint32 count)
 {
 	int rc = EOK;
-	uint32_t blk_cnt = count;
+	uint32 blk_cnt = count;
 	ext4_fsblk_t start_block = first;
 	struct ext4_fs *fs = inode_ref->fs;
 	struct ext4_sblock *sb = &fs->sb;
 
 	/* Compute indexes */
-	uint32_t bg_first = ext4_balloc_get_bgid_of_block(sb, first);
+	uint32 bg_first = ext4_balloc_get_bgid_of_block(sb, first);
 
 	/* Compute indexes */
-	uint32_t bg_last = ext4_balloc_get_bgid_of_block(sb, first + count - 1);
+	uint32 bg_last = ext4_balloc_get_bgid_of_block(sb, first + count - 1);
 
 	if (!ext4_sb_feature_incom(sb, EXT4_FINCOM_FLEX_BG)) {
 		/*It is not possible without flex_bg that blocks are continuous
@@ -265,7 +265,7 @@ int ext4_balloc_free_blocks(struct ext4_inode_ref *inode_ref,
 
 		struct ext4_bgroup *bg = bg_ref.block_group;
 
-		uint32_t idx_in_bg_first;
+		uint32 idx_in_bg_first;
 		idx_in_bg_first = ext4_fs_addr_to_idx_bg(sb, first);
 
 		/* Load block with bitmap */
@@ -284,7 +284,7 @@ int ext4_balloc_free_blocks(struct ext4_inode_ref *inode_ref,
 				"Group: %" PRIu32"\n",
 				bg_ref.index);
 		}
-		uint32_t free_cnt;
+		uint32 free_cnt;
 		free_cnt = ext4_sb_get_block_size(sb) * 8 - idx_in_bg_first;
 
 		/*If last block, free only count blocks*/
@@ -305,22 +305,22 @@ int ext4_balloc_free_blocks(struct ext4_inode_ref *inode_ref,
 			return rc;
 		}
 
-		uint32_t block_size = ext4_sb_get_block_size(sb);
+		uint32 block_size = ext4_sb_get_block_size(sb);
 
 		/* Update superblock free blocks count */
-		uint64_t sb_free_blocks = ext4_sb_get_free_blocks_cnt(sb);
+		uint64 sb_free_blocks = ext4_sb_get_free_blocks_cnt(sb);
 		sb_free_blocks += free_cnt;
 		ext4_sb_set_free_blocks_cnt(sb, sb_free_blocks);
 
 		/* Update inode blocks count */
-		uint64_t ino_blocks;
+		uint64 ino_blocks;
 		ino_blocks = ext4_inode_get_blocks_count(sb, inode_ref->inode);
 		ino_blocks -= free_cnt * (block_size / EXT4_INODE_BLOCK_SIZE);
 		ext4_inode_set_blocks_count(sb, inode_ref->inode, ino_blocks);
 		inode_ref->dirty = true;
 
 		/* Update block group free blocks count */
-		uint32_t free_blocks;
+		uint32 free_blocks;
 		free_blocks = ext4_bg_get_free_blocks_count(bg, sb);
 		free_blocks += free_cnt;
 		ext4_bg_set_free_blocks_count(bg, sb, free_blocks);
@@ -334,7 +334,7 @@ int ext4_balloc_free_blocks(struct ext4_inode_ref *inode_ref,
 		bg_first++;
 	}
 
-	uint32_t i;
+	uint32 i;
 	for (i = 0;i < blk_cnt;i++) {
 		rc = ext4_trans_try_revoke_block(fs->bdev, start_block + i);
 		if (rc != EOK)
@@ -355,14 +355,14 @@ int ext4_balloc_alloc_block(struct ext4_inode_ref *inode_ref,
 {
 	ext4_fsblk_t alloc = 0;
 	ext4_fsblk_t bmp_blk_adr;
-	uint32_t rel_blk_idx = 0;
-	uint64_t free_blocks;
+	uint32 rel_blk_idx = 0;
+	uint64 free_blocks;
 	int r;
 	struct ext4_sblock *sb = &inode_ref->fs->sb;
 
 	/* Load block group number for goal and relative index */
-	uint32_t bg_id = ext4_balloc_get_bgid_of_block(sb, goal);
-	uint32_t idx_in_bg = ext4_fs_addr_to_idx_bg(sb, goal);
+	uint32 bg_id = ext4_balloc_get_bgid_of_block(sb, goal);
+	uint32 idx_in_bg = ext4_fs_addr_to_idx_bg(sb, goal);
 
 	struct ext4_block b;
 	struct ext4_block_group_ref bg_ref;
@@ -384,7 +384,7 @@ int ext4_balloc_alloc_block(struct ext4_inode_ref *inode_ref,
 	ext4_fsblk_t first_in_bg;
 	first_in_bg = ext4_balloc_get_block_of_bgid(sb, bg_ref.index);
 
-	uint32_t first_in_bg_index;
+	uint32 first_in_bg_index;
 	first_in_bg_index = ext4_fs_addr_to_idx_bg(sb, first_in_bg);
 
 	if (idx_in_bg < first_in_bg_index)
@@ -422,14 +422,14 @@ int ext4_balloc_alloc_block(struct ext4_inode_ref *inode_ref,
 		goto success;
 	}
 
-	uint32_t blk_in_bg = ext4_blocks_in_group_cnt(sb, bg_id);
+	uint32 blk_in_bg = ext4_blocks_in_group_cnt(sb, bg_id);
 
-	uint32_t end_idx = (idx_in_bg + 63) & ~63;
+	uint32 end_idx = (idx_in_bg + 63) & ~63;
 	if (end_idx > blk_in_bg)
 		end_idx = blk_in_bg;
 
 	/* Try to find free block near to goal */
-	uint32_t tmp_idx;
+	uint32 tmp_idx;
 	for (tmp_idx = idx_in_bg + 1; tmp_idx < end_idx; ++tmp_idx) {
 		if (ext4_bmap_is_bit_clr(b.data, tmp_idx)) {
 			ext4_bmap_bit_set(b.data, tmp_idx);
@@ -477,9 +477,9 @@ goal_failed:
 		return r;
 
 	/* Try other block groups */
-	uint32_t block_group_count = ext4_block_group_cnt(sb);
-	uint32_t bgid = (bg_id + 1) % block_group_count;
-	uint32_t count = block_group_count;
+	uint32 block_group_count = ext4_block_group_cnt(sb);
+	uint32 bgid = (bg_id + 1) % block_group_count;
+	uint32 count = block_group_count;
 
 	while (count > 0) {
 		r = ext4_fs_get_block_group_ref(inode_ref->fs, bgid, &bg_ref);
@@ -556,22 +556,22 @@ success:
     /* Empty command - because of syntax */
     ;
 
-	uint32_t block_size = ext4_sb_get_block_size(sb);
+	uint32 block_size = ext4_sb_get_block_size(sb);
 
 	/* Update superblock free blocks count */
-	uint64_t sb_free_blocks = ext4_sb_get_free_blocks_cnt(sb);
+	uint64 sb_free_blocks = ext4_sb_get_free_blocks_cnt(sb);
 	sb_free_blocks--;
 	ext4_sb_set_free_blocks_cnt(sb, sb_free_blocks);
 
 	/* Update inode blocks (different block size!) count */
-	uint64_t ino_blocks = ext4_inode_get_blocks_count(sb, inode_ref->inode);
+	uint64 ino_blocks = ext4_inode_get_blocks_count(sb, inode_ref->inode);
 	ino_blocks += block_size / EXT4_INODE_BLOCK_SIZE;
 	ext4_inode_set_blocks_count(sb, inode_ref->inode, ino_blocks);
 	inode_ref->dirty = true;
 
 	/* Update block group free blocks count */
 
-	uint32_t fb_cnt = ext4_bg_get_free_blocks_count(bg_ref.block_group, sb);
+	uint32 fb_cnt = ext4_bg_get_free_blocks_count(bg_ref.block_group, sb);
 	fb_cnt--;
 	ext4_bg_set_free_blocks_count(bg_ref.block_group, sb, fb_cnt);
 
@@ -591,8 +591,8 @@ int ext4_balloc_try_alloc_block(struct ext4_inode_ref *inode_ref,
 	struct ext4_sblock *sb = &fs->sb;
 
 	/* Compute indexes */
-	uint32_t block_group = ext4_balloc_get_bgid_of_block(sb, baddr);
-	uint32_t index_in_group = ext4_fs_addr_to_idx_bg(sb, baddr);
+	uint32 block_group = ext4_balloc_get_bgid_of_block(sb, baddr);
+	uint32 index_in_group = ext4_fs_addr_to_idx_bg(sb, baddr);
 
 	/* Load block group reference */
 	struct ext4_block_group_ref bg_ref;
@@ -640,21 +640,21 @@ int ext4_balloc_try_alloc_block(struct ext4_inode_ref *inode_ref,
 	if (!(*free))
 		goto terminate;
 
-	uint32_t block_size = ext4_sb_get_block_size(sb);
+	uint32 block_size = ext4_sb_get_block_size(sb);
 
 	/* Update superblock free blocks count */
-	uint64_t sb_free_blocks = ext4_sb_get_free_blocks_cnt(sb);
+	uint64 sb_free_blocks = ext4_sb_get_free_blocks_cnt(sb);
 	sb_free_blocks--;
 	ext4_sb_set_free_blocks_cnt(sb, sb_free_blocks);
 
 	/* Update inode blocks count */
-	uint64_t ino_blocks = ext4_inode_get_blocks_count(sb, inode_ref->inode);
+	uint64 ino_blocks = ext4_inode_get_blocks_count(sb, inode_ref->inode);
 	ino_blocks += block_size / EXT4_INODE_BLOCK_SIZE;
 	ext4_inode_set_blocks_count(sb, inode_ref->inode, ino_blocks);
 	inode_ref->dirty = true;
 
 	/* Update block group free blocks count */
-	uint32_t fb_cnt = ext4_bg_get_free_blocks_count(bg_ref.block_group, sb);
+	uint32 fb_cnt = ext4_bg_get_free_blocks_count(bg_ref.block_group, sb);
 	fb_cnt--;
 	ext4_bg_set_free_blocks_count(bg_ref.block_group, sb, fb_cnt);
 

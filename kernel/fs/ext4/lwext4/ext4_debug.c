@@ -40,21 +40,21 @@
 #include <fs/ext4/lwext4/ext4_errno.h>
 #include <fs/ext4/lwext4/ext4_debug.h>
 
-#include <stdarg.h>
+// #include <stdarg.h>
 
-static uint32_t debug_mask;
+static uint32 debug_mask;
 
-void ext4_dmask_set(uint32_t m)
+void ext4_dmask_set(uint32 m)
 {
 	debug_mask |= m;
 }
 
-void ext4_dmask_clr(uint32_t m)
+void ext4_dmask_clr(uint32 m)
 {
 	debug_mask &= ~m;
 }
 
-uint32_t ext4_dmask_get(void)
+uint32 ext4_dmask_get(void)
 {
 	return debug_mask;
 }

@@ -12,10 +12,14 @@ void test() {
     // intr_off();
     PASS("test start!!!");
 
+    test_kalloc();
+
     // test_uart();
     // test_virtio();
-    test_walkaddr();
-    test_virtio();
+    // test_walkaddr();
+    // test_virtio();
+
+    test_fs();
 
     PASS("test finish!!!");
     // intr_on();

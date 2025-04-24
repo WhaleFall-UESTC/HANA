@@ -53,8 +53,8 @@ static void virtio_blk_handle_used(struct virtio_blk *dev, uint32 usedidx)
     uint32 desc1, desc2, desc3;
     struct virtio_blk_req *req;
 
-    debug("virtio_blk_handle_used: usedidx=%u, usedid=%u",
-          usedidx, virtq->used.ring[usedidx].id);
+    // debug("virtio_blk_handle_used: usedidx=%u, usedid=%u",
+    //       usedidx, virtq->used.ring[usedidx].id);
 
     desc1 = virtq->used.ring[usedidx].id;
     if (!(virtq->desc[desc1].flags & VIRTQ_DESC_F_NEXT))
@@ -78,7 +78,7 @@ static void virtio_blk_handle_used(struct virtio_blk *dev, uint32 usedidx)
     {
     case VIRTIO_BLK_S_OK:
         req->blkreq.status = BLKREQ_STATUS_OK;
-        debug("virtio_blk_handle_used: request completed successfully");
+        // debug("virtio_blk_handle_used: request completed successfully");
         break;
     case VIRTIO_BLK_S_IOERR:
         debug("virtio_blk_handle_used: request failed with I/O error");
@@ -189,9 +189,9 @@ static void virtio_blk_submit(struct blkdev *dev, struct blkreq *req)
     }
     hdr->sector = req->sector_sta;
 
-    debug("virtio_blk_submit: %s, sector=%lu, size=%lu",
-          req->type == BLKREQ_TYPE_READ ? "read" : "write",
-          req->sector_sta, req->size);
+    // debug("virtio_blk_submit: %s, sector=%lu, size=%lu",
+    //       req->type == BLKREQ_TYPE_READ ? "read" : "write",
+    //       req->sector_sta, req->size);
 
     d1 = virtq_alloc_desc(virtq_info, hdr);
     hdr->descriptor = d1;

@@ -1,7 +1,7 @@
 #ifndef __KLIB_H__
 #define __KLIB_H__
 
-#include <stddef.h>
+#include <common.h>
 #include <stdarg.h>
 
 /* lib/string.c */

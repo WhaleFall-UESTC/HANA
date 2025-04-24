@@ -52,8 +52,7 @@ extern "C" {
 #include <fs/ext4/lwext4/ext4_fs.h>
 #include <fs/ext4/lwext4/ext4_dir.h>
 
-#include <stdint.h>
-#include <stdbool.h>
+#include <common.h>
 
 struct ext4_dir_idx_block {
 	struct ext4_block b;
@@ -91,7 +90,7 @@ int ext4_dir_dx_find_entry(struct ext4_dir_search_result *result,
  * @return Error code
  */
 int ext4_dir_dx_add_entry(struct ext4_inode_ref *parent,
-			  struct ext4_inode_ref *child, const char *name, uint32_t name_len);
+			  struct ext4_inode_ref *child, const char *name, uint32 name_len);
 
 /**@brief Add new entry to indexed directory
  * @param dir           Directory i-node
@@ -99,7 +98,7 @@ int ext4_dir_dx_add_entry(struct ext4_inode_ref *parent,
  * @return Error code
  */
 int ext4_dir_dx_reset_parent_inode(struct ext4_inode_ref *dir,
-                                   uint32_t parent_inode);
+                                   uint32 parent_inode);
 
 #ifdef __cplusplus
 }

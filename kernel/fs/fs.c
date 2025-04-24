@@ -1,8 +1,8 @@
 #include <fs/fs.h>
 #include <fs/file.h>
-#include <fs/dcache.h>
 #include <fs/fcntl.h>
 #include <fs/stat.h>
+#include <fs/dirent.h>
 #include <fs/ext4/ext4.h>
 #include <fs/ext4/ext4_blk.h>
 
@@ -29,6 +29,8 @@ int mount(const char *blkdev_name, struct mountpoint *mount_p)
     assert(mount_p->fs != NULL);
     assert(mount_p->fs->fs_op != NULL);
 
+    mount_p->blkdev = blkdev;
+
     return mount_p->fs->fs_op->mount(blkdev, mount_p->mountpoint);
 }
 
@@ -49,7 +51,7 @@ static int mountpoint_match_prefix(const char* path, struct mountpoint* mount_p)
 
 static int mountpoint_find(const char* path)
 {
-    int max_len = 0, res = -1;
+    int max_len = -1, res = -1;
 
     for(int i = 0; i < mount_count; i++)
     {
@@ -82,13 +84,13 @@ static int fullpath_connect(const char* path, char* full_path)
 
     while(i_path < path_len && i_f < MAX_PATH_LEN) {
         while(path[i_path] == '/' && i_path < path_len) i_path++;
-        if(path[i_path] == '.' && (i_path + 2 == path_len || i_path + 2 < path_len && path[i_path + 2] == '/') && path[i_path + 1] == '.') {
+        if(path[i_path] == '.' && (i_path + 2 == path_len || (i_path + 2 < path_len && path[i_path + 2] == '/')) && path[i_path + 1] == '.') {
             // "../" or "..\0"
             i_path += 2;
             while(i_f > 0 && full_path[i_f - 1] != '/') i_f--;
             if(i_f > 0) i_f--;
         }
-        else if(path[i_path] == '.' && (i_path + 1 == path_len || i_path + 1 < path_len && path[i_path + 1] == '/')) {
+        else if(path[i_path] == '.' && (i_path + 1 == path_len || (i_path + 1 < path_len && path[i_path + 1] == '/'))) {
             // "./" or ".\0"
             i_path ++;
         }
@@ -131,20 +133,6 @@ static int get_absolute_path(const char* path, char* full_path)
     return 0;
 }
 
-umode_t fflag_to_imode(int fflag)
-{
-    umode_t mode = 0;
-
-    if (fflag & O_RDONLY)
-        mode |= S_IRUSR | S_IRGRP | S_IROTH;
-    if (fflag & O_WRONLY)
-        mode |= S_IWUSR | S_IWGRP | S_IWOTH;
-    if (fflag & O_RDWR)
-        mode |= S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
-
-    return mode;
-}
-
 /************************ Syscalls for filesystems *************************/
 
 /**
@@ -163,6 +151,8 @@ SYSCALL_DEFINE2(open, const char*, path, unsigned int, flags) {
     struct inode* inode = NULL;
     struct files_struct* fdt = myproc()->fdt;
     struct stat stat;
+
+    debug("open path: %s, flags: %d", path, flags);
 
     ret = get_absolute_path(path, full_path);
     if (ret < 0)
@@ -195,22 +185,20 @@ SYSCALL_DEFINE2(open, const char*, path, unsigned int, flags) {
         goto out_file;
     }
     
+    file->f_flags = flags;
+    debug("file->f_flags: %d", file->f_flags);
     ret = mount_p->fs->fs_op->ifget(mount_p, inode, file);
     if(ret < 0) {
         error("ifget error");
         goto out_inode;
     }
 
+    debug("open file %s, flags: %d", full_path, flags);
     ret = file->f_op->open(file, full_path, flags);
     if(ret != EOK) {
         error("open error, ret: %d", ret);
         goto out_inode;
     }
-
-    // add file and inode flags
-
-    file->f_flags = flags;
-    // inode->i_mode = fflag_to_imode(flags);
 
     // add file to fdt
 
@@ -258,8 +246,6 @@ out_err:
 SYSCALL_DEFINE3(read, int, fd, char*, buf, size_t, count) {
     struct file* file;
     struct files_struct* fdt = myproc()->fdt;
-    struct mountpoint* mount_p;
-    struct blkreq* req;
     int ret;
 
     if (fd < 0 || fd >= NR_OPEN)
@@ -279,8 +265,6 @@ SYSCALL_DEFINE3(read, int, fd, char*, buf, size_t, count) {
 SYSCALL_DEFINE3(write, int, fd, const char*, buf, size_t, count) {
     struct file* file;
     struct files_struct* fdt = myproc()->fdt;
-    struct mountpoint* mount_p;
-    struct blkreq* req;
     int ret;
 
     if (fd < 0 || fd >= NR_OPEN)
@@ -300,7 +284,6 @@ SYSCALL_DEFINE3(write, int, fd, const char*, buf, size_t, count) {
 SYSCALL_DEFINE1(close, int, fd) {
     struct file* file;
     struct files_struct* fdt = myproc()->fdt;
-    struct mountpoint* mount_p;
     int ret;
 
     if (fd < 0 || fd >= NR_OPEN)
@@ -395,7 +378,6 @@ SYSCALL_DEFINE1(unlink, const char*, path) {
     struct mountpoint* mount_p;
     int ret, mp_index;
     char full_path[MAX_PATH_LEN];
-    struct inode* inode = NULL;
 
     ret = get_absolute_path(path, full_path);
     if (ret < 0)
@@ -423,11 +405,24 @@ SYSCALL_DEFINE1(unlink, const char*, path) {
     return 0;
 }
 
+SYSCALL_DEFINE3(getdents64, int, fd, struct dirent *, buf, size_t, len) {
+    struct file* file;
+    struct files_struct* fdt = myproc()->fdt;
+
+    if (fd < 0 || fd >= NR_OPEN)
+        return -1;
+
+    file = fdt->fd[fd];
+    if (file == NULL)
+        return -1;
+
+    return file->f_op->getdents64(file, buf, len);
+}
+
 SYSCALL_DEFINE2(mkdir, const char*, path, umode_t, mode) {
     struct mountpoint* mount_p;
     int ret, mp_index;
     char full_path[MAX_PATH_LEN];
-    struct inode* inode = NULL;
 
     ret = get_absolute_path(path, full_path);
     if (ret < 0)
@@ -446,6 +441,7 @@ SYSCALL_DEFINE2(mkdir, const char*, path, umode_t, mode) {
     mount_p = &mount_table[mp_index];
     assert(mount_p->fs != NULL);
 
+    debug("mkdir %s, mode = %d", full_path, mode);
     ret = mount_p->fs->fs_op->mkdir(full_path, mode);
     if(ret < 0) {
         error("mkdir error");
@@ -459,7 +455,6 @@ SYSCALL_DEFINE1(rmdir, const char*, path) {
     struct mountpoint* mount_p;
     int ret, mp_index;
     char full_path[MAX_PATH_LEN];
-    struct inode* inode = NULL;
 
     ret = get_absolute_path(path, full_path);
     if (ret < 0)
@@ -492,7 +487,6 @@ SYSCALL_DEFINE2(link, const char*, oldpath, const char*, newpath) {
     int ret, mp_index;
     char full_old_path[MAX_PATH_LEN];
     char full_new_path[MAX_PATH_LEN];
-    struct inode* inode = NULL;
 
     ret = get_absolute_path(oldpath, full_old_path);
     if (ret < 0)
@@ -532,7 +526,6 @@ SYSCALL_DEFINE2(symlink, const char *, target, const char *, linkpath) {
     int ret, mp_index;
     char full_target_path[MAX_PATH_LEN];
     char full_link_path[MAX_PATH_LEN];
-    struct inode* inode = NULL;
 
     ret = get_absolute_path(target, full_target_path);
     if (ret < 0)

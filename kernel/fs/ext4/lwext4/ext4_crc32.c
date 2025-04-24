@@ -41,10 +41,9 @@
 #include <fs/ext4/lwext4/ext4_misc.h>
 #include <fs/ext4/lwext4/ext4_errno.h>
 #include <fs/ext4/lwext4/ext4_debug.h>
+#include <fs/ext4/lwext4/ext4_crc32.h>
 
-#include "ext4_crc32.h"
-
-static const uint32_t crc32_tab[] = {
+static const uint32 crc32_tab[] = {
 	0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f,
 	0xe963a535, 0x9e6495a3,	0x0edb8832, 0x79dcb8a4, 0xe0d5e91e, 0x97d2d988,
 	0x09b64c2b, 0x7eb17cbd, 0xe7b82d07, 0x90bf1d91, 0x1db71064, 0x6ab020f2,
@@ -107,7 +106,7 @@ static const uint32_t crc32_tab[] = {
 /* (ross@guest.adelaide.edu.au.). This document is likely to be */
 /* in the FTP archive "ftp.adelaide.edu.au/pub/rocksoft". */
 /* */
-static const uint32_t crc32c_tab[256] = {
+static const uint32 crc32c_tab[256] = {
     0x00000000L, 0xF26B8303L, 0xE13B70F7L, 0x1350F3F4L, 0xC79A971FL,
     0x35F1141CL, 0x26A1E7E8L, 0xD4CA64EBL, 0x8AD958CFL, 0x78B2DBCCL,
     0x6BE22838L, 0x9989AB3BL, 0x4D43CFD0L, 0xBF284CD3L, 0xAC78BF27L,
@@ -161,10 +160,10 @@ static const uint32_t crc32c_tab[256] = {
     0x988C474DL, 0x6AE7C44EL, 0xBE2DA0A5L, 0x4C4623A6L, 0x5F16D052L,
     0xAD7D5351L};
 
-static inline uint32_t crc32(uint32_t crc, const void *buf, uint32_t size,
-			     const uint32_t *tab)
+static inline uint32 crc32(uint32 crc, const void *buf, uint32 size,
+			     const uint32 *tab)
 {
-	const uint8_t *p = (const uint8_t *)buf;
+	const uint8 *p = (const uint8 *)buf;
 
 	while (size--)
 		crc = tab[(crc ^ *p++) & 0xFF] ^ (crc >> 8);
@@ -172,12 +171,12 @@ static inline uint32_t crc32(uint32_t crc, const void *buf, uint32_t size,
 	return (crc);
 }
 
-uint32_t ext4_crc32(uint32_t crc, const void *buf, uint32_t size)
+uint32 ext4_crc32(uint32 crc, const void *buf, uint32 size)
 {
 	return crc32(crc, buf, size, crc32_tab);
 }
 
-uint32_t ext4_crc32c(uint32_t crc, const void *buf, uint32_t size)
+uint32 ext4_crc32c(uint32 crc, const void *buf, uint32 size)
 {
 	return crc32(crc, buf, size, crc32c_tab);
 }

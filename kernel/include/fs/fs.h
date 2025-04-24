@@ -3,6 +3,8 @@
 
 #include <common.h>
 #include <locking/spinlock.h>
+#include <io/blk.h>
+#include <fs/stat.h>
 
 // struct path
 // {
@@ -11,7 +13,7 @@
 // };
 
 #define MAX_PATH_LEN 256
-typedef const char* path_t;
+typedef const char *path_t;
 
 struct inode_operations;
 struct mountpoint;
@@ -27,7 +29,7 @@ struct inode
     uint32 i_ino;              // inode number
 
     spinlock_t i_lock;   // inode lock
-    uint32_t i_refcount; // reference count
+    uint32 i_refcount; // reference count
 
     time_t i_atime; // last access time
     time_t i_mtime; // last modification time
@@ -36,7 +38,7 @@ struct inode
     struct mountpoint *i_mp; // mountpoint
 };
 
-struct dentry;
+// struct dentry;
 
 /**
  * TODO: Let the interfaces accept inode and dentry as a parameter rather than path
@@ -45,11 +47,11 @@ struct dentry;
 
 // struct inode_operations
 // {
-    // int (*readlink) (struct dentry *, char __user *,int);
-    // int (*rename)(struct inode *, path_t,
-    //               struct inode *, path_t, unsigned int);
-    // int (*setattr)(path_t, struct iattr *);
-    // ssize_t (*listxattr)(path_t, char *, size_t);
+// int (*readlink) (struct dentry *, char __user *,int);
+// int (*rename)(struct inode *, path_t,
+//               struct inode *, path_t, unsigned int);
+// int (*setattr)(path_t, struct iattr *);
+// ssize_t (*listxattr)(path_t, char *, size_t);
 // };
 
 // struct inode_operations {
@@ -88,7 +90,7 @@ struct fs_operations
     int (*mkdir)(path_t, umode_t);
     int (*rmdir)(path_t);
     int (*rename)(path_t, path_t);
-    int (*getattr)(const path_t, struct stat *);
+    int (*getattr)(path_t, struct stat *);
 };
 
 struct file_system
@@ -100,7 +102,8 @@ struct file_system
 struct mountpoint
 {
     const char *mountpoint;
-    struct file_system *fs;
+    const struct file_system *fs;
+    const struct blkdev *blkdev;
 };
 
 #define NR_MOUNT 16
@@ -111,20 +114,18 @@ int mount(const char *blkdev_name, struct mountpoint *mount_p);
 extern struct mountpoint mount_table[NR_MOUNT], *root_mp;
 extern int mount_count;
 
-#define mount_root(blkname, filesystem)   \
-    do                                    \
-    {                                     \
-        root_mp->mountpoint = MOUNT_ROOT; \
-        root_mp->fs = &(filesystem);      \
-        mount(blkname, root_mp);          \
-    } while (0)
-#define mount_addp(blkname, filesystem, mountpoint)         \
-    do                                                      \
-    {                                                       \
-        mount_table[mount_count].mountpoint = (mountpoint); \
-        mount_table[mount_count].fs = &(filesystem);        \
-        mount(blkname, &mount_table[mount_count]);          \
-        mount_count++;                                      \
-    } while (0)
+static inline int mount_root(const char *blkdev_name, const struct file_system *fs)
+{
+    root_mp->mountpoint = MOUNT_ROOT;
+    root_mp->fs = fs;
+    return mount(blkdev_name, root_mp);
+}
+
+static inline int mount_add(const char *blkdev_name, const struct file_system *fs, const char *mountpoint)
+{
+    mount_table[mount_count].mountpoint = mountpoint;
+    mount_table[mount_count].fs = fs;
+    return mount(blkdev_name, &mount_table[mount_count++]);
+}
 
 #endif // __FS_H__

@@ -48,8 +48,7 @@
 #include <fs/ext4/lwext4/ext4_crc32.h>
 #include <fs/ext4/lwext4/ext4_journal.h>
 
-#include <string.h>
-#include <stdlib.h>
+#include <klib.h>
 
 /**@brief  Revoke entry during journal replay.*/
 struct revoke_entry {
@@ -60,7 +59,7 @@ struct revoke_entry {
 	 *         than trans_id, records of @block
 	 *         in those transactions should not
 	 *         be replayed.*/
-	uint32_t trans_id;
+	uint32 trans_id;
 
 	/**@brief  Revoke tree node.*/
 	RB_ENTRY(revoke_entry) revoke_node;
@@ -69,16 +68,16 @@ struct revoke_entry {
 /**@brief  Valid journal replay information.*/
 struct recover_info {
 	/**@brief  Starting transaction id.*/
-	uint32_t start_trans_id;
+	uint32 start_trans_id;
 
 	/**@brief  Ending transaction id.*/
-	uint32_t last_trans_id;
+	uint32 last_trans_id;
 
 	/**@brief  Used as internal argument.*/
-	uint32_t this_trans_id;
+	uint32 this_trans_id;
 
 	/**@brief  No of transactions went through.*/
-	uint32_t trans_cnt;
+	uint32 trans_cnt;
 
 	/**@brief  RB-Tree storing revoke entries.*/
 	RB_HEAD(jbd_revoke, revoke_entry) revoke_root;
@@ -90,10 +89,10 @@ struct replay_arg {
 	struct recover_info *info;
 
 	/**@brief  Current block we are on.*/
-	uint32_t *this_block;
+	uint32 *this_block;
 
 	/**@brief  Current trans_id we are on.*/
-	uint32_t this_trans_id;
+	uint32 this_trans_id;
 };
 
 /* Make sure we wrap around the log correctly! */
@@ -103,10 +102,10 @@ do {									\
 		var -= (jbd_get32((sb), maxlen) - jbd_get32((sb), first));	\
 } while (0)
 
-static inline int32_t
-trans_id_diff(uint32_t x, uint32_t y)
+static inline int32
+trans_id_diff(uint32 x, uint32 y)
 {
-	int32_t diff = x - y;
+	int32 diff = x - y;
 	return diff;
 }
 
@@ -162,12 +161,12 @@ static int jbd_has_csum(struct jbd_sb *jbd_sb)
 }
 
 #if CONFIG_META_CSUM_ENABLE
-static uint32_t jbd_sb_csum(struct jbd_sb *jbd_sb)
+static uint32 jbd_sb_csum(struct jbd_sb *jbd_sb)
 {
-	uint32_t checksum = 0;
+	uint32 checksum = 0;
 
 	if (jbd_has_csum(jbd_sb)) {
-		uint32_t orig_checksum = jbd_sb->checksum;
+		uint32 orig_checksum = jbd_sb->checksum;
 		jbd_set32(jbd_sb, checksum, 0);
 		/* Calculate crc32c checksum against tho whole superblock */
 		checksum = ext4_crc32c(EXT4_CRC32_INIT, jbd_sb,
@@ -202,17 +201,17 @@ jbd_verify_sb_csum(struct jbd_sb *jbd_sb)
 #endif
 
 #if CONFIG_META_CSUM_ENABLE
-static uint32_t jbd_meta_csum(struct jbd_fs *jbd_fs,
+static uint32 jbd_meta_csum(struct jbd_fs *jbd_fs,
 			      struct jbd_bhdr *bhdr)
 {
-	uint32_t checksum = 0;
+	uint32 checksum = 0;
 
 	if (jbd_has_csum(&jbd_fs->sb)) {
-		uint32_t block_size = jbd_get32(&jbd_fs->sb, blocksize);
+		uint32 block_size = jbd_get32(&jbd_fs->sb, blocksize);
 		struct jbd_block_tail *tail =
 			(struct jbd_block_tail *)((char *)bhdr + block_size -
 				sizeof(struct jbd_block_tail));
-		uint32_t orig_checksum = tail->checksum;
+		uint32 orig_checksum = tail->checksum;
 		tail->checksum = 0;
 
 		/* First calculate crc32c checksum against fs uuid */
@@ -232,7 +231,7 @@ static uint32_t jbd_meta_csum(struct jbd_fs *jbd_fs,
 static void jbd_meta_csum_set(struct jbd_fs *jbd_fs,
 			      struct jbd_bhdr *bhdr)
 {
-	uint32_t block_size = jbd_get32(&jbd_fs->sb, blocksize);
+	uint32 block_size = jbd_get32(&jbd_fs->sb, blocksize);
 	struct jbd_block_tail *tail = (struct jbd_block_tail *)
 				((char *)bhdr + block_size -
 				sizeof(struct jbd_block_tail));
@@ -247,7 +246,7 @@ static bool
 jbd_verify_meta_csum(struct jbd_fs *jbd_fs,
 		     struct jbd_bhdr *bhdr)
 {
-	uint32_t block_size = jbd_get32(&jbd_fs->sb, blocksize);
+	uint32 block_size = jbd_get32(&jbd_fs->sb, blocksize);
 	struct jbd_block_tail *tail = (struct jbd_block_tail *)
 				((char *)bhdr + block_size -
 				sizeof(struct jbd_block_tail));
@@ -261,16 +260,16 @@ jbd_verify_meta_csum(struct jbd_fs *jbd_fs,
 #endif
 
 #if CONFIG_META_CSUM_ENABLE
-static uint32_t jbd_commit_csum(struct jbd_fs *jbd_fs,
+static uint32 jbd_commit_csum(struct jbd_fs *jbd_fs,
 			      struct jbd_commit_header *header)
 {
-	uint32_t checksum = 0;
+	uint32 checksum = 0;
 
 	if (jbd_has_csum(&jbd_fs->sb)) {
-		uint8_t orig_checksum_type = header->chksum_type,
+		uint8 orig_checksum_type = header->chksum_type,
 			 orig_checksum_size = header->chksum_size;
-		uint32_t orig_checksum = header->chksum[0];
-		uint32_t block_size = jbd_get32(&jbd_fs->sb, blocksize);
+		uint32 orig_checksum = header->chksum[0];
+		uint32 block_size = jbd_get32(&jbd_fs->sb, blocksize);
 		header->chksum_type = 0;
 		header->chksum_size = 0;
 		header->chksum[0] = 0;
@@ -322,26 +321,26 @@ static bool jbd_verify_commit_csum(struct jbd_fs *jbd_fs,
  * NOTE: We only make use of @csum parameter when
  *       JBD_FEATURE_COMPAT_CHECKSUM is enabled.
  */
-static uint32_t jbd_block_csum(struct jbd_fs *jbd_fs, const void *buf,
-			       uint32_t csum,
-			       uint32_t sequence)
+static uint32 jbd_block_csum(struct jbd_fs *jbd_fs, const void *buf,
+			       uint32 csum,
+			       uint32 sequence)
 {
-	uint32_t checksum = 0;
+	uint32 checksum = 0;
 
 	if (jbd_has_csum(&jbd_fs->sb)) {
-		uint32_t block_size = jbd_get32(&jbd_fs->sb, blocksize);
+		uint32 block_size = jbd_get32(&jbd_fs->sb, blocksize);
 		/* First calculate crc32c checksum against fs uuid */
 		checksum = ext4_crc32c(EXT4_CRC32_INIT, jbd_fs->sb.uuid,
 				       sizeof(jbd_fs->sb.uuid));
 		/* Then calculate crc32c checksum against sequence no. */
 		checksum = ext4_crc32c(checksum, &sequence,
-				sizeof(uint32_t));
+				sizeof(uint32));
 		/* Calculate crc32c checksum against tho whole block */
 		checksum = ext4_crc32c(checksum, buf,
 				block_size);
 	} else if (JBD_HAS_INCOMPAT_FEATURE(&jbd_fs->sb,
 				     JBD_FEATURE_COMPAT_CHECKSUM)) {
-		uint32_t block_size = jbd_get32(&jbd_fs->sb, blocksize);
+		uint32 block_size = jbd_get32(&jbd_fs->sb, blocksize);
 		/* Calculate crc32c checksum against tho whole block */
 		checksum = ext4_crc32(csum, buf,
 				block_size);
@@ -353,7 +352,7 @@ static uint32_t jbd_block_csum(struct jbd_fs *jbd_fs, const void *buf,
 #endif
 
 static void jbd_block_tag_csum_set(struct jbd_fs *jbd_fs, void *__tag,
-				   uint32_t checksum)
+				   uint32 checksum)
 {
 	int ver = jbd_has_csum(&jbd_fs->sb);
 	if (!ver)
@@ -361,7 +360,7 @@ static void jbd_block_tag_csum_set(struct jbd_fs *jbd_fs, void *__tag,
 
 	if (ver == 2) {
 		struct jbd_block_tag *tag = __tag;
-		tag->checksum = (uint16_t)to_be32(checksum);
+		tag->checksum = (uint16)to_be32(checksum);
 	} else {
 		struct jbd_block_tag3 *tag = __tag;
 		tag->checksum = to_be32(checksum);
@@ -376,7 +375,7 @@ static int jbd_sb_write(struct jbd_fs *jbd_fs, struct jbd_sb *s)
 {
 	int rc;
 	struct ext4_fs *fs = jbd_fs->inode_ref.fs;
-	uint64_t offset;
+	uint64 offset;
 	ext4_fsblk_t fblock;
 	rc = jbd_inode_bmap(jbd_fs, 0, &fblock);
 	if (rc != EOK)
@@ -396,7 +395,7 @@ static int jbd_sb_read(struct jbd_fs *jbd_fs, struct jbd_sb *s)
 {
 	int rc;
 	struct ext4_fs *fs = jbd_fs->inode_ref.fs;
-	uint64_t offset;
+	uint64 offset;
 	ext4_fsblk_t fblock;
 	rc = jbd_inode_bmap(jbd_fs, 0, &fblock);
 	if (rc != EOK)
@@ -447,7 +446,7 @@ int jbd_get_fs(struct ext4_fs *fs,
 	       struct jbd_fs *jbd_fs)
 {
 	int rc;
-	uint32_t journal_ino;
+	uint32 journal_ino;
 
 	memset(jbd_fs, 0, sizeof(struct jbd_fs));
 	/* See if there is journal inode on this filesystem.*/
@@ -601,7 +600,7 @@ static int jbd_tag_bytes(struct jbd_fs *jbd_fs)
 	 * add 2 bytes to size.*/
 	if (JBD_HAS_INCOMPAT_FEATURE(&jbd_fs->sb,
 				     JBD_FEATURE_INCOMPAT_CSUM_V2))
-		size += sizeof(uint16_t);
+		size += sizeof(uint16);
 
 	if (JBD_HAS_INCOMPAT_FEATURE(&jbd_fs->sb,
 				     JBD_FEATURE_INCOMPAT_64BIT))
@@ -609,7 +608,7 @@ static int jbd_tag_bytes(struct jbd_fs *jbd_fs)
 
 	/* If block number is 4 bytes in size,
 	 * minus 4 bytes from size */
-	return size - sizeof(uint32_t);
+	return size - sizeof(uint32);
 }
 
 /**@brief  Tag information. */
@@ -628,13 +627,13 @@ struct tag_info {
 	bool uuid_exist;
 
 	/**@brief  UUID content if UUID part exists.*/
-	uint8_t uuid[UUID_SIZE];
+	uint8 uuid[UUID_SIZE];
 
 	/**@brief  Is this the last tag? */
 	bool last_tag;
 
 	/**@brief  crc32c checksum. */
-	uint32_t checksum;
+	uint32 checksum;
 };
 
 /**@brief  Extract information from a block tag.
@@ -647,7 +646,7 @@ static int
 jbd_extract_block_tag(struct jbd_fs *jbd_fs,
 		      void *__tag,
 		      int tag_bytes,
-		      int32_t remain_buf_size,
+		      int32 remain_buf_size,
 		      struct tag_info *tag_info)
 {
 	char *uuid_start;
@@ -667,7 +666,7 @@ jbd_extract_block_tag(struct jbd_fs *jbd_fs,
 		if (JBD_HAS_INCOMPAT_FEATURE(&jbd_fs->sb,
 					     JBD_FEATURE_INCOMPAT_64BIT))
 			 tag_info->block |=
-				 (uint64_t)jbd_get32(tag, blocknr_high) << 32;
+				 (uint64)jbd_get32(tag, blocknr_high) << 32;
 
 		if (jbd_get32(tag, flags) & JBD_FLAG_ESCAPE)
 			tag_info->is_escape = true;
@@ -692,7 +691,7 @@ jbd_extract_block_tag(struct jbd_fs *jbd_fs,
 		if (JBD_HAS_INCOMPAT_FEATURE(&jbd_fs->sb,
 					     JBD_FEATURE_INCOMPAT_64BIT))
 			 tag_info->block |=
-				 (uint64_t)jbd_get32(tag, blocknr_high) << 32;
+				 (uint64)jbd_get32(tag, blocknr_high) << 32;
 
 		if (jbd_get16(tag, flags) & JBD_FLAG_ESCAPE)
 			tag_info->is_escape = true;
@@ -723,7 +722,7 @@ jbd_extract_block_tag(struct jbd_fs *jbd_fs,
 static int
 jbd_write_block_tag(struct jbd_fs *jbd_fs,
 		    void *__tag,
-		    int32_t remain_buf_size,
+		    int32 remain_buf_size,
 		    struct tag_info *tag_info)
 {
 	char *uuid_start;
@@ -739,7 +738,7 @@ jbd_write_block_tag(struct jbd_fs *jbd_fs,
 				     JBD_FEATURE_INCOMPAT_CSUM_V3)) {
 		struct jbd_block_tag3 *tag = __tag;
 		memset(tag, 0, sizeof(struct jbd_block_tag3));
-		jbd_set32(tag, blocknr, (uint32_t)tag_info->block);
+		jbd_set32(tag, blocknr, (uint32)tag_info->block);
 		if (JBD_HAS_INCOMPAT_FEATURE(&jbd_fs->sb,
 					     JBD_FEATURE_INCOMPAT_64BIT))
 			jbd_set32(tag, blocknr_high, tag_info->block >> 32);
@@ -769,7 +768,7 @@ jbd_write_block_tag(struct jbd_fs *jbd_fs,
 	} else {
 		struct jbd_block_tag *tag = __tag;
 		memset(tag, 0, sizeof(struct jbd_block_tag));
-		jbd_set32(tag, blocknr, (uint32_t)tag_info->block);
+		jbd_set32(tag, blocknr, (uint32)tag_info->block);
 		if (JBD_HAS_INCOMPAT_FEATURE(&jbd_fs->sb,
 					     JBD_FEATURE_INCOMPAT_64BIT))
 			jbd_set32(tag, blocknr_high, tag_info->block >> 32);
@@ -811,7 +810,7 @@ jbd_write_block_tag(struct jbd_fs *jbd_fs,
 static void
 jbd_iterate_block_table(struct jbd_fs *jbd_fs,
 			void *__tag_start,
-			int32_t tag_tbl_size,
+			int32 tag_tbl_size,
 			void (*func)(struct jbd_fs * jbd_fs,
 				     struct tag_info *tag_info,
 				     void *arg),
@@ -855,7 +854,7 @@ static void jbd_display_block_tags(struct jbd_fs *jbd_fs,
 				   struct tag_info *tag_info,
 				   void *arg)
 {
-	uint32_t *iblock = arg;
+	uint32 *iblock = arg;
 	ext4_dbg(DEBUG_JBD, "Block in block_tag: %" PRIu64 "\n", tag_info->block);
 	(*iblock)++;
 	wrap(&jbd_fs->sb, *iblock);
@@ -883,7 +882,7 @@ static void jbd_replay_block_tags(struct jbd_fs *jbd_fs,
 	int r;
 	struct replay_arg *arg = __arg;
 	struct recover_info *info = arg->info;
-	uint32_t *this_block = arg->this_block;
+	uint32 *this_block = arg->this_block;
 	struct revoke_entry *revoke_entry;
 	struct ext4_block journal_block, ext4_block;
 	struct ext4_fs *fs = jbd_fs->inode_ref.fs;
@@ -925,7 +924,7 @@ static void jbd_replay_block_tags(struct jbd_fs *jbd_fs,
 		ext4_bcache_set_dirty(ext4_block.buf);
 		ext4_block_set(fs->bdev, &ext4_block);
 	} else {
-		uint16_t mount_count, state;
+		uint16 mount_count, state;
 		mount_count = ext4_get16(&fs->sb, mount_count);
 		state = ext4_get16(&fs->sb, state);
 
@@ -1002,7 +1001,7 @@ static void jbd_build_revoke_tree(struct jbd_fs *jbd_fs,
 	char *blocks_entry;
 	struct jbd_revoke_header *revoke_hdr =
 		(struct jbd_revoke_header *)header;
-	uint32_t i, nr_entries, record_len = 4;
+	uint32 i, nr_entries, record_len = 4;
 
 	/* If we are working on a 64bit jbd filesystem, */
 	if (JBD_HAS_INCOMPAT_FEATURE(&jbd_fs->sb,
@@ -1017,12 +1016,12 @@ static void jbd_build_revoke_tree(struct jbd_fs *jbd_fs,
 
 	for (i = 0;i < nr_entries;i++) {
 		if (record_len == 8) {
-			uint64_t *blocks =
-				(uint64_t *)blocks_entry;
+			uint64 *blocks =
+				(uint64 *)blocks_entry;
 			jbd_add_revoke_block_tags(info, to_be64(*blocks));
 		} else {
-			uint32_t *blocks =
-				(uint32_t *)blocks_entry;
+			uint32 *blocks =
+				(uint32 *)blocks_entry;
 			jbd_add_revoke_block_tags(info, to_be32(*blocks));
 		}
 		blocks_entry += record_len;
@@ -1031,7 +1030,7 @@ static void jbd_build_revoke_tree(struct jbd_fs *jbd_fs,
 
 static void jbd_debug_descriptor_block(struct jbd_fs *jbd_fs,
 				       struct jbd_bhdr *header,
-				       uint32_t *iblock)
+				       uint32 *iblock)
 {
 	jbd_iterate_block_table(jbd_fs,
 				header + 1,
@@ -1065,8 +1064,8 @@ static int jbd_iterate_log(struct jbd_fs *jbd_fs,
 	int r = EOK;
 	bool log_end = false;
 	struct jbd_sb *sb = &jbd_fs->sb;
-	uint32_t start_trans_id, this_trans_id;
-	uint32_t start_block, this_block;
+	uint32 start_trans_id, this_trans_id;
+	uint32 start_block, this_block;
 
 	/* We start iterating valid blocks in the whole journal.*/
 	start_trans_id = this_trans_id = jbd_get32(sb, sequence);
@@ -1235,7 +1234,7 @@ int jbd_recover(struct jbd_fs *jbd_fs)
 		 * clear EXT4_FINCOM_RECOVER flag on the
 		 * ext4 superblock, and set the start of
 		 * journal to 0.*/
-		uint32_t features_incompatible =
+		uint32 features_incompatible =
 			ext4_get32(&jbd_fs->inode_ref.fs->sb,
 				   features_incompatible);
 		jbd_set32(&jbd_fs->sb, start, 0);
@@ -1268,7 +1267,7 @@ int jbd_journal_start(struct jbd_fs *jbd_fs,
 		      struct jbd_journal *journal)
 {
 	int r;
-	uint32_t features_incompatible =
+	uint32 features_incompatible =
 			ext4_get32(&jbd_fs->inode_ref.fs->sb,
 				   features_incompatible);
 	features_incompatible |= EXT4_FINCOM_RECOVER;
@@ -1417,7 +1416,7 @@ int jbd_journal_stop(struct jbd_journal *journal)
 {
 	int r;
 	struct jbd_fs *jbd_fs = journal->jbd_fs;
-	uint32_t features_incompatible;
+	uint32 features_incompatible;
 
 	/* Make sure that journalled content have reached
 	 * the disk.*/
@@ -1452,10 +1451,10 @@ int jbd_journal_stop(struct jbd_journal *journal)
  * @param  journal current journal session
  * @param  trans transaction
  * @return allocated block address*/
-static uint32_t jbd_journal_alloc_block(struct jbd_journal *journal,
+static uint32 jbd_journal_alloc_block(struct jbd_journal *journal,
 					struct jbd_trans *trans)
 {
-	uint32_t start_block;
+	uint32 start_block;
 
 	start_block = journal->last++;
 	trans->alloc_blocks++;
@@ -1771,7 +1770,7 @@ static int jbd_trans_write_commit_block(struct jbd_trans *trans)
 	int rc;
 	struct ext4_block block;
 	struct jbd_commit_header *header;
-	uint32_t commit_iblock;
+	uint32 commit_iblock;
 	struct jbd_journal *journal = trans->journal;
 
 	commit_iblock = jbd_journal_alloc_block(journal, trans);
@@ -1808,13 +1807,13 @@ static int jbd_journal_prepare(struct jbd_journal *journal,
 	int rc = EOK, i = 0;
 	struct ext4_block desc_block = EXT4_BLOCK_ZERO(),
 			  data_block = EXT4_BLOCK_ZERO();
-	int32_t tag_tbl_size = 0;
-	uint32_t desc_iblock = 0;
-	uint32_t data_iblock = 0;
+	int32 tag_tbl_size = 0;
+	uint32 desc_iblock = 0;
+	uint32 data_iblock = 0;
 	char *tag_start = NULL, *tag_ptr = NULL;
 	struct jbd_buf *jbd_buf, *tmp;
 	struct ext4_fs *fs = journal->jbd_fs->inode_ref.fs;
-	uint32_t checksum = EXT4_CRC32_INIT;
+	uint32 checksum = EXT4_CRC32_INIT;
 	struct jbd_bhdr *bhdr = NULL;
 	void *data;
 
@@ -2000,12 +1999,12 @@ jbd_journal_prepare_revoke(struct jbd_journal *journal,
 {
 	int rc = EOK, i = 0;
 	struct ext4_block desc_block = EXT4_BLOCK_ZERO();
-	int32_t tag_tbl_size = 0;
-	uint32_t desc_iblock = 0;
+	int32 tag_tbl_size = 0;
+	uint32 desc_iblock = 0;
 	char *blocks_entry = NULL;
 	struct jbd_revoke_rec *rec, *tmp;
 	struct jbd_revoke_header *header = NULL;
-	int32_t record_len = 4;
+	int32 record_len = 4;
 	struct jbd_bhdr *bhdr = NULL;
 
 	if (JBD_HAS_INCOMPAT_FEATURE(&journal->jbd_fs->sb,
@@ -2056,13 +2055,13 @@ again:
 			goto again;
 		}
 		if (record_len == 8) {
-			uint64_t *blocks =
-				(uint64_t *)blocks_entry;
+			uint64 *blocks =
+				(uint64 *)blocks_entry;
 			*blocks = to_be64(rec->lba);
 		} else {
-			uint32_t *blocks =
-				(uint32_t *)blocks_entry;
-			*blocks = to_be32((uint32_t)rec->lba);
+			uint32 *blocks =
+				(uint32 *)blocks_entry;
+			*blocks = to_be32((uint32)rec->lba);
 		}
 		blocks_entry += record_len;
 		tag_tbl_size -= record_len;
@@ -2159,7 +2158,7 @@ static int __jbd_journal_commit_trans(struct jbd_journal *journal,
 				      struct jbd_trans *trans)
 {
 	int rc = EOK;
-	uint32_t last = journal->last;
+	uint32 last = journal->last;
 	struct jbd_revoke_rec *rec, *tmp;
 
 	trans->trans_id = journal->alloc_trans_id;
