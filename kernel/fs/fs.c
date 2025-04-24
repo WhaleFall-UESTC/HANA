@@ -230,7 +230,7 @@ SYSCALL_DEFINE2(open, const char*, path, unsigned int, flags) {
      * TODO: add inode cache machanism
      */
 
-    return 0;
+    return fd;
 
 out_fd:
     fd_free(fdt, fd);
@@ -299,6 +299,8 @@ SYSCALL_DEFINE1(close, int, fd) {
 
     kfree(file->f_inode);
     kfree(file);
+
+    fd_free(fdt, fd);
 
     return 0;
 }

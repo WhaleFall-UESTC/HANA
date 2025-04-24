@@ -820,19 +820,27 @@ struct jbd_sb {
 #endif
 
 #include <mm/mm.h>
+#include <debug.h>
+#include <klib.h>
 
 static inline void* ext4_malloc(uint64 size)
 {
-	return kalloc(size);
+	void* addr = kalloc(size);
+	debug("ext4_malloc: 0x%p, size = %lu", addr, size);
+	return addr;
 }
 
 static inline void* ext4_calloc(uint64 count, uint64 size)
 {
-	return kcalloc(count, size);
+	void* addr = ext4_malloc(count * size);
+	memset(addr, 0, count * size);
+	return addr;
+	// return kcalloc(count, size);
 }
 
 static inline void ext4_free(void* ptr)
 {
+	debug("ext4_free: 0x%p", ptr);
 	kfree(ptr);
 }
 
