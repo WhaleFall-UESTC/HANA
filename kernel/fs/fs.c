@@ -4,44 +4,36 @@
 #include <fs/stat.h>
 #include <fs/dirent.h>
 #include <fs/ext4/ext4.h>
-#include <fs/ext4/ext4_blk.h>
 
 #include <io/blk.h>
 #include <proc/proc.h>
 #include <syscall.h>
 #include <debug.h>
 
-struct mountpoint mount_table[NR_MOUNT], *root_mp = &mount_table[0];
-int mount_count = 1;
+#define NR_MOUNT 16
+
+struct mountpoint mount_table[NR_MOUNT];
+int mount_count = 0;
+const struct file_system* filesys[] = {&ext4_fs};
 
 /************************ Export and Helper functions ************************/
 
-int mount(const char *blkdev_name, struct mountpoint *mount_p)
-{
-    struct blkdev* blkdev = blkdev_get_by_name(blkdev_name);
-    if (blkdev == NULL)
-    {
-        error("block device %s not found", blkdev_name);
-        return -1;
-    }
+static const struct file_system* filesys_find(const char* fstype) {
+    int i;
 
-    assert(mount_p != NULL);
-    assert(mount_p->fs != NULL);
-    assert(mount_p->fs->fs_op != NULL);
-
-    mount_p->blkdev = blkdev;
-
-    return mount_p->fs->fs_op->mount(blkdev, mount_p->mountpoint);
+    for(i = 0; i < nr_elem(filesys); i ++)
+        if(!strcmp(fstype, filesys[i]->name))
+            return filesys[i];
+    return NULL;
 }
 
-static int mountpoint_match_prefix(const char* path, struct mountpoint* mount_p)
-{
-    int mp_len = strlen(mount_p->mountpoint);
-    int path_len = strlen(path);
+static int str_match_prefix(const char* str, const char* prefix) {
+    int p_len = strlen(prefix);
+    int str_len = strlen(str);
     int end_index = 0;
 
-    while(end_index < mp_len && end_index < path_len && 
-          mount_p->mountpoint[end_index] == path[end_index])
+    while(end_index < p_len && end_index < str_len && 
+        prefix[end_index] == str[end_index])
     {
         end_index++;
     }
@@ -55,7 +47,7 @@ static int mountpoint_find(const char* path)
 
     for(int i = 0; i < mount_count; i++)
     {
-        int len = mountpoint_match_prefix(path, &mount_table[i]) - 1;
+        int len = str_match_prefix(path, mount_table[i].mountpoint) - 1;
         if (len > max_len)
         {
             max_len = len;
@@ -111,8 +103,11 @@ static int fullpath_connect(const char* path, char* full_path)
     return i_f;
 }
 
-static int get_absolute_path(const char* path, char* full_path)
+static int get_absolute_path(const char* path, char* full_path, fd_t dirfd)
 {
+    struct files_struct* fdt = myproc()->fdt;
+    struct file* file;
+
     if (path == NULL || full_path == NULL)
     {
         error("path or full_path is NULL");
@@ -124,7 +119,12 @@ static int get_absolute_path(const char* path, char* full_path)
     }
     else {
         // convert relative path to full path
-        strcpy(full_path, myproc()->cwd);
+        if(dirfd == AT_FDCWD)
+            strcpy(full_path, myproc()->cwd);
+        else {
+            file = fd_get(fdt, dirfd);
+            strcpy(full_path, file->f_path);
+        }
         int ret = fullpath_connect(path, full_path);
         if (ret < 0)
             return -1;
@@ -135,14 +135,71 @@ static int get_absolute_path(const char* path, char* full_path)
 
 /************************ Syscalls for filesystems *************************/
 
+SYSCALL_DEFINE2(getcwd, char *, char *, buf, size_t, size) {
+    const char* cwd = myproc()->cwd;
+
+    if(buf == NULL || strlen(cwd) > size)
+        return NULL;
+
+    strncpy(buf, cwd, size);
+    return buf;
+}
+
+SYSCALL_DEFINE1(dup, fd_t, fd_t, fd) {
+    struct files_struct* fdt = myproc()->fdt;
+    int ret;
+
+    ret = fd_clone(fdt, fd, -1);
+
+    if(ret < 0) {
+        error("fd clone error");
+        return -1;
+    }
+
+    return ret;
+}
+
+SYSCALL_DEFINE3(dup3, fd_t, fd_t, old, fd_t, new, int, flags) {
+    struct files_struct* fdt = myproc()->fdt;
+    int ret;
+
+    if(flags & O_CLOEXEC) {
+        error("O_CLOEXEC is currently not supported.");
+    }
+
+    ret = fd_clone(fdt, old, new);
+
+    if(ret < 0) {
+        error("fd clone error");
+        return -1;
+    }
+
+    return ret;
+}
+
+SYSCALL_DEFINE1(chdir, int, const char*, path) {
+    char** p_cwd = &myproc()->cwd;
+
+    kfree(*p_cwd);
+    *p_cwd = strdup(path);
+
+    if(*p_cwd == NULL) {
+        error("strdup error");
+        return -1;
+    }
+
+    return 0;
+}
+
 /**
- * open syscall
+ * openat syscall
  * We currently alloc and free BOTH inode and file in open and close
+ * @dirfd: fd of dir or AT_FDCWD
  * @path: path to open
  * @flags: open flags
  * @return: fd on success, -1 on error
  */
-SYSCALL_DEFINE2(open, const char*, path, unsigned int, flags) {
+SYSCALL_DEFINE4(openat, fd_t, fd_t, dirfd, const char*, path, int, flags, umode_t, mode) {
     fd_t fd;
     struct mountpoint* mount_p = NULL;
     int ret, mp_index;
@@ -154,7 +211,7 @@ SYSCALL_DEFINE2(open, const char*, path, unsigned int, flags) {
 
     debug("open path: %s, flags: %d", path, flags);
 
-    ret = get_absolute_path(path, full_path);
+    ret = get_absolute_path(path, full_path, dirfd);
     if (ret < 0)
     {
         error("get absolute path error");
@@ -194,7 +251,7 @@ SYSCALL_DEFINE2(open, const char*, path, unsigned int, flags) {
     }
 
     debug("open file %s, flags: %d", full_path, flags);
-    ret = file->f_op->open(file, full_path, flags);
+    ret = file->f_op->openat(file, full_path, flags, mode);
     if(ret != EOK) {
         error("open error, ret: %d", ret);
         goto out_inode;
@@ -224,7 +281,8 @@ SYSCALL_DEFINE2(open, const char*, path, unsigned int, flags) {
     inode->i_atime = stat.st_atime;
     inode->i_mtime = stat.st_mtime;
     inode->i_ctime = stat.st_ctime;
-    strcpy(inode->i_path, full_path);
+
+    strcpy(file->f_path, full_path);
 
     /**
      * TODO: add inode cache machanism
@@ -243,45 +301,49 @@ out_err:
 }
 
 
-SYSCALL_DEFINE3(read, int, fd, char*, buf, size_t, count) {
+SYSCALL_DEFINE3(read, ssize_t, int, fd, char*, buf, size_t, count) {
     struct file* file;
     struct files_struct* fdt = myproc()->fdt;
     int ret;
+    off_t ori_fpos;
 
     if (fd < 0 || fd >= NR_OPEN)
         return -1;
 
-    file = fdt->fd[fd];
+    file = fd_get(fdt, fd);
     if (file == NULL)
         return -1;
 
+    ori_fpos = file->f_ops;
     ret = file->f_op->read(file, buf, count, &file->f_ops);
     if (ret < 0)
         return -1;
 
-    return count;
+    return file->f_ops - ori_fpos;
 }
 
-SYSCALL_DEFINE3(write, int, fd, const char*, buf, size_t, count) {
+SYSCALL_DEFINE3(write, ssize_t, int, fd, const char*, buf, size_t, count) {
     struct file* file;
     struct files_struct* fdt = myproc()->fdt;
     int ret;
+    off_t ori_fpos;
 
     if (fd < 0 || fd >= NR_OPEN)
         return -1;
 
-    file = fdt->fd[fd];
+    file = fd_get(fdt, fd);
     if (file == NULL)
         return -1;
 
+    ori_fpos = file->f_ops;
     ret = file->f_op->write(file, buf, count, &file->f_ops);
     if (ret < 0)
         return -1;
 
-    return count;
+    return file->f_ops - ori_fpos;
 }
 
-SYSCALL_DEFINE1(close, int, fd) {
+SYSCALL_DEFINE1(close, int, int, fd) {
     struct file* file;
     struct files_struct* fdt = myproc()->fdt;
     int ret;
@@ -289,7 +351,7 @@ SYSCALL_DEFINE1(close, int, fd) {
     if (fd < 0 || fd >= NR_OPEN)
         return -1;
 
-    file = fdt->fd[fd];
+    file = fd_get(fdt, fd);
     if (file == NULL)
         return -1;
 
@@ -305,7 +367,7 @@ SYSCALL_DEFINE1(close, int, fd) {
     return 0;
 }
 
-SYSCALL_DEFINE3(lseek, int, fd, off_t, offset, int, whence) {
+SYSCALL_DEFINE3(lseek, off_t, int, fd, off_t, offset, int, whence) {
     struct file* file;
     struct files_struct* fdt = myproc()->fdt;
     int ret;
@@ -313,7 +375,7 @@ SYSCALL_DEFINE3(lseek, int, fd, off_t, offset, int, whence) {
     if (fd < 0 || fd >= NR_OPEN)
         return -1;
 
-    file = fdt->fd[fd];
+    file = fd_get(fdt, fd);
     if (file == NULL)
         return -1;
 
@@ -324,12 +386,12 @@ SYSCALL_DEFINE3(lseek, int, fd, off_t, offset, int, whence) {
     return ret;
 }
 
-SYSCALL_DEFINE2(stat, const char*, path, struct stat*, buf) {
+SYSCALL_DEFINE2(stat, int, const char*, path, struct stat*, buf) {
     struct mountpoint* mount_p;
     int ret, mp_index;
     char full_path[MAX_PATH_LEN];
 
-    ret = get_absolute_path(path, full_path);
+    ret = get_absolute_path(path, full_path, AT_FDCWD);
     if (ret < 0)
     {
         error("get absolute path error");
@@ -355,7 +417,7 @@ SYSCALL_DEFINE2(stat, const char*, path, struct stat*, buf) {
     return 0;
 }
 
-SYSCALL_DEFINE2(fstat, int, fd, struct stat*, buf) {
+SYSCALL_DEFINE2(fstat, int, int, fd, struct stat*, buf) {
     struct file* file;
     struct files_struct* fdt = myproc()->fdt;
     struct inode* inode;
@@ -364,24 +426,24 @@ SYSCALL_DEFINE2(fstat, int, fd, struct stat*, buf) {
     if (fd < 0 || fd >= NR_OPEN)
         return -1;
 
-    file = fdt->fd[fd];
+    file = fd_get(fdt, fd);
     if (file == NULL)
         return -1;
 
     inode = file->f_inode;
-    ret = inode->i_mp->fs->fs_op->getattr(inode->i_path, buf);
+    ret = inode->i_mp->fs->fs_op->getattr(file->f_path, buf);
     if (ret < 0)
         return -1;
 
     return 0;
 }
 
-SYSCALL_DEFINE1(unlink, const char*, path) {
+SYSCALL_DEFINE3(unlinkat, int, fd_t, dirfd, const char*, path, unsigned int, flags) {
     struct mountpoint* mount_p;
     int ret, mp_index;
     char full_path[MAX_PATH_LEN];
 
-    ret = get_absolute_path(path, full_path);
+    ret = get_absolute_path(path, full_path, dirfd);
     if (ret < 0)
     {
         error("get absolute path error");
@@ -398,7 +460,11 @@ SYSCALL_DEFINE1(unlink, const char*, path) {
     mount_p = &mount_table[mp_index];
     assert(mount_p->fs != NULL);
 
-    ret = mount_p->fs->fs_op->unlink(full_path);
+    if(flags & AT_REMOVEDIR)
+        ret = mount_p->fs->fs_op->rmdir(full_path);
+    else
+        ret = mount_p->fs->fs_op->unlink(full_path);
+
     if(ret < 0) {
         error("unlink error");
         return -1;
@@ -407,26 +473,26 @@ SYSCALL_DEFINE1(unlink, const char*, path) {
     return 0;
 }
 
-SYSCALL_DEFINE3(getdents64, int, fd, struct dirent *, buf, size_t, len) {
+SYSCALL_DEFINE3(getdents64, ssize_t, int, fd, struct dirent *, buf, size_t, len) {
     struct file* file;
     struct files_struct* fdt = myproc()->fdt;
 
     if (fd < 0 || fd >= NR_OPEN)
         return -1;
 
-    file = fdt->fd[fd];
+    file = fd_get(fdt, fd);
     if (file == NULL)
         return -1;
 
     return file->f_op->getdents64(file, buf, len);
 }
 
-SYSCALL_DEFINE2(mkdir, const char*, path, umode_t, mode) {
+SYSCALL_DEFINE3(mkdirat, int, fd_t, dirfd, const char*, path, umode_t, mode) {
     struct mountpoint* mount_p;
     int ret, mp_index;
     char full_path[MAX_PATH_LEN];
 
-    ret = get_absolute_path(path, full_path);
+    ret = get_absolute_path(path, full_path, dirfd);
     if (ret < 0)
     {
         error("get absolute path error");
@@ -453,51 +519,30 @@ SYSCALL_DEFINE2(mkdir, const char*, path, umode_t, mode) {
     return 0;
 }
 
-SYSCALL_DEFINE1(rmdir, const char*, path) {
+SYSCALL_DEFINE5(linkat, int, fd_t, olddirfd, const char*, oldpath, fd_t, newdirfd, const char*, newpath, unsigned int, flags) {
     struct mountpoint* mount_p;
     int ret, mp_index;
-    char full_path[MAX_PATH_LEN];
-
-    ret = get_absolute_path(path, full_path);
-    if (ret < 0)
-    {
-        error("get absolute path error");
-        return -1;
-    }
-
-    // find mountpoint
-    mp_index = mountpoint_find(full_path);
-    if (mp_index < 0)
-    {
-        error("mountpoint not found for path %s", full_path);
-        return -1;
-    }
-    mount_p = &mount_table[mp_index];
-    assert(mount_p->fs != NULL);
-
-    ret = mount_p->fs->fs_op->rmdir(full_path);
-    if(ret < 0) {
-        error("rmdir error");
-        return -1;
-    }
-
-    return 0;
-}
-
-SYSCALL_DEFINE2(link, const char*, oldpath, const char*, newpath) {
-    struct mountpoint* mount_p;
-    int ret, mp_index;
+    struct files_struct* fdt = myproc()->fdt;
+    struct file* old_file = fd_get(fdt, olddirfd);
     char full_old_path[MAX_PATH_LEN];
     char full_new_path[MAX_PATH_LEN];
 
-    ret = get_absolute_path(oldpath, full_old_path);
-    if (ret < 0)
-    {
-        error("get absolute old path error");
-        return -1;
+    if(flags & AT_EMPTY_PATH) {
+        if(old_file->f_flags & O_DIRECTORY)
+            return -1;
+        
+        strcpy(full_old_path, old_file->f_path);
+    }
+    else {
+        ret = get_absolute_path(oldpath, full_old_path, olddirfd);
+        if (ret < 0)
+        {
+            error("get absolute old path error");
+            return -1;
+        }
     }
 
-    ret = get_absolute_path(newpath, full_new_path);
+    ret = get_absolute_path(newpath, full_new_path, newdirfd);
     if (ret < 0)
     {
         error("get absolute new path error");
@@ -520,23 +565,24 @@ SYSCALL_DEFINE2(link, const char*, oldpath, const char*, newpath) {
         return -1;
     }
 
+    if(flags & AT_SYMLINK_FOLLOW && S_ISLNK(old_file->f_inode->i_mode)) {
+        ret = mount_p->fs->fs_op->unlink(old_file->f_path);
+
+        if(ret < 0) {
+            error("unlink error");
+            return -1;
+        }
+    }
+
     return 0;
 }
 
-SYSCALL_DEFINE2(symlink, const char *, target, const char *, linkpath) {
+SYSCALL_DEFINE3(symlinkat, int, const char *, target, fd_t, newdirfd, const char *, linkpath) {
     struct mountpoint* mount_p;
     int ret, mp_index;
-    char full_target_path[MAX_PATH_LEN];
-    char full_link_path[MAX_PATH_LEN];
+    char full_linkpath[MAX_PATH_LEN];
 
-    ret = get_absolute_path(target, full_target_path);
-    if (ret < 0)
-    {
-        error("get absolute target path error");
-        return -1;
-    }
-
-    ret = get_absolute_path(linkpath, full_link_path);
+    ret = get_absolute_path(linkpath, full_linkpath, newdirfd);
     if (ret < 0)
     {
         error("get absolute link path error");
@@ -544,18 +590,106 @@ SYSCALL_DEFINE2(symlink, const char *, target, const char *, linkpath) {
     }
 
     // find mountpoint
-    mp_index = mountpoint_find(full_target_path);
+    mp_index = mountpoint_find(target);
     if (mp_index < 0)
     {
-        error("mountpoint not found for path %s", full_target_path);
+        error("mountpoint not found for path %s", target);
         return -1;
     }
     mount_p = &mount_table[mp_index];
     assert(mount_p->fs != NULL);
 
-    ret = mount_p->fs->fs_op->symlink(full_target_path, full_link_path);
+    ret = mount_p->fs->fs_op->symlink(target, full_linkpath);
     if(ret < 0) {
         error("symlink error");
+        return -1;
+    }
+
+    return 0;
+}
+
+/**
+ * mount syscall
+ * We currently ignore flags
+ */
+SYSCALL_DEFINE5(mount, int, const char *, special, const char *, dir, const char *, fstype, unsigned long, flags, const void *, data) {
+    int len, ret, mp_index;
+    char full_path_sp[MAX_PATH_LEN], full_path_dir[MAX_PATH_LEN];
+    struct mountpoint* mp;
+
+    ret = get_absolute_path(special, full_path_sp, AT_FDCWD);
+    if (ret < 0)
+    {
+        error("get absolute special path error");
+        return -1;
+    }
+
+    len = str_match_prefix(full_path_sp, "/dev/");
+
+    if(len != 5) {
+        error("cannot find special device.");
+        return -1;
+    }
+
+    struct blkdev* blkdev = blkdev_get_by_name(special + len);
+    if (blkdev == NULL)
+    {
+        error("block device %s not found", special + len);
+        return -1;
+    }
+
+    ret = get_absolute_path(dir, full_path_dir, AT_FDCWD);
+    if (ret < 0)
+    {
+        error("get absolute dir path error");
+        return -1;
+    }
+
+    mp_index = mountpoint_find(full_path_dir);
+    if(mp_index != -1) {
+        error("Mount point already used.");
+        return -1;
+    }
+
+    mp_index = mount_count++;
+    mp = &mount_table[mp_index];
+    
+    assert(mp->fs == NULL);
+
+    mp->blkdev = blkdev;
+    mp->fs = filesys_find(fstype);
+    mp->mountpoint = strdup(full_path_dir);
+
+    return mp->fs->fs_op->mount(blkdev, mp, data);
+}
+
+SYSCALL_DEFINE2(umount2, int, const char *, special, int, flags) {
+    int ret, mp_index;
+    char full_path_sp[MAX_PATH_LEN];
+    struct mountpoint* mp;
+
+    ret = get_absolute_path(special, full_path_sp, AT_FDCWD);
+    if (ret < 0)
+    {
+        error("get absolute special path error");
+        return -1;
+    }
+
+    mp_index = mountpoint_find(full_path_sp);
+    if(mp_index < 0) {
+        error("Mount point not found.");
+        return -1;
+    }
+
+    mp = &mount_table[mp_index];
+
+    assert(mp != NULL);
+    assert(mp->fs != NULL);
+    assert(mp->fs->fs_op != NULL);
+
+    ret = mp->fs->fs_op->umount(mp);
+    if(ret < 0) {
+        error("Umount mount point failed.");
         return -1;
     }
 

@@ -33,7 +33,7 @@ void fdt_init(struct files_struct *files, char* name)
 
 fd_t fd_alloc(struct files_struct *fdt, struct file* file)
 {
-    fd_t fd = fdt->next_fd;
+    fd_t fd;
     
     if(file == NULL)
     {
@@ -41,7 +41,9 @@ fd_t fd_alloc(struct files_struct *fdt, struct file* file)
         return -1;
     }
 
-    if (fd >= NR_OPEN)
+    spinlock_acquire(&fdt->fdt_lock);
+
+    if ((fd = fdt->next_fd) >= NR_OPEN)
     {
         error("too much open files for porc %s", myproc()->name);
         return -1;
@@ -53,6 +55,9 @@ fd_t fd_alloc(struct files_struct *fdt, struct file* file)
     find_avail_fd(fdt);
 
     fdt->nr_avail_fd--;
+
+    spinlock_release(&fdt->fdt_lock);
+
     return fd;
 }
 
@@ -60,9 +65,43 @@ void fd_free(struct files_struct *fdt, fd_t fd) {
     if(fd < 0 || fd >= NR_OPEN)
         return;
 
+    spinlock_acquire(&fdt->fdt_lock);
+
     if(fdt->fd[fd] != NULL) {
         fdt->fd[fd] = NULL;
         fdt->nr_avail_fd++;
         find_avail_fd(fdt);
     }
+
+    spinlock_release(&fdt->fdt_lock);
+}
+
+int fd_clone(struct files_struct *fdt, fd_t old_fd, fd_t new_fd) {
+    spinlock_acquire(&fdt->fdt_lock);
+
+    if(new_fd == -1)
+        new_fd = fdt->next_fd;
+
+    if(fdt->fd[old_fd] == NULL || fdt->fd[new_fd] != NULL)
+        return -1;
+    
+    fdt->fd[new_fd] = fdt->fd[old_fd];
+
+    find_avail_fd(fdt);
+
+    spinlock_release(&fdt->fdt_lock);
+
+    return new_fd;
+}
+
+struct file* fd_get(struct files_struct *fdt, fd_t fd) {
+    struct file* res;
+
+    spinlock_acquire(&fdt->fdt_lock);
+
+    res = fdt->fd[fd];
+
+    spinlock_release(&fdt->fdt_lock);
+
+    return res;
 }

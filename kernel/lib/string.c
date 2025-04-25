@@ -1,4 +1,5 @@
 #include <common.h>
+#include <mm/mm.h>
 
 size_t 
 strlen(const char *s)
@@ -64,6 +65,15 @@ strcmp(const char *s1, const char *s2)
             return s1[i] - s2[i];
     
     return (s2[i] == '\0') ? 0 : -s2[i];
+}
+
+
+char*
+strdup(const char* str)
+{
+    int len = strlen(str);
+    char* dst = kalloc(len);
+    return strncpy(dst, str, len);
 }
 
 

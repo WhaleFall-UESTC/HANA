@@ -112,6 +112,7 @@ build: $(KERNEL) $(DISK)
 build_all: $(KERNELDUMP) $(DISK)
 
 run: build
+	mkfs.ext4 $(FS)
 	$(QEMU) $(QEMUOPTS)
 
 gdb: build_all .gdbinit-$(ARCH)

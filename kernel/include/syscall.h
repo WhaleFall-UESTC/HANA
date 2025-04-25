@@ -74,28 +74,28 @@ typedef uint64 (*syscall_func_t)(void);
 #define __SC_CAST(t, a) (__force t) a
 #define __SC_RESERVE(t, a) a
 
-#define SYSCALL_DEFINE0(name) _SYSCALL_DEFINEx(0, _##name)
-#define SYSCALL_DEFINE1(name, ...) _SYSCALL_DEFINEx(1, _##name, __VA_ARGS__)
-#define SYSCALL_DEFINE2(name, ...) _SYSCALL_DEFINEx(2, _##name, __VA_ARGS__)
-#define SYSCALL_DEFINE3(name, ...) _SYSCALL_DEFINEx(3, _##name, __VA_ARGS__)
-#define SYSCALL_DEFINE4(name, ...) _SYSCALL_DEFINEx(4, _##name, __VA_ARGS__)
-#define SYSCALL_DEFINE5(name, ...) _SYSCALL_DEFINEx(5, _##name, __VA_ARGS__)
-#define SYSCALL_DEFINE6(name, ...) _SYSCALL_DEFINEx(6, _##name, __VA_ARGS__)
+#define SYSCALL_DEFINE0(name, ret_type) _SYSCALL_DEFINEx(0, _##name, ret_type)
+#define SYSCALL_DEFINE1(name, ret_type, ...) _SYSCALL_DEFINEx(1, _##name, ret_type, __VA_ARGS__)
+#define SYSCALL_DEFINE2(name, ret_type, ...) _SYSCALL_DEFINEx(2, _##name, ret_type, __VA_ARGS__)
+#define SYSCALL_DEFINE3(name, ret_type, ...) _SYSCALL_DEFINEx(3, _##name, ret_type, __VA_ARGS__)
+#define SYSCALL_DEFINE4(name, ret_type, ...) _SYSCALL_DEFINEx(4, _##name, ret_type, __VA_ARGS__)
+#define SYSCALL_DEFINE5(name, ret_type, ...) _SYSCALL_DEFINEx(5, _##name, ret_type, __VA_ARGS__)
+#define SYSCALL_DEFINE6(name, ret_type, ...) _SYSCALL_DEFINEx(6, _##name, ret_type, __VA_ARGS__)
 
-#define SYSCALL_KERNEL_DEFINE(x, name, ...)                         \
-    uint64 call_sys##name(__MAP(x, __SC_DECL, __VA_ARGS__))         \
+#define SYSCALL_KERNEL_DEFINE(x, name, ret_type, ...)               \
+    ret_type call_sys##name(__MAP(x, __SC_DECL, __VA_ARGS__))       \
     {                                                               \
         return __do_sys##name(__MAP(x, __SC_RESERVE, __VA_ARGS__)); \
     }
 
-#define _SYSCALL_DEFINEx(x, name, ...)                                       \
-    static inline uint64 __do_sys##name(__MAP(x, __SC_DECL, __VA_ARGS__));   \
-    uint64 sys##name(void)                                                   \
-    {                                                                        \
-        return __do_sys##name(__MAP(x, __SC_CAST, _PARAMS(x, __VA_ARGS__))); \
-    }                                                                        \
-    SYSCALL_KERNEL_DEFINE(x, name, __VA_ARGS__)                              \
-    static inline uint64 __do_sys##name(__MAP(x, __SC_DECL, __VA_ARGS__))
+#define _SYSCALL_DEFINEx(x, name, ret_type, ...)                                     \
+    static inline ret_type __do_sys##name(__MAP(x, __SC_DECL, __VA_ARGS__));         \
+    uint64 sys##name(void)                                                           \
+    {                                                                                \
+        return (uint64)__do_sys##name(__MAP(x, __SC_CAST, _PARAMS(x, __VA_ARGS__))); \
+    }                                                                                \
+    SYSCALL_KERNEL_DEFINE(x, name, ret_type, __VA_ARGS__)                                      \
+    static inline ret_type __do_sys##name(__MAP(x, __SC_DECL, __VA_ARGS__))
 
 void syscall();
 

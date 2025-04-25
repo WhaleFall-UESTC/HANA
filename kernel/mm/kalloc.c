@@ -24,7 +24,6 @@ kinit(uint64 start, uint64 end)
 void*
 kalloc(uint64 sz)
 {
-    // log("kalloc sz: %lu", sz);
     assert(sz > 0);
     if (sz > NR_OBJS * OBJECT_SIZE)
         return buddy_alloc(sz);
@@ -43,7 +42,6 @@ kcalloc(uint64 nr, uint64 sz)
 void
 kfree(void *addr)
 {
-    // log("kfree addr: %lx", (uint64)addr);
     if (IS_PGALIGNED(addr)) {
         buddy_free(addr, GET_PAGE_ORDER(addr, pages));
     } else {

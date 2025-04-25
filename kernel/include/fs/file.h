@@ -15,6 +15,8 @@ struct file
 	const struct file_operations *f_op;
 	struct inode *f_inode;
 
+	char f_path[MAX_PATH_LEN];
+
 	off_t f_ops;
 
 	void *f_private;
@@ -25,14 +27,14 @@ struct file_operations
 	off_t (*llseek)(struct file *, off_t, int);
 	ssize_t (*read)(struct file *, char *, size_t, off_t *);
 	ssize_t (*write)(struct file *, const char *, size_t, off_t *);
-	int (*open)(struct file *, path_t, uint32);
+	int (*openat)(struct file *, path_t, int, umode_t);
 	int (*close)(struct file *);
 	int(*getdents64)(struct file *, struct dirent *, size_t);
 	// int (*flush) (struct file *, fl_owner_t id);
 	// int (*fsync) (struct file *, off_t, off_t, int datasync);
 };
 
-typedef unsigned int fd_t;
+typedef int fd_t;
 
 #define NR_OPEN 1024
 
@@ -66,5 +68,23 @@ fd_t fd_alloc(struct files_struct *fdt, struct file *file);
  * @param fd The file descriptor to free.
  */
 void fd_free(struct files_struct *fdt, fd_t fd);
+
+/**
+ * Clone a struct file from a old fd to a new one.
+ * If new_fd is set to -1, return the lowest-numbered fd unused.
+ * @param fdt The files_struct given.
+ * @param old_fd The old file descriptor.
+ * @param new_fd The new file descriptor.
+ * @return new_fd on success, -1 on error.
+ */
+int fd_clone(struct files_struct *fdt, fd_t old_fd, fd_t new_fd);
+
+/**
+ * Get a struct file in fd.
+ * @param fdt The files_struct given.
+ * @param fd The file descriptor.
+ * @return NULL on error, otherwise success.
+ */
+struct file* fd_get(struct files_struct *fdt, fd_t fd);
 
 #endif // __FILE_H__

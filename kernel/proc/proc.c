@@ -59,7 +59,8 @@ alloc_proc()
     p->next = NULL;
     p->parent = NULL;
 
-    p->cwd = "/";
+    p->cwd = strdup("/");
+    Assert(p->cwd, "out of memory");
 
     p->fdt = (struct files_struct*) kalloc(sizeof(struct files_struct));
     Assert(p->fdt, "out of memory");

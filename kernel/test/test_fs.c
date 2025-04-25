@@ -16,140 +16,190 @@
 #include <common.h>
 #include <locking/spinlock.h>
 
-#define EXT4_BLK_DEV "virtio-blk1"
+#define EXT4_BLK_DEV "/dev/virtio-blk1"
 
-uint64 call_sys_mkdir(const char *path, umode_t mode);
-uint64 call_sys_open(const char *path, unsigned int flags);
-uint64 call_sys_getdents64(int fd, struct dirent *buf, size_t len);
-uint64 call_sys_close(int fd);
-uint64 call_sys_read(int fd, char *buf, size_t count);
-uint64 call_sys_write(int fd, const char *buf, size_t count);
+int    call_sys_mount(const char *special, const char *dir, const char *fstype, unsigned long flags, const void *data);
+int    call_sys_umount2(const char *special, int flags);
+char*  call_sys_getcwd(char *buf, size_t size);
+int    call_sys_chdir(const char *path);
+int    call_sys_mkdirat(int dirfd, const char *path, umode_t mode);
+int    call_sys_openat(int dirfd, const char *filename, int flags, umode_t mode);
+int    call_sys_close(int fd);
+ssize_t call_sys_write(int fd, const void *buf, size_t count);
+ssize_t call_sys_read(int fd, void *buf, size_t count);
+int    call_sys_linkat(int olddirfd, const char *oldpath, int newdirfd, const char *newpath, unsigned int flags);
+int    call_sys_unlinkat(int dirfd, const char *path, unsigned int flags);
+fd_t   call_sys_dup(fd_t oldfd);
+fd_t   call_sys_dup3(fd_t oldfd, int newfd, int flags);
+int    call_sys_getdents64(int fd, struct dirent *buf, size_t len);
+int    call_sys_fstat(int fd, struct stat *kst);
 
-void test_fs(void)
+void test_fs()
 {
-    int ret;
-    fd_t fd;
+    struct stat kst;
+    struct dirent *d;
+    char *cwd;
+    int ret, fd, new_fd, dir_fd;
+    ssize_t n;
+    char buf[128];
 
-    char buf[1024];
-    memset(buf, 0, sizeof(buf));
+    log("FS test start!");
 
-    log("test fs");
-
-    // blkdev_get_by_name("virtio-blk1")->ops->status(blkdev_get_by_name("virtio-blk1"));
-
-    ret = mount_root(EXT4_BLK_DEV, &ext4_fs);
-    if (ret != 0)
+    // 挂载文件系统
+    if ((ret = call_sys_mount(EXT4_BLK_DEV, "/", "ext4", 0, NULL)) != 0)
     {
-        error("mount root failed");
+        error("mount failed: %d", ret);
         return;
     }
-    else
-        PASS("mount root success");
-
-    // ret = call_sys_mkdir("/dir1", 0777);
-    // if (ret != 0)
-    // {
-    //     error("mkdir failed");
-    //     return;
-    // }
-    // else
-    //     PASS("mkdir success");
-
-    ret = call_sys_mkdir("/dir2/aaa", 0777);
-    if (ret != 0)
+    PASS("mount / success");
+    // 测试初始工作目录
+    if ((cwd = call_sys_getcwd(buf, 128)) == NULL)
     {
-        error("mkdir failed");
-        return;
+        error("getcwd failed");
+        goto umount;
     }
-    else
-        PASS("mkdir success");
-
-    fd = call_sys_open("/test/hhh", O_RDWR | O_CREAT);
-    if (fd < 0)
+    if (strcmp(cwd, "/") != 0)
     {
-        error("open file failed");
-        return;
+        error("initial cwd mismatch: %s", cwd);
+        goto umount;
     }
-    else
+    PASS("initial cwd is /");
+    // 创建测试目录
+    if ((ret = call_sys_mkdirat(AT_FDCWD, "/testdir", 0755)) != 0)
     {
-        PASS("open file success");
-        log("open file fd: %d", fd);
+        error("mkdir /testdir failed: %d", ret);
+        goto umount;
     }
-
-    ret = call_sys_write(fd, "hello world", 11);
-    if (ret < 0)
+    PASS("mkdir /testdir success");
+    // 切换工作目录
+    if ((ret = call_sys_chdir("/testdir")) != 0)
     {
-        error("write file failed");
-        return;
+        error("chdir to /testdir failed: %d", ret);
+        goto cleanup_dir;
     }
-    else
-        PASS("write file success");
-
-    ret = call_sys_read(fd, buf, 1024);
-    if (ret < 0)
+    PASS("chdir to /testdir success");
+    // 验证工作目录
+    if ((cwd = call_sys_getcwd(buf, 128)) == NULL || strcmp(cwd, "/testdir") != 0)
     {
-        error("read file failed");
-        return;
+        error("cwd verify failed: %s", cwd ? cwd : "NULL");
+        goto cleanup_chdir;
     }
-    else
-        PASS("read file success");
-
-    log("read file: %s", buf);
-
-    ret = call_sys_close(fd);
-    if (ret < 0)
+    PASS("cwd after chdir is /testdir");
+    // 创建测试文件
+    if ((fd = call_sys_openat(AT_FDCWD, "testfile", O_CREAT | O_RDWR, 0644)) < 0)
     {
-        error("close file failed");
-        return;
+        error("create testfile failed: %d", fd);
+        goto cleanup_chdir;
     }
-    else
-        PASS("close file success");
-
-    fd = call_sys_open("/test", O_RDONLY | O_DIRECTORY);
-    if (fd < 0)
+    PASS("create testfile success");
+    // 写入测试数据
+    const char *data = "testdata";
+    if ((n = call_sys_write(fd, data, strlen(data))) != strlen(data))
     {
-        error("open directory failed");
-        return;
+        error("write failed: %ld", n);
+        goto cleanup_file;
     }
-    else
+    PASS("write testfile success");
+    // 关闭文件
+    if ((ret = call_sys_close(fd)) != 0)
     {
-        PASS("open directory success");
-        log("open directory fd: %d", fd);
+        error("close failed: %d", ret);
+        goto cleanup_file;
     }
-
-    ret = call_sys_getdents64(fd, (struct dirent *)buf, 1000);
-    if (ret < 0)
+    PASS("close testfile success");
+    // 重新打开验证内容
+    if ((fd = call_sys_openat(AT_FDCWD, "testfile", O_RDONLY, 0)) < 0)
     {
-        error("get dent failed");
-        return;
+        error("reopen testfile failed: %d", fd);
+        goto cleanup_file;
     }
-    else
-        PASS("get dent success");
-
-    for (struct dirent *dent = (struct dirent *)buf; ;
-         dent = (struct dirent *)((uint64)dent + dent->d_reclen))
+    if ((n = call_sys_read(fd, buf, sizeof(buf))) != strlen(data))
     {
-        log("get dent: name %s", dent->d_name);
-        log("get dent: ino %lu", dent->d_ino);
-        log("get dent: reclen %d", dent->d_reclen);
-        log("get dent: dtype %d", dent->d_type);
-        log("get dent: doff %ld\n", dent->d_off);
-        if (dent->d_off == -1) break;
+        error("read failed: %ld", n);
+        goto cleanup_file;
     }
-
-    ret = call_sys_close(fd);
-    if (ret < 0)
+    if (memcmp(buf, data, strlen(data)) != 0)
     {
-        error("close directory failed");
-        return;
+        error("data mismatch");
+        goto cleanup_file;
     }
-    else
-        PASS("close directory success");
-
-    // ret = call_sys_mkdir("/test/aaa", 0777);
-    // if (ret != 0) {
-    //     error("mkdir failed");
-    //     return;
-    // }
-    // else PASS("mkdir success");
+    PASS("read testfile success");
+    call_sys_close(fd);
+    // 创建硬链接
+    if ((ret = call_sys_linkat(AT_FDCWD, "testfile", AT_FDCWD, "linkfile", 0)) != 0)
+    {
+        error("link failed: %d", ret);
+        goto cleanup_file;
+    }
+    PASS("link success");
+    // 验证链接文件
+    if ((fd = call_sys_openat(AT_FDCWD, "linkfile", O_RDONLY, 0)) < 0)
+    {
+        error("open linkfile failed: %d", fd);
+        goto cleanup_link;
+    }
+    call_sys_close(fd);
+    PASS("linkfile valid");
+    // 测试dup/dup3
+    fd = call_sys_openat(AT_FDCWD, "testfile", O_RDONLY, 0);
+    if ((new_fd = call_sys_dup(fd)) < 0)
+    {
+        error("dup failed: %d", new_fd);
+        goto cleanup_link;
+    }
+    call_sys_close(new_fd);
+    if ((new_fd = call_sys_dup3(fd, 100, 0)) != 100)
+    {
+        error("dup3 failed: %d", new_fd);
+        goto cleanup_link;
+    }
+    call_sys_close(new_fd);
+    call_sys_close(fd);
+    PASS("dup/dup3 success");
+    // 测试目录遍历
+    dir_fd = call_sys_openat(AT_FDCWD, ".", O_RDONLY | O_DIRECTORY, 0);
+    char *dirbuf = kalloc(512);
+    if ((n = call_sys_getdents64(dir_fd, (struct dirent *)dirbuf, 512)) <= 0)
+    {
+        error("getdents64 failed: %ld", n);
+        kfree(dirbuf);
+        goto cleanup_link;
+    }
+    int found = 0;
+    for (int pos = 0; pos < n; pos += d->d_reclen)
+    {
+        d = (struct dirent *)(dirbuf + pos);
+        if (strcmp(d->d_name, "testfile") == 0)
+            found++;
+    }
+    if (!found)
+    {
+        error("directory entry not found");
+        kfree(dirbuf);
+        goto cleanup_link;
+    }
+    kfree(dirbuf);
+    call_sys_close(dir_fd);
+    PASS("getdents64 success");
+    // 测试fstat
+    fd = call_sys_openat(AT_FDCWD, "testfile", O_RDONLY, 0);
+    if (call_sys_fstat(fd, &kst) != 0 || kst.st_size != strlen(data))
+    {
+        error("fstat failed");
+        call_sys_close(fd);
+        goto cleanup_link;
+    }
+    call_sys_close(fd);
+    PASS("fstat success");
+// 清理流程
+cleanup_link:
+    call_sys_unlinkat(AT_FDCWD, "linkfile", 0);
+cleanup_file:
+    call_sys_unlinkat(AT_FDCWD, "testfile", 0);
+cleanup_chdir:
+    call_sys_chdir("/");
+cleanup_dir:
+    call_sys_unlinkat(AT_FDCWD, "/testdir", AT_REMOVEDIR);
+umount:
+    call_sys_umount2("/", 0);
 }

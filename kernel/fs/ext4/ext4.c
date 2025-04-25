@@ -17,8 +17,7 @@
 #define MAX_EXT4_BLOCKDEV_NAME 32
 #define EXT4_BUF_SIZE 512
 
-int
-ext4_fs_mount(struct blkdev * blkdev, const char *mountpoint)
+int ext4_fs_mount(struct blkdev * blkdev, struct mountpoint *mp, const char *data)
 {
 	char buffer[MAX_EXT4_BLOCKDEV_NAME + 1];
 	int ret;
@@ -61,20 +60,55 @@ ext4_fs_mount(struct blkdev * blkdev, const char *mountpoint)
 		return -1;
 	}
 
-	debug("ext4 device mount name = %s, mountp = %s", buffer, mountpoint);
-	ret = ext4_mount(buffer, mountpoint, false);
+	debug("ext4 device mount name = %s, mountp = %s", buffer, mp->mountpoint);
+	ret = ext4_mount(buffer, mp->mountpoint, false);
 	if (ret != EOK)
 	{
 		error_ext4("mount error! ret = %d", ret);
 		return -1;
 	}
 
-	ret = ext4_cache_write_back(mountpoint, true);
+	ret = ext4_cache_write_back(mp->mountpoint, true);
 	if (ret != EOK)
 	{
 		error_ext4("cache write back error! ret = %d", ret);
 		return -1;
 	}
+
+	fs_dev->name = strdup(buffer);
+
+	mp->private = (void*)fs_dev;
+
+	return 0;
+}
+
+int ext4_fs_umount(struct mountpoint* mp) {
+	int ret;
+	struct ext4_fs_dev* fs_dev = (struct ext4_fs_dev*)mp->private;
+
+	assert(fs_dev != NULL);
+
+	ret = ext4_cache_flush(mp->mountpoint);
+	if(ret != EOK) {
+		error_ext4("cache flush error! ret = %d", ret);
+		return -1;
+	}
+
+	ret = ext4_umount(mp->mountpoint);
+	if (ret != EOK)
+	{
+		error_ext4("umount error! ret = %d", ret);
+		return -1;
+	}
+
+	ret = ext4_device_unregister(fs_dev->name);
+	if(ret != EOK) {
+		error_ext4("device unregister error! ret = %d", ret);
+		return -1;
+	}
+
+	kfree((void*)fs_dev->name);
+	kfree(fs_dev);
 
 	return 0;
 }
@@ -173,7 +207,7 @@ static ssize_t ext4_write(struct file* file, const char * buffer, size_t size, o
 	return wcnt;
 }
 
-static int ext4_open(struct file* file, path_t path, uint32 flags) {
+static int ext4_openat(struct file* file, path_t path, int flags, umode_t mode) {
 	struct ext4_file *ext4_file;
 	struct ext4_dir *dir;
 	int ret;
@@ -194,6 +228,15 @@ static int ext4_open(struct file* file, path_t path, uint32 flags) {
 		ret = ext4_fopen2(ext4_file, path, flags);
 		if (ret != EOK) {
 			error_ext4("ext4_fopen2 error! ret: %d", ret);
+			return -1;
+		}
+	}
+
+	if(flags & O_CREAT) {
+		ret = ext4_mode_set(path, mode);
+
+		if(ret != EOK) {
+			error_ext4("ext4_mode_set error! ret: %d", ret);
 			return -1;
 		}
 	}
@@ -328,6 +371,14 @@ static int ext4_mkdir(path_t path, umode_t mode) {
 		error_ext4("mkdir error! ret=%d", ret);
 		return -1;
 	}
+
+	ret = ext4_mode_set(path, mode);
+
+	if(ret != EOK) {
+		error_ext4("ext4_mode_set error! ret: %d", ret);
+		return -1;
+	}
+
 	return ret;
 }
 
@@ -353,13 +404,14 @@ const struct file_operations ext4_file_fops = {
 	.llseek = ext4_llseek,
 	.read = ext4_read,
 	.write = ext4_write,
-	.open = ext4_open,
+	.openat = ext4_openat,
 	.close = ext4_close,
 	.getdents64 = ext4_getdents64,
 };
 
 const struct fs_operations ext4_filesystem_ops = {
 	.mount = ext4_fs_mount,
+	.umount = ext4_fs_umount,
 	.ifget = ext4_fs_ifget,
 	.link = ext4_link,
 	.unlink = ext4_unlink,

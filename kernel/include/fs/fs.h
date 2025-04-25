@@ -25,7 +25,6 @@ struct inode
 
     const struct inode_operations *i_op; // inode operations
 
-    char i_path[MAX_PATH_LEN]; // path to the file
     uint32 i_ino;              // inode number
 
     spinlock_t i_lock;   // inode lock
@@ -73,11 +72,12 @@ struct inode
 // };
 
 struct file;
+struct mountpoint;
 
 struct fs_operations
 {
-    int (*mount)(struct blkdev *, const char *);
-    // int (*umount)(const char *mount_point);
+    int (*mount)(struct blkdev *, struct mountpoint *, const char *);
+    int (*umount)(struct mountpoint *);
     // int (*statfs)(const char *mount_point, struct statfs *);
     /**
      * get fs specific inode and file
@@ -104,28 +104,7 @@ struct mountpoint
     const char *mountpoint;
     const struct file_system *fs;
     const struct blkdev *blkdev;
+    void* private;
 };
-
-#define NR_MOUNT 16
-#define MOUNT_ROOT "/"
-
-int mount(const char *blkdev_name, struct mountpoint *mount_p);
-
-extern struct mountpoint mount_table[NR_MOUNT], *root_mp;
-extern int mount_count;
-
-static inline int mount_root(const char *blkdev_name, const struct file_system *fs)
-{
-    root_mp->mountpoint = MOUNT_ROOT;
-    root_mp->fs = fs;
-    return mount(blkdev_name, root_mp);
-}
-
-static inline int mount_add(const char *blkdev_name, const struct file_system *fs, const char *mountpoint)
-{
-    mount_table[mount_count].mountpoint = mountpoint;
-    mount_table[mount_count].fs = fs;
-    return mount(blkdev_name, &mount_table[mount_count++]);
-}
 
 #endif // __FS_H__
