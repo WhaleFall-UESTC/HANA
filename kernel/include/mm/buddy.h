@@ -2,6 +2,7 @@
 #define __BUDDY_H__
 
 #define MAX_ORDER 11  // maximum order of buddy system
+#define BUDDY_MAGIC 0x42554459
 
 #define BLOCK_SIZE(order) (PGSIZE << (order))
 #define BLOCK_NPAGES(order) (1 << (order))
@@ -15,6 +16,7 @@
 
 // the block's address must be page-aligned
 struct block {
+    uint64 magic;
     int order;
     struct block* prev;
     struct block* next;

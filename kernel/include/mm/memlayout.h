@@ -12,7 +12,10 @@
 #define MAXVA       (1UL << 63)
 #endif
 
-#define PHYSTOP     (KERNELBASE + MEMORY_SIZE)
+// qemu-system-riscv64 virt has limit
+#define PHYSTOP     0x88000000L
+
+#define IN_KERNEL(addr) (((uint64)(addr)) >= KERNELBASE && ((uint64)(addr)) < PHYSTOP)
 
 #define TRAMPOLINE  (MAXVA - PGSIZE)
 #define TRAPFRAME   (TRAMPOLINE - PGSIZE)

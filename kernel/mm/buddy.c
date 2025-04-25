@@ -2,6 +2,7 @@
 #include <klib.h>
 #include <debug.h>
 #include <mm/buddy.h>
+#include <mm/memlayout.h>
 
 extern struct page* pages;
 struct zone zone;
@@ -40,6 +41,8 @@ add_last(uint64 addr, int order)
     assert(IS_PGALIGNED(addr));
     struct block* new_block = (struct block*) addr;
     new_block->order = order;
+    // unsafe design
+    new_block->magic = BUDDY_MAGIC;
 
     struct block* last_block = zone.free_area[order].free_list.prev;
     zone.free_area[order].free_list.prev = new_block;
@@ -64,6 +67,7 @@ remove(struct block* remove_block)
     // need to clear this block
     // once allocated but not used, buddy_free will free it
     remove_block->order = -1;
+    remove_block->magic = 0;
 }
 
 
@@ -73,16 +77,17 @@ buddy_init(uint64 start, uint64 end)
 {
     uint64 s = PGROUNDUP(start);
     uint64 e = PGROUNDDOWN(end);
-    uint npages = ((e - s) >> PGSHIFT);
+    uint64 npages = ((e - s) >> PGSHIFT);
+    uint64 npages_copy = npages;
 
     log("start at %p, end at %p", (void*)s, (void*)e);
-    log("npages: %d, size is: %#x", (int)npages, npages << PGSHIFT);
+    log("npages: %#lx, size is: %#lx", npages, npages << PGSHIFT);
     memset(&zone, 0, sizeof(struct zone));
     assert(s <= e);
     // log("compute the number of init blocks for each free_area");
 
     // compute the number of init blocks for each free_area
-    uint square_npages = (MAX_ORDER * BLOCK_NPAGES(MAX_ORDER - 1));
+    uint64 square_npages = (MAX_ORDER * BLOCK_NPAGES(MAX_ORDER - 1));
     if (npages > square_npages) {
         npages -= square_npages;
         for (int i = 0; i < MAX_ORDER; i++) {
@@ -99,7 +104,9 @@ buddy_init(uint64 start, uint64 end)
         zone.free_area[i].free_list.next = &zone.free_area[i].free_list;
     }
 
-    assert(npages == 0);
+    for (int i = 0; i < MAX_ORDER; i++)
+        npages_copy -= BLOCK_NPAGES(i) * zone.free_area[i].nr_free;
+    assert(npages_copy == 0);
     // log("allocate blocks");
 
     // allocate blocks
@@ -173,7 +180,10 @@ void
 buddy_free_helper(void* addr, int order)
 {
     struct block* buddy = (struct block*) BUDDY_BLOCK(addr, order);
-    if (order < MAX_ORDER - 1 && buddy->order == order && buddy->prev && buddy->next) {
+    if (order < MAX_ORDER - 1 
+        && buddy->magic == BUDDY_MAGIC && buddy->order == order  
+        && IN_KERNEL(buddy->prev) && IN_KERNEL(buddy->next))
+    {
         remove(buddy);
         // memset((void*) BUDDY_HIGH(addr, order), 0, sizeof(struct block));
         buddy_free_helper((void*) BUDDY_LOW(addr, order), order + 1);

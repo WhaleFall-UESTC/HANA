@@ -98,8 +98,11 @@ void test_kalloc()
     kfree(tmp_4pg);
     kfree(tmp_8obj);
 
+    PASS("pass single alloc");
+
     for (int i = 0; i < MAX_ORDER - 1; i++)
     {
+        debug("order: %d", i);
         void *tmp = kalloc(PGSIZE << i);
         void *tmp2 = kalloc((PGSIZE << i) + PGSIZE);
         memset(tmp, 0, PGSIZE << i);
@@ -110,12 +113,15 @@ void test_kalloc()
     void *tmp = kalloc(PGSIZE << (MAX_ORDER - 1));
     kfree(tmp);
 
+    PASS("pass buddy alloc");
+
     for (int i = 1; i <= NR_OBJS; i++)
     {
         // log("slab free %d objs", i);
         void *tmp = kalloc(i * OBJECT_SIZE);
         kfree(tmp);
     }
+    PASS("pass slab alloc");
 
     test_kalloc_kfree();
 
