@@ -959,8 +959,8 @@ static int ext4_dir_dx_split_data(struct ext4_inode_ref *inode_ref,
 		de = (void *)((uint8 *)de + elen);
 	}
 
-	// qsort(sort, idx, sizeof(struct ext4_dx_sort_entry),
-	//       ext4_dir_dx_entry_comparator);
+	qsort(sort, idx, sizeof(struct ext4_dx_sort_entry),
+	      ext4_dir_dx_entry_comparator);
 
 	/* Allocate new block for store the second part of entries */
 	ext4_fsblk_t new_fblock;

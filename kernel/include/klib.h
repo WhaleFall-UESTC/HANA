@@ -25,4 +25,11 @@ int             sprintf(char *out, const char *fmt, ...);
 int             printf(const char* fmt, ...);
 int             puts(char* buf);
 
+/* lib/sort.c */
+typedef int (*compar_fn_t)(const void*, const void*);
+/**
+ * Sort NMEMB elements of BASE, of SIZE bytes each, using COMPAR to perform the comparisons.
+ */
+void qsort(void *base, size_t nmemb, size_t size, compar_fn_t compar);
+
 #endif // __KLIB_H__

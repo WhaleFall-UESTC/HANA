@@ -61,7 +61,7 @@ static void bendio(struct blkreq *req)
 }
 #endif
 
-#ifdef EXT4_BLK_IO_SCETOR
+#ifdef EXT4_BLK_IO_SECTOR
 
 int blockdev_bread(struct ext4_blockdev *bdev, void *buf, uint64 blk_id,
 				   uint32 blk_cnt)
