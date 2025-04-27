@@ -17,7 +17,7 @@
 #define MAX_EXT4_BLOCKDEV_NAME 32
 #define EXT4_BUF_SIZE 512
 
-int ext4_fs_mount(struct blkdev * blkdev, struct mountpoint *mp, const char *data)
+static int ext4_fs_mount(struct blkdev * blkdev, struct mountpoint *mp, const char *data)
 {
 	char buffer[MAX_EXT4_BLOCKDEV_NAME + 1];
 	int ret;
@@ -82,7 +82,7 @@ int ext4_fs_mount(struct blkdev * blkdev, struct mountpoint *mp, const char *dat
 	return 0;
 }
 
-int ext4_fs_umount(struct mountpoint* mp) {
+static int ext4_fs_umount(struct mountpoint* mp) {
 	int ret;
 	struct ext4_fs_dev* fs_dev = (struct ext4_fs_dev*)mp->private;
 
@@ -113,7 +113,7 @@ int ext4_fs_umount(struct mountpoint* mp) {
 	return 0;
 }
 
-int ext4_fs_ifget(struct mountpoint *mp, struct inode *inode, struct file *file)
+static int ext4_fs_ifget(struct mountpoint *mp, struct inode *inode, struct file *file)
 {
 	if ((file->f_flags & O_DIRECTORY) == O_DIRECTORY) {
 		struct ext4_dir *dir;

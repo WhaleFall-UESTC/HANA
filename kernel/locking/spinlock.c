@@ -14,7 +14,7 @@
 
 
 void 
-spinlock_init(struct spinlock* lk, char* name) 
+spinlock_init(struct spinlock* lk, const char* name) 
 {
     lk->locked = UNLOCKED;
     lk->cpu = NULL;

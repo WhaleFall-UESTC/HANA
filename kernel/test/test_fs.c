@@ -18,21 +18,22 @@
 
 #define EXT4_BLK_DEV "/dev/virtio-blk1"
 
-int    call_sys_mount(const char *special, const char *dir, const char *fstype, unsigned long flags, const void *data);
-int    call_sys_umount2(const char *special, int flags);
-char*  call_sys_getcwd(char *buf, size_t size);
-int    call_sys_chdir(const char *path);
-int    call_sys_mkdirat(int dirfd, const char *path, umode_t mode);
-int    call_sys_openat(int dirfd, const char *filename, int flags, umode_t mode);
-int    call_sys_close(int fd);
+int     call_sys_mount(const char *special, const char *dir, const char *fstype, unsigned long flags, const void *data);
+int     call_sys_umount2(const char *special, int flags);
+char*   call_sys_getcwd(char *buf, size_t size);
+int     call_sys_chdir(const char *path);
+int     call_sys_mkdirat(int dirfd, const char *path, umode_t mode);
+int     call_sys_openat(int dirfd, const char *filename, int flags, umode_t mode);
+int     call_sys_close(int fd);
 ssize_t call_sys_write(int fd, const void *buf, size_t count);
 ssize_t call_sys_read(int fd, void *buf, size_t count);
-int    call_sys_linkat(int olddirfd, const char *oldpath, int newdirfd, const char *newpath, unsigned int flags);
-int    call_sys_unlinkat(int dirfd, const char *path, unsigned int flags);
-fd_t   call_sys_dup(fd_t oldfd);
-fd_t   call_sys_dup3(fd_t oldfd, int newfd, int flags);
-int    call_sys_getdents64(int fd, struct dirent *buf, size_t len);
-int    call_sys_fstat(int fd, struct stat *kst);
+int     call_sys_linkat(int olddirfd, const char *oldpath, int newdirfd, const char *newpath, unsigned int flags);
+int     call_sys_unlinkat(int dirfd, const char *path, unsigned int flags);
+fd_t    call_sys_dup(fd_t oldfd);
+fd_t    call_sys_dup3(fd_t oldfd, int newfd, int flags);
+int     call_sys_getdents64(int fd, struct dirent *buf, size_t len);
+int     call_sys_fstat(int fd, struct stat *kst);
+int     call_sys_pipe2(int* pipefd, int flags);
 
 void test_fs()
 {
@@ -42,8 +43,45 @@ void test_fs()
     int ret, fd, new_fd, dir_fd;
     ssize_t n;
     char buf[128];
+    int pipefd[2];
 
     log("FS test start!");
+
+    if((ret = call_sys_pipe2(pipefd, 0)) != 0)
+    {
+        error("get pipe failed: %d", ret);
+        return;
+    }
+    PASS("pipe2 success");
+
+    const char *pdata = "testpippppppppppppe";
+    if ((n = call_sys_write(pipefd[1], pdata, strlen(pdata))) != strlen(pdata))
+    {
+        error("write failed: %ld", n);
+        return;
+    }
+    PASS("write pipe success");
+    if ((n = call_sys_read(pipefd[0], buf, strlen(pdata))) != strlen(pdata))
+    {
+        error("read failed: %ld", n);
+        return;
+    }
+    if (memcmp(buf, pdata, strlen(pdata)) != 0)
+    {
+        error("data mismatch");
+        return;
+    }
+    PASS("read pipe success");
+    if ((ret = call_sys_close(pipefd[0])) != 0)
+    {
+        error("close pipe failed: %d", ret);
+        return;
+    }
+    if ((ret = call_sys_close(pipefd[1])) != 0)
+    {
+        error("close pipe failed: %d", ret);
+        return;
+    }
 
     // 挂载文件系统
     if ((ret = call_sys_mount(EXT4_BLK_DEV, "/", "ext4", 0, NULL)) != 0)

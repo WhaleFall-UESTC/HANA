@@ -18,7 +18,7 @@ typedef struct spinlock spinlock_t;
 #define UNLOCKED    0
 #define LOCKED      1
 
-void    spinlock_init(struct spinlock* lk, char* name);
+void    spinlock_init(struct spinlock* lk, const char* name);
 void    spinlock_acquire(struct spinlock* lk);
 void    spinlock_release(struct spinlock* lk);
 int     spinlock_holding(struct spinlock* lk);

@@ -4,7 +4,7 @@
  * See list.h
  */
 
-#include <list.h>
+#include <tools/list.h>
 
 void hlist_insert(struct hlist_head *head, struct hlist_head *item)
 {

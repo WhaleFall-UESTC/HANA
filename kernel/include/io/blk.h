@@ -2,7 +2,7 @@
 #define __BLK_H__
 
 #include <common.h>
-#include <list.h>
+#include <tools/list.h>
 #include <debug.h>
 #include <locking/spinlock.h>
 #include <irq/interrupt.h>

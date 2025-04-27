@@ -3,7 +3,7 @@
 
 #include <common.h>
 #include <fs/fs.h>
-#include <list.h>
+#include <tools/list.h>
 
 struct dentry {
     char *d_name; // name of the directory entry

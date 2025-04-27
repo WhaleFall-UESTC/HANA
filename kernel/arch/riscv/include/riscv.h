@@ -25,9 +25,18 @@
 typedef uint64 pte_t;
 typedef pte_t *pagetable_t;
 
-#define fence(prev, succ) asm volatile("fence " #prev ", " #succ)
-#define mb() __asm__ __volatile__("fence iorw, iorw" ::: "memory")
-#define smp_mb() __asm__ __volatile__("fence rw, rw" ::: "memory")
+#define RISCV_FENCE(p, s) \
+	__asm__ __volatile__ ("fence " #p "," #s : : : "memory")
+
+/* These barriers need to enforce ordering on both devices or memory. */
+#define mb()		RISCV_FENCE(iorw,iorw)
+#define rmb()		RISCV_FENCE(ir,ir)
+#define wmb()		RISCV_FENCE(ow,ow)
+
+/* These barriers do not need to enforce ordering on devices, just memory. */
+#define smp_mb()	RISCV_FENCE(rw,rw)
+#define smp_rmb()	RISCV_FENCE(r,r)
+#define smp_wmb()	RISCV_FENCE(w,w)
 
 // which hart (core) is this?
 static inline uint64

@@ -51,6 +51,7 @@
 #endif
 
 #define KALLOC(type, var) type* var = (type*) kalloc(sizeof(type))
+#define KCALLOC(type, var, count) type* var = (type*) kcalloc(sizeof(type), count)
 
 #define nr_elem(x) (sizeof(x) / sizeof(x[0]))
 
