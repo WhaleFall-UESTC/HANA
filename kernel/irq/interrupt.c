@@ -2,10 +2,10 @@
 #include <irq/interrupt.h>
 #include <debug.h>
 #include <proc/proc.h>
+#include <drivers/uart.h>
 
 #ifdef ARCH_RISCV
 #include <drivers/plic.h>
-#include <drivers/uart.h>
 #else
 /* other archs */
 #endif

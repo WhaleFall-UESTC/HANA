@@ -182,7 +182,7 @@ buddy_free_helper(void* addr, int order)
     struct block* buddy = (struct block*) BUDDY_BLOCK(addr, order);
     if (order < MAX_ORDER - 1 
         && buddy->magic == BUDDY_MAGIC && buddy->order == order  
-        && IN_KERNEL(buddy->prev) && IN_KERNEL(buddy->next))
+        && IN_RAM(buddy->prev) && IN_RAM(buddy->next))
     {
         remove(buddy);
         // memset((void*) BUDDY_HIGH(addr, order), 0, sizeof(struct block));

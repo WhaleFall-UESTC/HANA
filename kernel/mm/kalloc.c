@@ -7,10 +7,10 @@
 struct page* pages;
 
 void
-kinit(uint64 start, uint64 end)
+kmem_init(uint64 va_start, uint64 va_end)
 {
-    uint64 s = PGROUNDUP(start);
-    uint64 e = PGROUNDDOWN(end);
+    uint64 s = PGROUNDUP(va_start);
+    uint64 e = PGROUNDDOWN(va_end);
     uint npages = ((e - s) >> PGSHIFT);
     pages = (struct page*) s;
     s += PGROUNDUP(npages * sizeof(struct page));
@@ -20,6 +20,7 @@ kinit(uint64 start, uint64 end)
     slab_init();
     out("Initialize slab");
 }
+
 
 void*
 kalloc(uint64 sz)

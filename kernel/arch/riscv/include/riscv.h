@@ -14,8 +14,6 @@
 #define PTE_FLAGS(pte) ((pte) & 0x3ff)
 
 #define CHECK_PTE(pte_addr, flags) (((pte_addr) != NULL) && ((*(pte_addr) & (flags)) != 0))
-#define WALK_ALLOC 1
-#define WALK_NOALLOC 0
 
 #define PX(i, va) (((va) >> (9 * i + 12)) & 0x1ff)
 

@@ -4,26 +4,20 @@
 #include <klib.h>
 #include <platform.h>
 #include <debug.h>
-
-#ifdef ARCH_RISCV
 #include <riscv.h>
-#endif
-
 
 extern char etext[];
+extern char end[];
 extern char trampoline[];
 extern char *init_stack_top;
 
 pagetable_t kernel_pagetable;
 
-static inline pagetable_t
-alloc_pagetable()
+void
+kinit()
 {
-    pagetable_t pgtbl = (pagetable_t) kalloc(PGSIZE);
-    memset(pgtbl, 0, PGSIZE);
-    return pgtbl;
+    kmem_init((uint64)end, PHYSTOP);
 }
-
 
 void 
 kvminit()
@@ -31,6 +25,7 @@ kvminit()
     kernel_pagetable = kvmmake();
     // mappages(kernel_pagetable, KSTACK(0), (uint64)init_stack_top, PGSIZE, PTE_R | PTE_W);
 }
+
 
 // set pagetable and enable paging
 void
@@ -40,7 +35,7 @@ kvminithart()
     sfence_vma();
 
     // init_stack is in rodata
-    // which va mapped to the same pa
+    // whose va mapped to the same pa
 }
 
 

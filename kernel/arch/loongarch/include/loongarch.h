@@ -1,6 +1,37 @@
+#pragma once
+
 #define PALEN 48
 #define VALEN 48
-#define MAXVA (1UL << VALEN)
+#define MAXVA (1UL << (9 + 12 - 1)) // lower half virtual address
+
+typedef uint64 pte_t;
+typedef pte_t *pagetable_t;
+
+#define PTE_V   (1L << 0)
+#define PTE_D   (1L << 1)
+#define PTE_PLV (3L << 2)
+#define PTE_PLV0 (0L << 2)
+#define PTE_PLV3 (3L << 2)
+#define PTE_MAT (3L << 4)
+#define PTE_MAT_SUC (0L << 4)
+#define PTE_MAT_CC  (1L << 4)
+#define PTE_MAT_WUC (2L << 4)
+#define PTE_G   (1L << 6)
+#define PTE_P   (1L << 7)
+#define PTE_W   (1L << 8)
+#define PTE_NR  (1L << 61)
+#define PTE_NX  (1L << 62)
+#define PTE_RPLV (1L << 63)
+
+#define PAMASK  (0xFFFFFFFFFUL << PGSHIFT)
+#define PTE2PA(pte) (((uint64)(pte)) & PAMASK)
+#define PA2PTE(pa)  (pte_t)(((uint64)(pa)) & PAMASK)
+#define PTE_FLAGS(pte) ((pte) & 0xE0000000000001FFUL)
+
+#define DIRWIDTH    9U
+#define PTBASE      12U
+#define DIRBASE(n) (PTBASE + n * DIRWIDTH)
+
 
 /* 基础控制寄存器 */
 #define CSR_CRMD        0x0    // 当前模式信息
@@ -227,6 +258,7 @@
 #define CSR_PWCL_Dir2_base (0x1F << 20) // 次低一级目录起始地址 RW
 #define CSR_PWCL_Dir2_width (0x1F << 25) // 次低一级目录索引位数 RW
 #define CSR_PWCL_PTEWidth (0x3 << 30)   // 页表项位宽 RW
+#define CSR_PWCL_PTEWidth64 (0x0 << 30)
 
 /* 页表遍历控制高半部分 (PWCH) */
 #define CSR_PWCH_Dir3_base (0x3F << 0)  // 次高一级目录起始地址 RW
@@ -383,9 +415,25 @@ csr_set(uint64 csr, uint64 val)
     asm volatile("csrxchg $zero, %0, %1" : : "r"(val), "i"(csr));
 }
 
+static inline uint64
+cpucfg(uint64 num) 
+{
+    uint64 val;
+    asm volatile("cpucfg %0, %1" : "=r"(val) : "r"(num));
+    return val;
+}
 
-static inline void intr_on() {
+
+static inline void 
+intr_on() 
+{
     asm volatile("csrxchg $zero, %0, %1" : : "r"(CSR_CRMD_IE), "i"(CSR_CRMD));
+}
+
+static inline void 
+intr_off() 
+{
+    csr_write(CSR_CRMD, csr_read(CSR_CRMD) & ~CSR_CRMD_IE);
 }
 
 

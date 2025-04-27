@@ -1,10 +1,8 @@
 
 #include <stdarg.h>
 #include <klib.h>
-
-#ifdef ARCH_RISCV 
 #include <drivers/uart.h>
-#endif
+
 
 #define ZEROPAD 1   // defalut blank pad
 #define BIN     2
@@ -35,6 +33,7 @@ skip_atoi(const char** s)
     return i;
 }
 
+#ifdef ARCH_RISCV
 extern void irq_pushoff();
 extern void irq_popoff();
 
@@ -46,6 +45,15 @@ write(char *buf, size_t n)
         putchar(buf[i]);
     irq_popoff();
 }
+#elif defined(ARCH_LOONGARCH)
+// loongarch has not implement irq
+static inline void
+write(char *buf, size_t n)
+{
+    for (int i = 0; i < n; i++)
+        putchar(buf[i]);
+}
+#endif
 
 static inline char
 digits(unsigned num)

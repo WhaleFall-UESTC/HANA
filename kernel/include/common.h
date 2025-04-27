@@ -52,6 +52,9 @@
 
 #define KALLOC(type, var) type* var = (type*) kalloc(sizeof(type))
 
+#define WALK_ALLOC 1
+#define WALK_NOALLOC 0
+
 #define nr_elem(x) (sizeof(x) / sizeof(x[0]))
 
 // typedefs

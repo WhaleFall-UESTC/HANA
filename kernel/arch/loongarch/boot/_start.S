@@ -1,12 +1,9 @@
-#include <loongarch.h>
-#include <mm/memlayout.h>
-
 .section .text._start
 .global _start
 _start:
     # initialize stack
     la      $sp, init_stack 
-    csrrd   $tp, CSR_CPUID
+    csrrd   $tp, 0x20
     li.d    $t0, 4096
     addi.d  $a0, $tp, 1
     mul.d   $a0, $a0, $t0

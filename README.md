@@ -50,13 +50,13 @@ source $RC
 ```bash
 cd ~/Downloads
 git clone https://github.com/foxsen/binutils-gdb \
-&& cd inutils-gdb \
+&& cd binutils-gdb \
 && git checkout loongarch-v2022-03-10 \
 && mkdir build \
 && cd build \
-&& ../configure --target=loongarch64-unknown-linux-gnu --prefix=/opt/gdb --disable-werror --without-python \
+&& ../configure --target=loongarch64-unknown-linux-gnu --prefix=/opt/gdb --disable-werror --without-python --disable-doc \
 && make -j8 \
-&& make install
+&& sudo make install
 ```
 <br>
 

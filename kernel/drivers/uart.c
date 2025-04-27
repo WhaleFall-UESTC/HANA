@@ -1,6 +1,5 @@
-#include <platform.h>
 #include <common.h>
-#include <riscv.h>
+#include <mm/memlayout.h>
 #include <trap/context.h>
 #include <irq/interrupt.h>
 #include <proc/proc.h>
