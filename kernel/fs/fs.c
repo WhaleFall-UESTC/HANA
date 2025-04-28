@@ -19,13 +19,12 @@ const struct file_system *filesys[] = {&ext4_fs};
 
 /************************ Export and Helper functions ************************/
 
-#define TO_STR(x) #x
 #define call_interface(regipt, interface, rettype, ...)                   \
 	({                                                                    \
 		rettype __ret;                                                    \
 		if ((regipt)->interface == NULL)                                  \
 		{                                                                 \
-			error(TO_STR(interface) "not supported in current fs/file."); \
+			error(macro_param_to_str(interface) "not supported in current fs/file."); \
 			__ret = -1;                                                   \
 		}                                                                 \
 		else                                                              \
@@ -281,6 +280,7 @@ SYSCALL_DEFINE4(openat, fd_t, fd_t, dirfd, const char *, path, int, flags, umode
 		goto out_file;
 	}
 
+	atomic_init(&file->f_ref, 1);
 	file->f_flags = flags;
 	debug("file->f_flags: %d", file->f_flags);
 	ret = call_interface(mount_p->fs->fs_op, ifget, int, mount_p, inode, file);
@@ -399,13 +399,20 @@ SYSCALL_DEFINE1(close, int, int, fd)
 	if (file == NULL)
 		return -1;
 
-	ret = call_interface(file->f_op, close, int, file);
-	if (ret < 0)
-		return -1;
-
-	if(file->f_inode)
-		kfree(file->f_inode);
-	kfree(file);
+	if(atomic_dec(&file->f_ref) == 0) {
+		ret = call_interface(file->f_op, close, int, file);
+		if (ret < 0) {
+			error("call specified close failed");
+			return -1;
+		}
+	
+		if(file->f_inode)
+			kfree(file->f_inode);
+		kfree(file);
+	}
+	else {
+		debug("file ref count has not down to 1 yet");
+	}
 
 	fd_free(fdt, fd);
 
@@ -784,7 +791,10 @@ SYSCALL_DEFINE2(pipe2, int, int*, pipefd, int, flags) {
 		error("pipe init error");
 		goto out_file;
 	}
-	
+
+	atomic_init(&rfile->f_ref, 1);
+	atomic_init(&wfile->f_ref, 1);
+
 	pipefd[0] = fd_alloc(fdt, rfile);
 	if(pipefd[0] < 0) {
 		ret = -1;

@@ -125,6 +125,8 @@ typedef long int ptrdiff_t;
 // #define __force	__attribute__((force))
 #define __force
 
+#define macro_param_to_str(x) #x
+
 #define metamacro_head(...) metamacro_head_(__VA_ARGS__, 0)
 #define metamacro_concat_(A, B) A ## B
 #define metamacro_concat(A, B) metamacro_concat_(A, B)

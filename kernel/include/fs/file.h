@@ -5,6 +5,7 @@
 #include <fs/fs.h>
 #include <fs/dirent.h>
 #include <klib.h>
+#include <locking/atomic.h>
 
 struct file_operations;
 
@@ -20,6 +21,12 @@ struct file
 	off_t f_ops;
 
 	void *f_private;
+
+	/**
+	 * Reference count of a struct file
+	 * f_ref = 0 will lead to free it
+	 */
+	atomic_define(int) f_ref;
 };
 
 struct file_operations
