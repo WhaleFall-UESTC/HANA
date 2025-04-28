@@ -9,9 +9,7 @@
 struct pipe {
 	struct kfifo* kfifo;
 	spinlock_t* lock;
-#define PIPE_END_READ 0
-#define PIPE_END_WRITE 1
-	uint8 rw;
+	int ref;
 };
 
 #define PIPE_KFIFO_SIZE_DEFAULT 4096
