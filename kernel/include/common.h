@@ -12,13 +12,15 @@
 
 #define PGSIZE 4096
 #define PGSHIFT 12
+#define PGMASK 0xFFFFFFFFFFFFF000UL
+#define PGOFFMASK 0xFFFUL
 
 #define KSTACK_SIZE PGSIZE
 
-#define PGROUNDUP(sz)  (((uint64)(sz)+PGSIZE-1) & ~(PGSIZE-1))
-#define PGROUNDDOWN(a) (((uint64)(a)) & ~(PGSIZE-1))
-#define IS_PGALIGNED(a) (!((uint64)(a) & 0xfff))
-#define PGOFFSET(a)    (((uint64)(a)) & (PGSIZE - 1))
+#define PGROUNDUP(sz)  (((uint64)(sz)+PGOFFMASK) & PGMASK)
+#define PGROUNDDOWN(a) (((uint64)(a)) & PGMASK)
+#define IS_PGALIGNED(a) (!((uint64)(a) & PGOFFMASK))
+#define PGOFFSET(a)    (((uint64)(a)) & PGOFFMASK)
 
 #define GET_LOW32(a) ((uint64)(a) & 0xffffffffL)
 #define GET_HIGH32(a) GET_LOW32(a >> 32)

@@ -93,7 +93,7 @@ walk(pagetable_t pgtbl, uint64 va, int alloc)
 
 
 void
-mappages(pagetable_t pgtbl, uint64 va, uint64 pa, uint64 sz, int flags)
+mappages(pagetable_t pgtbl, uint64 va, uint64 pa, uint64 sz, uint64 flags)
 {
     uint64 start_va = PGROUNDDOWN(va);
     uint64 end_va = PGROUNDUP(va + sz - 1);

@@ -16,6 +16,15 @@ kinit()
 }
 
 void 
+tlbinit()
+{
+    csr_write(CSR_STLBPS, PGSHIFT);
+    csr_write(CSR_TLBREHI, PGSHIFT);
+    csr_write(CSR_ASID, 0);
+    invtlb();
+}
+
+void 
 kvminit()
 {
     kernel_pagetable = kvmmake();
@@ -31,7 +40,7 @@ void
 kvminithart()
 {
     csr_write(CSR_PGDH, (uint64) kernel_pagetable);
-    invtlb();
+    tlbinit();
 }
 
 pagetable_t 
@@ -71,7 +80,7 @@ walk(pagetable_t pgtbl, uint64 va, int alloc)
 
 
 void
-mappages(pagetable_t pgtbl, uint64 va, uint64 pa, uint64 sz, int flags)
+mappages(pagetable_t pgtbl, uint64 va, uint64 pa, uint64 sz, uint64 flags)
 {
     uint64 start_va = PGROUNDDOWN(va);
     uint64 end_va = PGROUNDUP(va + sz - 1);

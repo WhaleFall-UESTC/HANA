@@ -11,7 +11,7 @@
 #define KERNELBASE  (DMW_MASK | KERNEL_BASE)
 // #define KERNELBASE   DMW_MASK
 #define RAMBASE     (DMW_MASK | RAM_BASE)
-#define RAMTOP      (RAM_BASE + MEMORY_SIZE)
+#define RAMTOP      (RAMBASE + MEMORY_SIZE)
 #define PHYSTOP     RAMTOP
 
 #define IN_RAM(addr) (((uint64)(addr) >= RAMBASE) && ((uint64)(addr) < RAMTOP))

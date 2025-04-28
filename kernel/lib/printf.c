@@ -65,7 +65,7 @@ digits(unsigned num)
 // number convert to formatted string
 // actually unsupport upper character
 static char* 
-number(char *str, int num, int size, int precision, int type)
+number(char *str, long num, int size, int precision, int type)
 {
     char c = 0, sign = 0, num_str[36];
     int i = 0;
@@ -91,7 +91,7 @@ number(char *str, int num, int size, int precision, int type)
     if (num == 0)
         num_str[i++] = '0';
     else {
-        unsigned unum = num;
+        unsigned long unum = num;
         do {
             num_str[i++] = digits(unum % base);
             unum /= base;
