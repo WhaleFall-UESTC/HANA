@@ -69,17 +69,17 @@ struct blkreq
 
 struct blkdev_ops;
 
-#define BLKDEV_NAME_MAX_LEN 16
+#define BLKDEV_NAME_MAX_LEN 64
 
 struct blkdev
 {
-    int devid;
+    dev_t devid;
     uint32 intr;
     unsigned long size; // blkdev capacity in bytes
     uint64 sector_size;
     char name[BLKDEV_NAME_MAX_LEN];
     const struct blkdev_ops *ops;
-    struct list_head blk_list; // list entry for block devices
+    struct list_head blk_entry; // list entry for block devices
     struct list_head rq_list;  // list head for requests
     spinlock_t rq_list_lock;
     spinlock_t blk_lock;
@@ -142,18 +142,18 @@ static inline void blkreq_free(struct blkdev* blkdev, struct blkreq* req)
 /**
  * init block device management system
  */
-void blocks_init(void);
+void block_subsys_init(void);
 
 /**
  * alloc a block device and do initialization
  */
-struct blkdev *blkdev_alloc(int devid, unsigned long size, uint64 sector_size,
+struct blkdev *blkdev_alloc(dev_t devid, unsigned long size, uint64 sector_size,
                             int intr, const char *name, const struct blkdev_ops *ops);
 
 /**
  * initialize a block device
  */
-void blkdev_init(struct blkdev *dev, int devid, unsigned long size, uint64 sector_size,
+void blkdev_init(struct blkdev *dev, dev_t devid, unsigned long size, uint64 sector_size,
                  int intr, const char *name, const struct blkdev_ops *ops);
 
 /**
@@ -168,15 +168,18 @@ void blkdev_register(struct blkdev *blkdev);
 struct blkdev *blkdev_get_by_name(const char *name);
 
 /**
+ * get a blkdev struct by its device id
+ */
+struct blkdev *blkdev_get_by_id(dev_t id);
+
+/**
  * submit a request to block device
  */
-
 void blkdev_submit_req(struct blkdev *dev, struct blkreq *request);
 
 /**
  * submit a request to block device and wait until it finish
  */
-
 void blkdev_submit_req_wait(struct blkdev *dev, struct blkreq *request);
 
 /**

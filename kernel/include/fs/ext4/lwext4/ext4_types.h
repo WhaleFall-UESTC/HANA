@@ -826,21 +826,21 @@ struct jbd_sb {
 static inline void* ext4_malloc(uint64 size)
 {
 	void* addr = kalloc(size);
-	// debug("ext4_malloc: 0x%p, size = %lu", addr, size);
+	debug("ext4_malloc: 0x%p, size = %lu", addr, size);
 	return addr;
 }
 
 static inline void* ext4_calloc(uint64 count, uint64 size)
 {
-	// void* addr = ext4_malloc(count * size);
-	// memset(addr, 0, count * size);
-	// return addr;
+	void* addr = ext4_malloc(count * size);
+	memset(addr, 0, count * size);
+	return addr;
 	return kcalloc(count, size);
 }
 
 static inline void ext4_free(void* ptr)
 {
-	// debug("ext4_free: 0x%p", ptr);
+	debug("ext4_free: 0x%p", ptr);
 	kfree(ptr);
 }
 

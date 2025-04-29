@@ -78,6 +78,8 @@ typedef unsigned int fmode_t;
 
 typedef long int ptrdiff_t;
 
+typedef unsigned int dev_t;
+
 #define bool _Bool
 #define true 1
 #define false 0

@@ -2,6 +2,35 @@
 #include <debug.h>
 #include <proc/proc.h>
 #include <mm/mm.h>
+#include <fs/fcntl.h>
+#include <fs/devfs/devfs.h>
+#include <fs/devfs/devs/tty.h>
+
+static struct file f_stdin = {
+    .f_flags = O_RDONLY,
+    .f_inode = NULL,
+    .f_op = &devfs_file_fops,
+    .f_path = "/dev/stdin",
+    .f_private = (void*)&stdin,
+    .f_ref = 1,
+    .fpos = 0
+}, f_stdout = {
+    .f_flags = O_WRONLY,
+    .f_inode = NULL,
+    .f_op = &devfs_file_fops,
+    .f_path = "/dev/stdout",
+    .f_private = (void*)&stdout,
+    .f_ref = 1,
+    .fpos = 0
+}, f_stderr = {
+    .f_flags = O_WRONLY,
+    .f_inode = NULL,
+    .f_op = &devfs_file_fops,
+    .f_path = "/dev/stderr",
+    .f_private = (void*)&stderr,
+    .f_ref = 1,
+    .fpos = 0
+};
 
 static inline void find_avail_fd(struct files_struct *fdt)
 {
@@ -26,9 +55,13 @@ void fdt_init(struct files_struct *files, char* name)
     debug("fdt addr: 0x%lx", (uint64)files);
     debug("sizeof fdt: %lu", sizeof(struct files_struct));
     memset(files, 0, sizeof(struct files_struct));
-    files->next_fd = 0;
-    files->nr_avail_fd = NR_OPEN;
     spinlock_init(&files->fdt_lock, name);
+    
+    files->fd[0] = &f_stdin;
+    files->fd[1] = &f_stdout;
+    files->fd[2] = &f_stderr;
+    files->next_fd = 3;
+    files->nr_avail_fd = NR_OPEN - 3;
 }
 
 fd_t fd_alloc(struct files_struct *fdt, struct file* file)

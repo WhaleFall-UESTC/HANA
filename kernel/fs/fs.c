@@ -5,6 +5,7 @@
 #include <fs/dirent.h>
 #include <fs/pipe.h>
 #include <fs/ext4/ext4.h>
+#include <fs/devfs/devfs.h>
 
 #include <io/blk.h>
 #include <proc/proc.h>
@@ -24,7 +25,8 @@ const struct file_system *filesys[] = {&ext4_fs};
 		rettype __ret;                                                    \
 		if ((regipt)->interface == NULL)                                  \
 		{                                                                 \
-			error(macro_param_to_str(interface) "not supported in current fs/file."); \
+			error(macro_param_to_str(interface)                           \
+				  "not supported in current fs/file.");                   \
 			__ret = -1;                                                   \
 		}                                                                 \
 		else                                                              \
@@ -328,6 +330,7 @@ SYSCALL_DEFINE4(openat, fd_t, fd_t, dirfd, const char *, path, int, flags, umode
 
 	/**
 	 * TODO: add inode cache machanism
+	 * TODO: ensure more flags be supported
 	 */
 
 	return fd;
@@ -356,12 +359,17 @@ SYSCALL_DEFINE3(read, ssize_t, int, fd, char *, buf, size_t, count)
 	if (file == NULL)
 		return -1;
 
-	ori_fpos = file->f_ops;
-	ret = call_interface(file->f_op, read, ssize_t, file, buf, count, &file->f_ops);
+	if((file->f_flags & O_ACCMODE) == O_WRONLY) {
+		error("file is write only");
+		return -1;
+	}
+
+	ori_fpos = file->fpos;
+	ret = call_interface(file->f_op, read, ssize_t, file, buf, count, &file->fpos);
 	if (ret < 0)
 		return -1;
 
-	return file->f_ops - ori_fpos;
+	return file->fpos - ori_fpos;
 }
 
 SYSCALL_DEFINE3(write, ssize_t, int, fd, const char *, buf, size_t, count)
@@ -378,12 +386,21 @@ SYSCALL_DEFINE3(write, ssize_t, int, fd, const char *, buf, size_t, count)
 	if (file == NULL)
 		return -1;
 
-	ori_fpos = file->f_ops;
-	ret = call_interface(file->f_op, write, ssize_t, file, buf, count, &file->f_ops);
+	if((file->f_flags & O_ACCMODE) == O_RDONLY) {
+		error("file is read only");
+		return -1;
+	}
+
+	if(file->f_flags & O_APPEND) {
+		file->fpos = call_interface(file->f_op, llseek, off_t, file, 0, SEEK_END);
+	}
+
+	ori_fpos = file->fpos;
+	ret = call_interface(file->f_op, write, ssize_t, file, buf, count, &file->fpos);
 	if (ret < 0)
 		return -1;
 
-	return file->f_ops - ori_fpos;
+	return file->fpos - ori_fpos;
 }
 
 SYSCALL_DEFINE1(close, int, int, fd)
@@ -687,6 +704,7 @@ SYSCALL_DEFINE5(mount, int, const char *, special, const char *, dir, const char
 	int len, ret, mp_index;
 	char full_path_sp[MAX_PATH_LEN], full_path_dir[MAX_PATH_LEN];
 	struct mountpoint *mp;
+	struct blkdev *blkdev;
 
 	ret = get_absolute_path(special, full_path_sp, AT_FDCWD);
 	if (ret < 0)
@@ -703,12 +721,13 @@ SYSCALL_DEFINE5(mount, int, const char *, special, const char *, dir, const char
 		return -1;
 	}
 
-	struct blkdev *blkdev = blkdev_get_by_name(special + len);
-	if (blkdev == NULL)
+	struct devfs_device* device = devfs_get_by_path(full_path_sp);
+	if (device == NULL || device->file_type != FT_BLKDEV)
 	{
 		error("block device %s not found", special + len);
 		return -1;
 	}
+	blkdev = device->disk.blkdev;
 
 	ret = get_absolute_path(dir, full_path_dir, AT_FDCWD);
 	if (ret < 0)
@@ -793,7 +812,9 @@ SYSCALL_DEFINE2(pipe2, int, int*, pipefd, int, flags) {
 	}
 
 	atomic_init(&rfile->f_ref, 1);
+	rfile->f_flags = O_RDONLY;
 	atomic_init(&wfile->f_ref, 1);
+	wfile->f_flags = O_WRONLY;
 
 	pipefd[0] = fd_alloc(fdt, rfile);
 	if(pipefd[0] < 0) {

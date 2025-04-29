@@ -88,7 +88,7 @@ $(BUILD_DIR)/%.o: %.S
 -include $(OBJS:.o=.d)
 
 clean:
-	rm -rf build
+	rm -rf build kernel-rv kernel-rv.asm
 
 $(FS):
 	qemu-img create -f raw $(FS) 2G

@@ -12,7 +12,8 @@
 //     char p_name[0];
 // };
 
-#define MAX_PATH_LEN 256
+#define MAX_PATH_LEN 1024
+#define MAX_FILENAME_LEN 256
 typedef const char *path_t;
 
 struct inode_operations;
@@ -23,7 +24,7 @@ struct inode
     umode_t i_mode; // file mode
     off_t i_size;   // file size
 
-    const struct inode_operations *i_op; // inode operations
+    // const struct inode_operations *i_op; // inode operations
 
     uint32 i_ino;              // inode number
 

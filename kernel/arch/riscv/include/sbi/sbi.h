@@ -1,3 +1,6 @@
+#ifndef __SBI_H__
+#define __SBI_H__
+
 struct sbiret {
     long error;
     long value;
@@ -40,3 +43,5 @@ sbiret_t sbi_ecall(int ext_id, int func_id, uint64 arg0, uint64 arg1, uint64 arg
 
 #define sbi_get_time() \
     sbi_ecall(SBI_EXT_TIME, SBI_FUNC_GET_TIME, 0, 0, 0, 0, 0, 0)
+
+#endif // __SBI_H__

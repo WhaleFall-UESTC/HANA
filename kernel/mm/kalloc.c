@@ -25,10 +25,17 @@ void*
 kalloc(uint64 sz)
 {
     assert(sz > 0);
+    void* res;
     if (sz > NR_OBJS * OBJECT_SIZE)
-        return buddy_alloc(sz);
+        res = buddy_alloc(sz);
     else
-        return slab_alloc(sz);
+        res = slab_alloc(sz);
+    debug("kalloc: 0x%p, sz = %lu", res, sz);
+    return res;
+    // if (sz > NR_OBJS * OBJECT_SIZE)
+    //     return buddy_alloc(sz);
+    // else
+    //     return slab_alloc(sz);
 }
 
 void *
@@ -42,6 +49,7 @@ kcalloc(uint64 nr, uint64 sz)
 void
 kfree(void *addr)
 {
+    debug("kfree: 0x%p", addr);
     if (IS_PGALIGNED(addr)) {
         buddy_free(addr, GET_PAGE_ORDER(addr, pages));
     } else {

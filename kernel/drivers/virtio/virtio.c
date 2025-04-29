@@ -251,7 +251,7 @@ static int virtio_dev_init(uint64 virt, uint32 intid)
 	return 0;
 }
 
-void virtio_init(void)
+void virtio_device_init(void)
 {
 	for (int i = 0; i < 1; i++)
 		virtio_dev_init(VIRT_VIRTIO + VIRT_VIRTIO_SIZE * i, i + 1);

@@ -8,13 +8,13 @@
 static struct list_head blkdev_list;
 static spinlock_t blkdev_list_lock;
 
-void blocks_init(void)
+void block_subsys_init(void)
 {
     INIT_LIST_HEAD(blkdev_list);
     spinlock_init(&blkdev_list_lock, "blkdev_list_lock");
 }
 
-struct blkdev *blkdev_alloc(int devid, unsigned long size, uint64 sector_size, int intr, const char *name, const struct blkdev_ops *ops)
+struct blkdev *blkdev_alloc(dev_t devid, unsigned long size, uint64 sector_size, int intr, const char *name, const struct blkdev_ops *ops)
 {
     KALLOC(struct blkdev, dev);
     assert(dev != NULL);
@@ -24,7 +24,7 @@ struct blkdev *blkdev_alloc(int devid, unsigned long size, uint64 sector_size, i
     return dev;
 }
 
-void blkdev_init(struct blkdev *dev, int devid, unsigned long size, uint64 sector_size, int intr, const char *name, const struct blkdev_ops *ops)
+void blkdev_init(struct blkdev *dev, dev_t devid, unsigned long size, uint64 sector_size, int intr, const char *name, const struct blkdev_ops *ops)
 {
     assert(dev != NULL);
     assert(name != NULL);
@@ -40,7 +40,7 @@ void blkdev_init(struct blkdev *dev, int devid, unsigned long size, uint64 secto
     spinlock_init(&dev->rq_list_lock, dev->name);
 
     snprintf(dev->name, BLKDEV_NAME_MAX_LEN, "%s%d", name, intr);
-    INIT_LIST_HEAD(dev->blk_list);
+    INIT_LIST_HEAD(dev->blk_entry);
     INIT_LIST_HEAD(dev->rq_list);
     spinlock_init(&dev->blk_lock, dev->name);
 }
@@ -50,7 +50,7 @@ void blkdev_register(struct blkdev *blkdev)
     assert(blkdev != NULL);
 
     spinlock_acquire(&blkdev_list_lock);
-    list_insert(&blkdev_list, &blkdev->blk_list);
+    list_insert(&blkdev_list, &blkdev->blk_entry);
     spinlock_release(&blkdev_list_lock);
 
     irq_register(blkdev->intr, blkdev_general_isr, (void *)blkdev);
@@ -63,9 +63,26 @@ struct blkdev *blkdev_get_by_name(const char *name)
     struct blkdev *blkdev;
 
     spinlock_acquire(&blkdev_list_lock);
-    list_for_each_entry(blkdev, &blkdev_list, blk_list)
+    list_for_each_entry(blkdev, &blkdev_list, blk_entry)
     {
         if (strncmp(blkdev->name, name, BLKDEV_NAME_MAX_LEN) == 0)
+        {
+            spinlock_release(&blkdev_list_lock);
+            return blkdev;
+        }
+    }
+    spinlock_release(&blkdev_list_lock);
+
+    return NULL;
+}
+
+struct blkdev *blkdev_get_by_id(dev_t id) {
+    struct blkdev *blkdev;
+
+    spinlock_acquire(&blkdev_list_lock);
+    list_for_each_entry(blkdev, &blkdev_list, blk_entry)
+    {
+        if (blkdev->devid == id)
         {
             spinlock_release(&blkdev_list_lock);
             return blkdev;
@@ -157,7 +174,7 @@ irqret_t blkdev_general_isr(uint32 intid, void *private) {
     if (blkdev->ops->irq_handle != NULL)
         ret = blkdev->ops->irq_handle(blkdev);
     else {
-        error("blkdev %s: no irq handler", blkdev->name);
+        log("blkdev %s: no irq handler", blkdev->name);
         goto out;
     }
 

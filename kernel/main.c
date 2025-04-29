@@ -9,7 +9,7 @@
 #include <trap/context.h>
 #include <proc/proc.h>
 #include <proc/sched.h>
-#include <io/virtio.h>
+#include <io/devinit.h>
 #include <io/blk.h>
 
 // #include <drivers/virtio.h>
@@ -48,10 +48,10 @@ main()
     
     // ecall();
     
-    blocks_init();
+    block_subsys_init();
     out("Initialize block subsystem");
     
-    virtio_init();
+    virtio_device_init();
     out("Initialize virtio");
 
     test_proc_init((uint64) test);

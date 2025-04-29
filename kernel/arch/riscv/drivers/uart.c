@@ -2,7 +2,6 @@
 #include <common.h>
 #include <riscv.h>
 #include <trap/context.h>
-#include <irq/interrupt.h>
 #include <proc/proc.h>
 #include <locking/spinlock.h>
 
@@ -61,6 +60,8 @@ static inline char uart_buf_read() {
 
 typedef int (*putchar_t)(int);
 putchar_t put_char;
+typedef int (*getchar_t)();
+getchar_t get_char;
 
 int uart_putc_sync(int c);
 
@@ -70,6 +71,10 @@ int sbi_console_putc(int c) {
     sbiret_t ret = sbi_console_putchar(c);
     return ret.error == SBI_SUCCESS ? ret.value : -1;
 }
+int sbi_console_getc() {
+    sbiret_t ret = sbi_console_getchar();
+    return ret.error == SBI_SUCCESS ? ret.value : -1;
+}
 #endif
 
 void 
@@ -77,6 +82,7 @@ uart_init()
 {
     #ifdef BIOS_SBI
     put_char = sbi_console_putc;
+    get_char = sbi_console_getc;
     return;
     #else
 
@@ -169,12 +175,12 @@ uart_getc()
 }
 
 
-irqret_t
-uart_isr(uint32, void*)
+int
+uart_isr()
 {
     uint8 iir = uart_read_reg(IIR);
     if (iir & IIR_NO_INT) 
-        return IRQ_ERR;
+        return -1;
 
     switch (iir & IIR_ID_MASK) {
         case IIR_RX_TIMEOUT:
@@ -184,8 +190,8 @@ uart_isr(uint32, void*)
             uart_start();
             break;
         default:
-            return IRQ_ERR;
+            return -1;
     }
 
-    return IRQ_HANDLED;
+    return 0;
 }

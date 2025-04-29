@@ -18,7 +18,7 @@ struct file
 
 	char f_path[MAX_PATH_LEN];
 
-	off_t f_ops;
+	off_t fpos;
 
 	void *f_private;
 

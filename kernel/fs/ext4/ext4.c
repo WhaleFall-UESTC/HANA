@@ -3,7 +3,6 @@
 #include <fs/fs.h>
 #include <fs/fcntl.h>
 #include <fs/stat.h>
-#include <fs/dcache.h>
 #include <fs/file.h>
 #include <fs/dirent.h>
 
@@ -115,7 +114,7 @@ static int ext4_fs_umount(struct mountpoint* mp) {
 
 static int ext4_fs_ifget(struct mountpoint *mp, struct inode *inode, struct file *file)
 {
-	if ((file->f_flags & O_DIRECTORY) == O_DIRECTORY) {
+	if (file->f_flags & O_DIRECTORY) {
 		struct ext4_dir *dir;
 		dir = (struct ext4_dir *)kalloc(sizeof(struct ext4_dir));
 		if (dir == NULL) {
@@ -162,7 +161,7 @@ static off_t ext4_llseek(struct file* file, off_t offset, int whence) {
 		return -1;
 	}
 
-	return offset;
+	return ext4_file->fpos;
 }
 
 static ssize_t ext4_read(struct file* file, char * buffer, size_t size, off_t * offset) {
