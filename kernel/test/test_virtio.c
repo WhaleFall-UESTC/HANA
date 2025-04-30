@@ -1,4 +1,4 @@
-#include <io/virtio.h>
+#include <io/devinit.h>
 #include <io/blk.h>
 #include <drivers/virtio.h>
 #include <common.h>
@@ -9,7 +9,7 @@
 
 #define VIRTIO_BLK_DEV_NAME "virtio-blk1"
 #define TEST_CYCLES 10
-#define BLOCK_SIZE 512
+#define BLOCK_SIZE 4096
 #define BLOCKS_PER_TEST 10
 #define TEST_DATA_SIZE (BLOCK_SIZE * BLOCKS_PER_TEST)
 

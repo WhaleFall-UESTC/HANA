@@ -1,8 +1,6 @@
 #ifndef __DEVFS_H__
 #define __DEVFS_H__
 
-#include <fs/fs.h>
-#include <fs/file.h>
 #include <fs/devfs/devs/tty.h>
 #include <fs/devfs/devs/block.h>
 #include <tools/list.h>

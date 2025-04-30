@@ -54,6 +54,11 @@ struct files_struct
 };
 
 /**
+ * Initialize file struct for stdin, stdout, stderr.
+ */
+void iofd_init();
+
+/**
  * Initialize the file descriptor table.
  * @param files The files_struct given.
  * @param name The name given to lock.

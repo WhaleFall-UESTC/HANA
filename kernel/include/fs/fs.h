@@ -100,12 +100,16 @@ struct file_system
     const struct fs_operations *fs_op;
 };
 
+struct devfs_device;
 struct mountpoint
 {
     const char *mountpoint;
     const struct file_system *fs;
     const struct blkdev *blkdev;
+    const struct devfs_device *device;
     void* private;
 };
+
+extern int vfilesys_init();
 
 #endif // __FS_H__

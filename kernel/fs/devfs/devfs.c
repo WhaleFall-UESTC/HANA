@@ -85,11 +85,11 @@ int devfs_init(struct mountpoint *mp)
     struct blkdev* blkdev;
     struct devfs_device* device;
 
-    if (strncmp(mp->mountpoint, "/dev", 4) != 0)
-    {
-        error("devfs only mount in /dev");
-        return -1;
-    }
+    mp->mountpoint = strdup("/dev");
+    mp->blkdev = NULL;
+    mp->device = NULL;
+    mp->fs = &devfs_fs;
+    mp->private = NULL;
 
     spinlock_init(&devfs_list_lk, "devfs list lock");
     INIT_LIST_HEAD(devfs_list);
@@ -97,7 +97,7 @@ int devfs_init(struct mountpoint *mp)
     char_subsys_init();
     uart_device_init();
 
-    chrdev = chrdev_get_by_name("uart");
+    chrdev = chrdev_get_by_name("uart10");
     assert(chrdev != NULL);
 
     tty_init(&stdin.tty, chrdev, "stdin", 0);
@@ -122,10 +122,10 @@ int devfs_init(struct mountpoint *mp)
     blkdev = blkdev_get_by_name("virtio-blk1");
     assert(blkdev != NULL);
 
-    device = kcalloc(sizeof(*device), 1);
+    device = kcalloc(1, sizeof(*device));
     assert(device != NULL);
 
-    block_init(device, blkdev, "sda");
+    block_init(&device->disk, blkdev, "sda");
     device->file_type = FT_BLKDEV;
     device->name = device->disk.name;
     devfs_add_device(device);
@@ -165,7 +165,7 @@ static off_t devfs_llseek(struct file *file, off_t offset, int whence)
     }
     else if (device->file_type == FT_CHRDEV)
     {
-        return tty_llseek(&device->disk, offset, whence);
+        return tty_llseek(&device->tty, offset, whence);
     }
 
     error("Invalid device type");
@@ -188,7 +188,7 @@ static ssize_t devfs_read(struct file *file, char *buffer, size_t size, off_t *o
     }
     else if (device->file_type == FT_CHRDEV)
     {
-        return tty_read(&device->disk, buffer, size, offset);
+        return tty_read(&device->tty, buffer, size, offset);
     }
 
     error("Invalid device type");
@@ -211,7 +211,7 @@ static ssize_t devfs_write(struct file *file, const char *buffer, size_t size, o
     }
     else if (device->file_type == FT_CHRDEV)
     {
-        return tty_write(&device->disk, buffer, size, offset);
+        return tty_write(&device->tty, buffer, size, offset);
     }
 
     error("Invalid device type");
@@ -241,7 +241,7 @@ static int devfs_openat(struct file *file, path_t path, int flags, umode_t mode)
     }
     else if (pos == 0)
     {
-        device = kcalloc(sizeof(*device), 1);
+        device = kcalloc(1, sizeof(*device));
         device->file_type = FT_DIR;
         file->f_inode->i_mode = mode & S_IFDIR;
     }
@@ -287,7 +287,6 @@ static int devfs_close(struct file *file)
 static int devfs_getattr(path_t path, struct stat *stat)
 {
     struct devfs_device *device;
-    int ret;
 
     assert(stat != NULL);
 

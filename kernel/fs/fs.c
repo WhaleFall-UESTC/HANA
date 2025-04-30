@@ -15,8 +15,8 @@
 #define NR_MOUNT 16
 
 struct mountpoint mount_table[NR_MOUNT];
-int mount_count = 0;
-const struct file_system *filesys[] = {&ext4_fs};
+int mount_count = 0, i_unfixed_mp;
+const struct file_system *filesys[] = {&devfs_fs, &ext4_fs};
 
 /************************ Export and Helper functions ************************/
 
@@ -61,14 +61,14 @@ static int str_match_prefix(const char *str, const char *prefix)
 	return end_index;
 }
 
-static int mountpoint_find(const char *path)
+static int mountpoint_find(const char *path, int start)
 {
 	int max_len = -1, res = -1;
 
-	for (int i = 0; i < mount_count; i++)
+	for (int i = start; i < mount_count; i++)
 	{
 		int len = str_match_prefix(path, mount_table[i].mountpoint) - 1;
-		if (len > max_len)
+		if (len > max_len && len + 1 == strlen(mount_table[i].mountpoint))
 		{
 			max_len = len;
 			res = i;
@@ -167,6 +167,13 @@ static int get_absolute_path(const char *path, char *full_path, fd_t dirfd)
 	return 0;
 }
 
+int vfilesys_init() {
+	devfs_init(&mount_table[mount_count++]);
+	i_unfixed_mp = 1;
+	iofd_init();
+	return 0;
+}
+
 /************************ Syscalls for filesystems *************************/
 
 SYSCALL_DEFINE2(getcwd, char *, char *, buf, size_t, size)
@@ -259,7 +266,7 @@ SYSCALL_DEFINE4(openat, fd_t, fd_t, dirfd, const char *, path, int, flags, umode
 	}
 
 	// find mountpoint
-	mp_index = mountpoint_find(full_path);
+	mp_index = mountpoint_find(full_path, 0);
 	if (mp_index < 0)
 	{
 		error("mountpoint not found for path %s", full_path);
@@ -268,14 +275,14 @@ SYSCALL_DEFINE4(openat, fd_t, fd_t, dirfd, const char *, path, int, flags, umode
 	mount_p = &mount_table[mp_index];
 	assert(mount_p->fs != NULL);
 
-	file = kcalloc(1, sizeof(struct file));
+	file = kcalloc(sizeof(struct file), 1);
 	if (file == NULL)
 	{
 		error("alloc file error");
 		goto out_err;
 	}
 
-	inode = kcalloc(1, sizeof(struct inode));
+	inode = kcalloc(sizeof(struct inode), 1);
 	if (inode == NULL)
 	{
 		error("alloc inode error");
@@ -470,7 +477,7 @@ SYSCALL_DEFINE2(stat, int, const char *, path, struct stat *, buf)
 	}
 
 	// find mountpoint
-	mp_index = mountpoint_find(full_path);
+	mp_index = mountpoint_find(full_path, 0);
 	if (mp_index < 0)
 	{
 		error("mountpoint not found for path %s", full_path);
@@ -526,7 +533,7 @@ SYSCALL_DEFINE3(unlinkat, int, fd_t, dirfd, const char *, path, unsigned int, fl
 	}
 
 	// find mountpoint
-	mp_index = mountpoint_find(full_path);
+	mp_index = mountpoint_find(full_path, 0);
 	if (mp_index < 0)
 	{
 		error("mountpoint not found for path %s", full_path);
@@ -578,7 +585,7 @@ SYSCALL_DEFINE3(mkdirat, int, fd_t, dirfd, const char *, path, umode_t, mode)
 	}
 
 	// find mountpoint
-	mp_index = mountpoint_find(full_path);
+	mp_index = mountpoint_find(full_path, 0);
 	if (mp_index < 0)
 	{
 		error("mountpoint not found for path %s", full_path);
@@ -632,7 +639,7 @@ SYSCALL_DEFINE5(linkat, int, fd_t, olddirfd, const char *, oldpath, fd_t, newdir
 	}
 
 	// find mountpoint
-	mp_index = mountpoint_find(full_old_path);
+	mp_index = mountpoint_find(full_old_path, 0);
 	if (mp_index < 0)
 	{
 		error("mountpoint not found for path %s", full_old_path);
@@ -676,7 +683,7 @@ SYSCALL_DEFINE3(symlinkat, int, const char *, target, fd_t, newdirfd, const char
 	}
 
 	// find mountpoint
-	mp_index = mountpoint_find(target);
+	mp_index = mountpoint_find(target, 0);
 	if (mp_index < 0)
 	{
 		error("mountpoint not found for path %s", target);
@@ -736,7 +743,7 @@ SYSCALL_DEFINE5(mount, int, const char *, special, const char *, dir, const char
 		return -1;
 	}
 
-	mp_index = mountpoint_find(full_path_dir);
+	mp_index = mountpoint_find(full_path_dir, i_unfixed_mp);
 	if (mp_index != -1)
 	{
 		error("Mount point already used.");
@@ -749,6 +756,7 @@ SYSCALL_DEFINE5(mount, int, const char *, special, const char *, dir, const char
 	assert(mp->fs == NULL);
 
 	mp->blkdev = blkdev;
+	mp->device = device;
 	mp->fs = filesys_find(fstype);
 	mp->mountpoint = strdup(full_path_dir);
 
@@ -768,7 +776,7 @@ SYSCALL_DEFINE2(umount2, int, const char *, special, int, flags)
 		return -1;
 	}
 
-	mp_index = mountpoint_find(full_path_sp);
+	mp_index = mountpoint_find(full_path_sp, i_unfixed_mp);
 	if (mp_index < 0)
 	{
 		error("Mount point not found.");

@@ -1,6 +1,7 @@
 #include <fs/devfs/devs/tty.h>
 #include <fs/file.h>
 #include <fs/fcntl.h>
+#include <mm/mm.h>
 
 static inline void tty_flush(struct tty* tty) {
     size_t pos;
@@ -15,8 +16,6 @@ static inline void tty_flush(struct tty* tty) {
 
 ssize_t tty_read(struct tty* tty, char *buffer, size_t size, off_t *offset)
 {
-	struct blkdev *blkdev;
-	uint32 blk_cnt, blk_id, i;
     size_t nr_read;
     char c;
 
@@ -37,8 +36,6 @@ ssize_t tty_read(struct tty* tty, char *buffer, size_t size, off_t *offset)
 
 ssize_t tty_write(struct tty* tty, const char *buffer, size_t size, off_t *offset)
 {
-	struct blkdev *blkdev;
-	uint32 blk_cnt, blk_id, i;
     size_t nr_write;
     char c;
 

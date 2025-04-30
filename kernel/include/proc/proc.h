@@ -6,10 +6,7 @@
 #include <trap/trap.h>
 #endif
 
-#ifndef __INTERRUPT_H__
-#define __INTERRUPT_H__
 #include <irq/interrupt.h>
-#endif
 
 struct proc {
     int pid;

@@ -11,6 +11,7 @@
 #include <proc/sched.h>
 #include <io/devinit.h>
 #include <io/blk.h>
+#include <fs/fs.h>
 
 // #include <drivers/virtio.h>
 
@@ -47,16 +48,11 @@ main()
     out("Initialize first proc");
     
     // ecall();
-    
-    block_subsys_init();
-    out("Initialize block subsystem");
-    
-    virtio_device_init();
-    out("Initialize virtio");
+
+    vfilesys_init();
+    out("Initialize vfs");
 
     test_proc_init((uint64) test);
-
-    // test_virtio();
 
     out("call scheduler");
     scheduler();

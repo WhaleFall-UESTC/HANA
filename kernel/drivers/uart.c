@@ -17,9 +17,8 @@ static char uart_getchar(struct chrdev *chrdev) {
 }
 
 static irqret_t uart_irq_handle(struct chrdev *chrdev) {
-	int ret;
-
 #ifndef BIOS_SBI
+	int ret;
 	ret = uart_isr();
 
 	if(ret < 0)

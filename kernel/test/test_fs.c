@@ -16,7 +16,7 @@
 #include <common.h>
 #include <locking/spinlock.h>
 
-#define EXT4_BLK_DEV "/dev/virtio-blk1"
+#define EXT4_BLK_DEV "/dev/sda"
 
 int     call_sys_mount(const char *special, const char *dir, const char *fstype, unsigned long flags, const void *data);
 int     call_sys_umount2(const char *special, int flags);
@@ -82,6 +82,29 @@ void test_fs()
         error("close pipe failed: %d", ret);
         return;
     }
+    PASS("close pipe success");
+
+    if ((fd = call_sys_openat(AT_FDCWD, "/dev", O_RDONLY, 0)) < 0)
+    {
+        error("create testfile failed: %d", fd);
+        return;
+    }
+    PASS("open /dev");
+    char *devdirbuf = kalloc(512);
+    if ((n = call_sys_getdents64(fd, (struct dirent *)devdirbuf, 512)) <= 0)
+    {
+        error("getdents64 failed: %ld", n);
+        kfree(devdirbuf);
+        return;
+    }
+    for (int pos = 0; pos < n; pos += d->d_reclen)
+    {
+        d = (struct dirent *)(devdirbuf + pos);
+        log("%s", d->d_name);
+    }
+    kfree(devdirbuf);
+    call_sys_close(fd);
+    PASS("getdents64 success");
 
     // 挂载文件系统
     if ((ret = call_sys_mount(EXT4_BLK_DEV, "/", "ext4", 0, NULL)) != 0)

@@ -20,7 +20,7 @@ extern const struct file_system ext4_fs;
     error("Ext4: " fmt, ##args)
 
 
-#define EXT4_BLK_IO_SECTOR
-// #define EXT4_BLK_IO_ALL
+// #define EXT4_BLK_IO_SECTOR
+#define EXT4_BLK_IO_ALL
 
 #endif // __EXT4_H__

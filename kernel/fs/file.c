@@ -12,25 +12,28 @@ static struct file f_stdin = {
     .f_op = &devfs_file_fops,
     .f_path = "/dev/stdin",
     .f_private = (void*)&stdin,
-    .f_ref = 1,
-    .fpos = 0
+    .fpos = 0,
 }, f_stdout = {
     .f_flags = O_WRONLY,
     .f_inode = NULL,
     .f_op = &devfs_file_fops,
     .f_path = "/dev/stdout",
     .f_private = (void*)&stdout,
-    .f_ref = 1,
-    .fpos = 0
+    .fpos = 0,
 }, f_stderr = {
     .f_flags = O_WRONLY,
     .f_inode = NULL,
     .f_op = &devfs_file_fops,
     .f_path = "/dev/stderr",
     .f_private = (void*)&stderr,
-    .f_ref = 1,
-    .fpos = 0
+    .fpos = 0,
 };
+
+void iofd_init() {
+    atomic_init(&f_stdin.f_ref, 0);
+    atomic_init(&f_stdout.f_ref, 0);
+    atomic_init(&f_stderr.f_ref, 0);
+}
 
 static inline void find_avail_fd(struct files_struct *fdt)
 {
@@ -56,12 +59,16 @@ void fdt_init(struct files_struct *files, char* name)
     debug("sizeof fdt: %lu", sizeof(struct files_struct));
     memset(files, 0, sizeof(struct files_struct));
     spinlock_init(&files->fdt_lock, name);
-    
+
     files->fd[0] = &f_stdin;
     files->fd[1] = &f_stdout;
     files->fd[2] = &f_stderr;
     files->next_fd = 3;
     files->nr_avail_fd = NR_OPEN - 3;
+
+    atomic_inc(&f_stdin.f_ref);
+    atomic_inc(&f_stdout.f_ref);
+    atomic_inc(&f_stderr.f_ref);
 }
 
 fd_t fd_alloc(struct files_struct *fdt, struct file* file)

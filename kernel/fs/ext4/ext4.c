@@ -5,6 +5,7 @@
 #include <fs/stat.h>
 #include <fs/file.h>
 #include <fs/dirent.h>
+#include <fs/devfs/devfs.h>
 
 #include <fs/ext4/ext4.h>
 #include <fs/ext4/ext4_blk.h>
@@ -13,7 +14,7 @@
 #include <fs/ext4/lwext4/ext4_fs.h>
 #include <fs/ext4/lwext4/ext4_errno.h>
 
-#define MAX_EXT4_BLOCKDEV_NAME 32
+#define MAX_EXT4_BLOCKDEV_NAME 64
 #define EXT4_BUF_SIZE 512
 
 static int ext4_fs_mount(struct blkdev * blkdev, struct mountpoint *mp, const char *data)
@@ -50,7 +51,7 @@ static int ext4_fs_mount(struct blkdev * blkdev, struct mountpoint *mp, const ch
 
 	fs_dev->blkdev = blkdev;
 
-	sprintf(buffer, "ext4-%s", blkdev->name);
+	snprintf(buffer, MAX_EXT4_BLOCKDEV_NAME,  "%s", mp->device->name);
 
 	ret = ext4_device_register(blockdev, buffer);
 	if (ret != EOK)
