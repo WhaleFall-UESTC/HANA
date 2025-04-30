@@ -32,13 +32,13 @@ err:
 
 void pipe_free(struct pipe* pipe) {
 	if(pipe && !--pipe->ref) {
-		if(pipe->lock) {
-			kfree(pipe->lock);
-			pipe->lock = NULL;
-		}
 		if(pipe->kfifo) {
 			kfifo_free(pipe->kfifo);
 			pipe->kfifo = NULL;
+		}
+		if(pipe->lock) {
+			kfree(pipe->lock);
+			pipe->lock = NULL;
 		}
 		kfree(pipe);
 	}
