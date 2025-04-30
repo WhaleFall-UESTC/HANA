@@ -61,6 +61,15 @@ static int str_match_prefix(const char *str, const char *prefix)
 	return end_index;
 }
 
+static inline int dirent_name_len(const char* str) {
+	int ret = 0;
+	while(*str != '\0' && *str != '/') {
+		str ++;
+		ret ++;
+	}
+	return ret;
+}
+
 static int mountpoint_find(const char *path, int start)
 {
 	int max_len = -1, res = -1;
@@ -561,15 +570,60 @@ SYSCALL_DEFINE3(getdents64, ssize_t, int, fd, struct dirent *, buf, size_t, len)
 {
 	struct file *file;
 	struct files_struct *fdt = myproc()->fdt;
+	int ret, i, posl, posr, str_len;
+	size_t size;
+	struct stat stat;
+	struct dirent *abuf;
+	const char* name;
 
-	if (fd < 0 || fd >= NR_OPEN)
-		return -1;
+	if (fd < 0 || fd >= NR_OPEN) return -1;
 
 	file = fd_get(fdt, fd);
-	if (file == NULL)
+	if (file == NULL || !(file->f_flags & O_DIRECTORY))
 		return -1;
 
-	return call_interface(file->f_op, getdents64, int, file, buf, len);
+	ret = call_interface(file->f_op, getdents64, int, file, buf, len);
+	if(ret < 0) {
+		error("fs getdents64 failed");
+		return -1;
+	}
+
+	// Add other mp dents
+	abuf = (struct dirent*)((char*)buf + ret);
+	len -= ret;
+	for(i = 0; i < mount_count; i ++) {
+		if(&mount_table[i] == file->f_inode->i_mp)
+			continue;
+		posl = str_match_prefix(mount_table[i].mountpoint, file->f_path);
+		while(mount_table[i].mountpoint[posl] == '/') posl++;
+		name = mount_table[i].mountpoint + posl;
+		posr = dirent_name_len(name) + posl;
+		while(mount_table[i].mountpoint[posr] == '/') posr++;
+		if (mount_table[i].mountpoint[posr] != '\0') continue;
+
+		if (call_interface(mount_table[i].fs->fs_op, getattr, int, mount_table[i].mountpoint, &stat) < 0)
+			continue;
+
+		
+		str_len = strlen(name);
+		size = sizeof(struct dirent) + str_len + 1;
+
+		if (len < size)
+			break;
+
+		abuf->d_ino = stat.st_ino;
+		abuf->d_off = 0;
+		abuf->d_type = fs_umode_to_dtype(stat.st_mode);
+
+		memcpy(abuf->d_name, name, str_len);
+		abuf->d_reclen = size;
+
+		abuf = (struct dirent *)((uint64)abuf + size);
+		len -= size;
+		ret += size;
+	}
+
+	return ret;
 }
 
 SYSCALL_DEFINE3(mkdirat, int, fd_t, dirfd, const char *, path, umode_t, mode)

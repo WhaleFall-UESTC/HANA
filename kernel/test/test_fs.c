@@ -54,7 +54,7 @@ void test_fs()
     }
     PASS("pipe2 success");
 
-    const char *pdata = "testpippppppppppppe";
+    const char *pdata = "testpippppppppppppe\n";
     if ((n = call_sys_write(pipefd[1], pdata, strlen(pdata))) != strlen(pdata))
     {
         error("write failed: %ld", n);
@@ -84,7 +84,7 @@ void test_fs()
     }
     PASS("close pipe success");
 
-    if ((fd = call_sys_openat(AT_FDCWD, "/dev", O_RDONLY, 0)) < 0)
+    if ((fd = call_sys_openat(AT_FDCWD, "/dev", O_RDONLY | O_DIRECTORY, 0)) < 0)
     {
         error("create testfile failed: %d", fd);
         return;
@@ -100,11 +100,17 @@ void test_fs()
     for (int pos = 0; pos < n; pos += d->d_reclen)
     {
         d = (struct dirent *)(devdirbuf + pos);
-        log("%s", d->d_name);
+        log("dev dirent: %s", d->d_name);
     }
     kfree(devdirbuf);
     call_sys_close(fd);
     PASS("getdents64 success");
+
+    if ((n = call_sys_write(1, pdata, strlen(pdata))) != strlen(pdata))
+    {
+        error("write failed: %ld", n);
+        return;
+    }
 
     // 挂载文件系统
     if ((ret = call_sys_mount(EXT4_BLK_DEV, "/", "ext4", 0, NULL)) != 0)
@@ -113,6 +119,30 @@ void test_fs()
         return;
     }
     PASS("mount / success");
+
+    if ((fd = call_sys_openat(AT_FDCWD, "/", O_RDONLY | O_DIRECTORY, 0)) < 0)
+    {
+        error("create testfile failed: %d", fd);
+        return;
+    }
+    PASS("open /");
+
+    char *rootdirbuf = kalloc(512);
+    if ((n = call_sys_getdents64(fd, (struct dirent *)rootdirbuf, 512)) <= 0)
+    {
+        error("getdents64 failed: %ld", n);
+        kfree(rootdirbuf);
+        return;
+    }
+    for (int pos = 0; pos < n; pos += d->d_reclen)
+    {
+        d = (struct dirent *)(rootdirbuf + pos);
+        log("root dirent: %s", d->d_name);
+    }
+    kfree(rootdirbuf);
+    call_sys_close(fd);
+    PASS("getdents64 success");
+
     // 测试初始工作目录
     if ((cwd = call_sys_getcwd(buf, 128)) == NULL)
     {
