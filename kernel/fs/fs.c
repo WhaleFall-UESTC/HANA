@@ -93,8 +93,8 @@ static int fullpath_connect(const char *path, char *full_path)
 	if (path[0] == '/')
 		return -1;
 
-	if (full_path[i_f - 1] == '/')
-		i_f--;
+	if (full_path[i_f - 1] != '/')
+		full_path[i_f ++] = '/';
 
 	while (i_path < path_len && i_f < MAX_PATH_LEN)
 	{
@@ -104,6 +104,7 @@ static int fullpath_connect(const char *path, char *full_path)
 		{
 			// "../" or "..\0"
 			i_path += 2;
+			i_f --;
 			while (i_f > 0 && full_path[i_f - 1] != '/')
 				i_f--;
 			if (i_f > 0)
