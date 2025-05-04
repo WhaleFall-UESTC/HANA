@@ -4,8 +4,8 @@
 #include <mm/buddy.h>
 #include <debug.h>
 
-struct slab* current;
-struct slab* partial;
+struct slab* current = NULL;
+struct slab* partial = NULL;
 uint partial_len = 0;
 
 static inline void
@@ -44,7 +44,8 @@ alloc_objs(struct slab* slab, uint8 nr_objs)
     for (int idx = slab->sentinel.next; idx != OBJECT_SENTINEL; idx = slab->objs[idx].next) {
         if (slab->objs[idx].size >= nr_objs) {
             // set old end zero
-            set_object_entry(&slab->objs[idx - 1 + slab->objs[idx].size], 0, 0, 0);
+            if (slab->objs[idx].size > 1)
+                set_object_entry(&slab->objs[idx - 1 + slab->objs[idx].size], 0, 0, 0);
             // reduce the size
             slab->objs[idx].size -= nr_objs;
             slab->sentinel.size -= nr_objs;
@@ -87,33 +88,38 @@ slab_alloc(uint64 sz)
     // if the head of partial can alloc objs
     if (ptr_pre->sentinel.size >= nr_objs) {
         // swap current and partial head
-        set_slab_next(current, ptr);
-        set_slab_next(partial, NULL);
         struct slab* tmp = current;
         current = partial;
         partial = tmp;
+        set_slab_next(partial, ptr);
+        current->next = 0;
         // return alloc result
         return alloc_objs(current, nr_objs);
     }
 
     // find available slab in partial
-    while (ptr != NULL) {
+    while (ptr) {
         if (ptr->sentinel.size >= nr_objs) {
             struct slab* ptr_next = get_slab_next(ptr);
             set_slab_next(current, ptr_next);
             set_slab_next(ptr_pre, current);
             current = ptr;
+            current->next = 0;
             return alloc_objs(current, nr_objs);
         }
         ptr_pre = ptr;
         ptr = get_slab_next(ptr);
     }
 
-    // if one of slab is available, ask for buddy system
+    // if none of slab is available, ask for buddy system
     // add current to the partial list
     set_slab_next(current, partial);
     partial = current;
     partial_len++;
+    // int cnt = 0;
+    // for (struct slab* ptr = partial; ptr; ptr = get_slab_next(ptr))
+    //     cnt++;
+    // Assert(cnt == partial_len, "cnt: %d, partal_len: %d", cnt, partial_len);
     current = (struct slab*) buddy_alloc(PGSIZE);
     init_slab(current);
     return alloc_objs(current, nr_objs);
@@ -162,12 +168,43 @@ slab_free(void* addr, uint8 nr_free)
     // if after free these object, the slab is free, and partial has enough slab
     // ret it to buddy system
     if (slab->sentinel.size == NR_OBJS && partial_len > MIN_PARTIAL) {
+        // delete this slab from list
+        if (slab == current) {
+            current = partial;
+            partial = get_slab_next(partial);
+            current->next = 0;
+        } else if (slab == partial) {
+            struct slab* partial_next = get_slab_next(partial);
+            partial = partial_next;
+
+        } else {
+            struct slab* ptr_pre = partial;
+            bool found = false;
+            int cnt = 1;
+            for (struct slab* ptr = get_slab_next(partial); ptr; ptr_pre = ptr, ptr = get_slab_next(ptr)) {
+                if (ptr == slab) {
+                    struct slab* ptr_next = get_slab_next(ptr);
+                    set_slab_next(ptr_pre, ptr_next);
+                    found = true;
+                    break;
+                }
+                cnt++;
+            }
+            if (found == false) {
+                Assert(cnt == partial_len, "cnt: %d, partial_len: %d", cnt, partial_len);
+                panic("Do not have slab %p", slab);
+            }
+        } 
         buddy_free((void*) slab, 0);
         partial_len--;
+        // int cnt = 0;
+        // for (struct slab* ptr = partial; ptr; ptr = get_slab_next(ptr))
+        //     cnt++;
+        // Assert(cnt == partial_len, "cnt: %d, partal_len: %d", cnt, partial_len);
         return;
     }
     int idx = OBJECT_IDX(addr);
-    assert(nr_free == slab->objs[idx].size);
+    Assert(nr_free == slab->objs[idx].size, "nr_free=%d, idx=%d, sz=%d, addr=%p", nr_free, idx, slab->objs[idx].size, addr);
     assert(slab->objs[idx].prev == A && slab->objs[idx].next == L);
 
     bool merge_h = idx < NR_OBJS - 1 && slab->objs[idx + nr_free].size != 0 \

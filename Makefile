@@ -47,7 +47,7 @@ ARCH_SRC = $(KERNEL_SRC)/arch/$(ARCH)
 KERNELDUMP = $(KERNEL).asm
 
 
-CFLAGS = -Wall -Werror -O -fno-omit-frame-pointer -ggdb -nostdlib
+CFLAGS = -Wall -Werror -O0 -fno-omit-frame-pointer -ggdb -nostdlib
 CFLAGS += $(if $(RISCV_CFLAGS),$(RISCV_CFLAGS),$(LOONGARCH_CFLAGS)) 
 CFLAGS += -I $(KERNEL_SRC)/include -I $(ARCH_SRC)/include -I $(KERNEL_SRC)/test/include
 CFLAGS += -MD -MP -MF $@.d

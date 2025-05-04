@@ -12,6 +12,7 @@ void test() {
     // intr_off();
     PASS("test start!!!");
 
+    test_slab();
     test_kalloc();
 
     // test_uart();
