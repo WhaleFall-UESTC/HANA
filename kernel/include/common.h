@@ -13,7 +13,7 @@
 #define PGSIZE 4096
 #define PGSHIFT 12
 
-#define KSTACK_SIZE PGSIZE
+#define KSTACK_SIZE (2*PGSIZE)
 
 #define PGROUNDUP(sz)  (((uint64)(sz)+PGSIZE-1) & ~(PGSIZE-1))
 #define PGROUNDDOWN(a) (((uint64)(a)) & ~(PGSIZE-1))

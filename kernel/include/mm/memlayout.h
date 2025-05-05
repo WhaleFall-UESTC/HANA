@@ -20,7 +20,7 @@
 #define TRAMPOLINE  (MAXVA - PGSIZE)
 #define TRAPFRAME   (TRAMPOLINE - PGSIZE)
 
-#define KSTACK(n)   (TRAPFRAME - (2 * (n)) * PGSIZE)
+#define KSTACK(n)   (TRAPFRAME - ((KSTACK_SIZE + PGSIZE) * (n)))
 
 
 #define UART0   VIRT_UART0

@@ -106,13 +106,12 @@ $(KERNELDUMP): $(KERNEL)
 distclean: clean
 	rm -f $(KERNEL) $(KERNELDUMP) $(DISK) $(FS)
 
-build: $(KERNEL) $(DISK) 
+build: $(KERNEL) $(DISK) $(FS)
 	@echo "[BUILD] Kernel and disk images are ready."
 
 build_all: $(KERNELDUMP) $(DISK)
 
 run: build
-	mkfs.ext4 $(FS)
 	$(QEMU) $(QEMUOPTS)
 
 gdb: build_all .gdbinit-$(ARCH)
