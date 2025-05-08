@@ -1,3 +1,5 @@
+.extern init_stack
+.extern start
 .section .text._start
 .global _start
 _start:

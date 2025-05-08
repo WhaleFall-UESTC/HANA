@@ -1,10 +1,19 @@
 #include <common.h>
 #include <loongarch.h>
 #include <mm/memlayout.h>
+#include <debug.h>
 
+extern char init_stack[];
 extern int main();
 
 void start() {
+    // set each core stack
+    // uint64 cpuid = r_csr_cpuid();
+    // w_tp(cpuid);
+    // uint64 stack_pointer = (uint64) init_stack;
+    // stack_pointer += (cpuid + 1) * KSTACK_SIZE;
+    // w_sp(stack_pointer);
+
     /* set direct mapping windows */
     /* in PLV0, map 0x9000_0000_0000_0000 - 0x9000_FFFF_FFFF_FFFF to
            0x0 - 0xFFFF_FFFF_FFFF 
@@ -33,5 +42,7 @@ void start() {
 
     invtlb();
     main();
+
+    panic("_start should never return");
 }
 

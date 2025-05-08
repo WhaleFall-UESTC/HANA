@@ -11,11 +11,11 @@ kmem_init(uint64 va_start, uint64 va_end)
 {
     uint64 s = PGROUNDUP(va_start);
     uint64 e = PGROUNDDOWN(va_end);
-    debug("RAM starts at %lx, end at %lx", s, e);
+    // debug("RAM starts at %lx, end at %lx", s, e);
     uint64 npages = ((e - s) >> PGSHIFT);
     pages = (struct page*) s;
-    s += npages * sizeof(struct page); // should pgroundup, but has bug here
-    debug("Initialize npages %#lx, a single page takes %d bytes", npages, (int)sizeof(struct page));
+    s += PGROUNDUP(npages * sizeof(struct page)); // should pgroundup, but has bug here
+    // debug("Initialize npages %#lx, a single page takes %d bytes", npages, (int)sizeof(struct page));
     buddy_init(s, e);  
     out("Initialize buddy system");
     slab_init();

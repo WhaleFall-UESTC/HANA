@@ -394,26 +394,161 @@ typedef pte_t *pagetable_t;
 #define CSR_MSGIE_PT          (0xFF << 0)   // 优先级阈值 RW
 
 
-static inline uint64 
-csr_read(uint64 csr)
-{
-    uint64 val;
-    asm volatile("csrrd %0, %1" : "=r"(val) : "i"(csr));
-    return val;
-}
+#define csr_read(CSR, VAL) \
+    asm volatile("csrrd %0, %1" : "=r"(VAL) : "i"(CSR))
 
-static inline void 
-csr_write(uint64 csr, uint64 val)
-{
-    asm volatile("csrwr %0, %1" : : "r"(val), "i"(csr));
-}
+#define csr_write(CSR, VAL) \
+    asm volatile("csrwr %0, %1" : : "r"(VAL), "i"(CSR))
 
-// set csr bits
-static inline void 
-csr_set(uint64 csr, uint64 val)
-{
-    asm volatile("csrxchg $zero, %0, %1" : : "r"(val), "i"(csr));
-}
+#define csr_set_bits(CSR, BITS) \
+    asm volatile("csrxchg $zero, %0, %1" : : "r"(BITS), "i"(CSR));
+
+static inline uint64 r_csr_crmd() { uint64 val; csr_read(CSR_CRMD, val); return val; }
+static inline void w_csr_crmd(uint64 val) { csr_write(CSR_CRMD, val); }
+    
+static inline uint64 r_csr_prmd() { uint64 val; csr_read(CSR_PRMD, val); return val; }
+static inline void w_csr_prmd(uint64 val) { csr_write(CSR_PRMD, val); }
+    
+static inline uint64 r_csr_euen() { uint64 val; csr_read(CSR_EUEN, val); return val; }
+static inline void w_csr_euen(uint64 val) { csr_write(CSR_EUEN, val); }
+    
+static inline uint64 r_csr_misc() { uint64 val; csr_read(CSR_MISC, val); return val; }
+static inline void w_csr_misc(uint64 val) { csr_write(CSR_MISC, val); }
+    
+static inline uint64 r_csr_ecfg() { uint64 val; csr_read(CSR_ECFG, val); return val; }
+static inline void w_csr_ecfg(uint64 val) { csr_write(CSR_ECFG, val); }
+    
+static inline uint64 r_csr_estat() { uint64 val; csr_read(CSR_ESTAT, val); return val; }
+static inline void w_csr_estat(uint64 val) { csr_write(CSR_ESTAT, val); }
+    
+static inline uint64 r_csr_era() { uint64 val; csr_read(CSR_ERA, val); return val; }
+static inline void w_csr_era(uint64 val) { csr_write(CSR_ERA, val); }
+    
+static inline uint64 r_csr_badv() { uint64 val; csr_read(CSR_BADV, val); return val; }
+static inline void w_csr_badv(uint64 val) { csr_write(CSR_BADV, val); }
+    
+static inline uint64 r_csr_badi() { uint64 val; csr_read(CSR_BADI, val); return val; }
+static inline void w_csr_badi(uint64 val) { csr_write(CSR_BADI, val); }
+    
+static inline uint64 r_csr_eentry() { uint64 val; csr_read(CSR_EENTRY, val); return val; }
+static inline void w_csr_eentry(uint64 val) { csr_write(CSR_EENTRY, val); }
+    
+static inline uint64 r_csr_tlbidx() { uint64 val; csr_read(CSR_TLBIDX, val); return val; }
+static inline void w_csr_tlbidx(uint64 val) { csr_write(CSR_TLBIDX, val); }
+    
+static inline uint64 r_csr_tlbehi() { uint64 val; csr_read(CSR_TLBEHI, val); return val; }
+static inline void w_csr_tlbehi(uint64 val) { csr_write(CSR_TLBEHI, val); }
+    
+static inline uint64 r_csr_tlbelo0() { uint64 val; csr_read(CSR_TLBELO0, val); return val; }
+static inline void w_csr_tlbelo0(uint64 val) { csr_write(CSR_TLBELO0, val); }
+    
+static inline uint64 r_csr_tlbelo1() { uint64 val; csr_read(CSR_TLBELO1, val); return val; }
+static inline void w_csr_tlbelo1(uint64 val) { csr_write(CSR_TLBELO1, val); }
+    
+static inline uint64 r_csr_asid() { uint64 val; csr_read(CSR_ASID, val); return val; }
+static inline void w_csr_asid(uint64 val) { csr_write(CSR_ASID, val); }
+    
+static inline uint64 r_csr_pgdl() { uint64 val; csr_read(CSR_PGDL, val); return val; }
+static inline void w_csr_pgdl(uint64 val) { csr_write(CSR_PGDL, val); }
+    
+static inline uint64 r_csr_pgdh() { uint64 val; csr_read(CSR_PGDH, val); return val; }
+static inline void w_csr_pgdh(uint64 val) { csr_write(CSR_PGDH, val); }
+    
+static inline uint64 r_csr_pgd() { uint64 val; csr_read(CSR_PGD, val); return val; }
+static inline void w_csr_pgd(uint64 val) { csr_write(CSR_PGD, val); }
+    
+static inline uint64 r_csr_pwcl() { uint64 val; csr_read(CSR_PWCL, val); return val; }
+static inline void w_csr_pwcl(uint64 val) { csr_write(CSR_PWCL, val); }
+    
+static inline uint64 r_csr_pwch() { uint64 val; csr_read(CSR_PWCH, val); return val; }
+static inline void w_csr_pwch(uint64 val) { csr_write(CSR_PWCH, val); }
+    
+static inline uint64 r_csr_stlbps() { uint64 val; csr_read(CSR_STLBPS, val); return val; }
+static inline void w_csr_stlbps(uint64 val) { csr_write(CSR_STLBPS, val); }
+    
+static inline uint64 r_csr_rvacfg() { uint64 val; csr_read(CSR_RVACFG, val); return val; }
+static inline void w_csr_rvacfg(uint64 val) { csr_write(CSR_RVACFG, val); }
+    
+static inline uint64 r_csr_cpuid() { uint64 val; csr_read(CSR_CPUID, val); return val; }
+static inline void w_csr_cpuid(uint64 val) { csr_write(CSR_CPUID, val); }
+    
+static inline uint64 r_csr_prcfg1() { uint64 val; csr_read(CSR_PRCFG1, val); return val; }
+static inline void w_csr_prcfg1(uint64 val) { csr_write(CSR_PRCFG1, val); }
+    
+static inline uint64 r_csr_prcfg2() { uint64 val; csr_read(CSR_PRCFG2, val); return val; }
+static inline void w_csr_prcfg2(uint64 val) { csr_write(CSR_PRCFG2, val); }
+    
+static inline uint64 r_csr_prcfg3() { uint64 val; csr_read(CSR_PRCFG3, val); return val; }
+static inline void w_csr_prcfg3(uint64 val) { csr_write(CSR_PRCFG3, val); }
+    
+static inline uint64 r_csr_tlbrentry() { uint64 val; csr_read(CSR_TLBRENTRY, val); return val; }
+static inline void w_csr_tlbrentry(uint64 val) { csr_write(CSR_TLBRENTRY, val); }
+    
+static inline uint64 r_csr_tlbrbadv() { uint64 val; csr_read(CSR_TLBRBADV, val); return val; }
+static inline void w_csr_tlbrbadv(uint64 val) { csr_write(CSR_TLBRBADV, val); }
+    
+static inline uint64 r_csr_tlbrera() { uint64 val; csr_read(CSR_TLBRERA, val); return val; }
+static inline void w_csr_tlbrera(uint64 val) { csr_write(CSR_TLBRERA, val); }
+    
+static inline uint64 r_csr_tlbrsave() { uint64 val; csr_read(CSR_TLBRSAVE, val); return val; }
+static inline void w_csr_tlbrsave(uint64 val) { csr_write(CSR_TLBRSAVE, val); }
+    
+static inline uint64 r_csr_tlbrelo0() { uint64 val; csr_read(CSR_TLBRELO0, val); return val; }
+static inline void w_csr_tlbrelo0(uint64 val) { csr_write(CSR_TLBRELO0, val); }
+    
+static inline uint64 r_csr_tlbrelo1() { uint64 val; csr_read(CSR_TLBRELO1, val); return val; }
+static inline void w_csr_tlbrelo1(uint64 val) { csr_write(CSR_TLBRELO1, val); }
+    
+static inline uint64 r_csr_tlbrehi() { uint64 val; csr_read(CSR_TLBREHI, val); return val; }
+static inline void w_csr_tlbrehi(uint64 val) { csr_write(CSR_TLBREHI, val); }
+    
+static inline uint64 r_csr_tlbrprmd() { uint64 val; csr_read(CSR_TLBRPRMD, val); return val; }
+static inline void w_csr_tlbrprmd(uint64 val) { csr_write(CSR_TLBRPRMD, val); }
+    
+static inline uint64 r_csr_dmw0() { uint64 val; csr_read(CSR_DMW0, val); return val; }
+static inline void w_csr_dmw0(uint64 val) { csr_write(CSR_DMW0, val); }
+    
+static inline uint64 r_csr_dmw1() { uint64 val; csr_read(CSR_DMW1, val); return val; }
+static inline void w_csr_dmw1(uint64 val) { csr_write(CSR_DMW1, val); }
+    
+static inline uint64 r_csr_dmw2() { uint64 val; csr_read(CSR_DMW2, val); return val; }
+static inline void w_csr_dmw2(uint64 val) { csr_write(CSR_DMW2, val); }
+    
+static inline uint64 r_csr_dmw3() { uint64 val; csr_read(CSR_DMW3, val); return val; }
+static inline void w_csr_dmw3(uint64 val) { csr_write(CSR_DMW3, val); }
+    
+static inline uint64 r_csr_llbctl() { uint64 val; csr_read(CSR_LLBCTL, val); return val; }
+static inline void w_csr_llbctl(uint64 val) { csr_write(CSR_LLBCTL, val); }
+    
+static inline uint64 r_csr_impctl1() { uint64 val; csr_read(CSR_IMPCTL1, val); return val; }
+static inline void w_csr_impctl1(uint64 val) { csr_write(CSR_IMPCTL1, val); }
+    
+static inline uint64 r_csr_impctl2() { uint64 val; csr_read(CSR_IMPCTL2, val); return val; }
+static inline void w_csr_impctl2(uint64 val) { csr_write(CSR_IMPCTL2, val); }
+    
+static inline uint64 r_csr_ctag() { uint64 val; csr_read(CSR_CTAG, val); return val; }
+static inline void w_csr_ctag(uint64 val) { csr_write(CSR_CTAG, val); }
+    
+static inline uint64 r_csr_msgir() { uint64 val; csr_read(CSR_MSGIR, val); return val; }
+static inline void w_csr_msgir(uint64 val) { csr_write(CSR_MSGIR, val); }
+    
+static inline uint64 r_csr_msgie() { uint64 val; csr_read(CSR_MSGIE, val); return val; }
+static inline void w_csr_msgie(uint64 val) { csr_write(CSR_MSGIE, val); }
+
+#define r_reg(REG, VAL) \
+    asm volatile("move %0, $" #REG : "=r"(VAL))
+
+#define w_reg(REG, VAL) \
+    asm volatile("move $" #REG ", %0" : : "r"(VAL))
+
+static inline uint64 r_sp() { uint64 val; r_reg(sp, val); return val; }
+static inline void w_sp(uint64 val) { w_reg(sp, val); }
+
+static inline uint64 r_ra() { uint64 val; asm volatile("move %0, $ra" : "=r"(val)); return val; }
+static inline void w_ra(uint64 val) { w_reg(ra, val); }
+
+static inline uint64 r_tp() { uint64 val; asm volatile("move %0, $tp" : "=r"(val)); return val; }
+static inline void w_tp(uint64 val) { w_reg(tp, val); }
 
 static inline uint64
 cpucfg(uint64 num) 
@@ -423,17 +558,16 @@ cpucfg(uint64 num)
     return val;
 }
 
-
 static inline void 
 intr_on() 
 {
-    asm volatile("csrxchg $zero, %0, %1" : : "r"(CSR_CRMD_IE), "i"(CSR_CRMD));
+    csr_set_bits(CSR_CRMD, CSR_CRMD_IE);
 }
 
 static inline void 
 intr_off() 
 {
-    csr_write(CSR_CRMD, csr_read(CSR_CRMD) & ~CSR_CRMD_IE);
+    w_csr_crmd(r_csr_crmd() & ~CSR_CRMD_IE);
 }
 
 
