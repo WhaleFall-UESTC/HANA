@@ -6,13 +6,14 @@
 #include <loongarch.h>
 
 // extern char trampoline[];
+extern char end[];
 
 pagetable_t kernel_pagetable;
 
 void
 kinit()
 {
-    kmem_init(RAMBASE, RAMTOP);
+    kmem_init((uint64)end, RAMTOP);
 }
 
 void 
@@ -31,7 +32,8 @@ kvminit()
 
     // pagetable config
     csr_write(CSR_PWCL, (PTBASE | (DIRWIDTH << 5) | (DIRBASE(1) << 10) | (DIRWIDTH << 15) | (DIRBASE(2) << 20) | (DIRWIDTH << 25)) | CSR_PWCL_PTEWidth64);
-    csr_write(CSR_PWCH, CSR_PWCH_HPTW_En);
+    // csr_write(CSR_PWCH, CSR_PWCH_HPTW_En);
+    csr_write(CSR_PWCH, 0);
     csr_write(CSR_RVACFG, 8);
 }
 
@@ -39,7 +41,8 @@ kvminit()
 void
 kvminithart()
 {
-    csr_write(CSR_PGDH, (uint64) kernel_pagetable);
+    // csr_write(CSR_PGDH, (uint64) kernel_pagetable);
+    w_csr_pgdh(KERNEL_VA2PA(kernel_pagetable));
     tlbinit();
 }
 
@@ -64,16 +67,16 @@ pte_t*
 walk(pagetable_t pgtbl, uint64 va, int alloc)
 {
     va >>= 12;
+    pgtbl = (pagetable_t) KERNEL_PA2VA(pgtbl);
     for (int shift = 18; shift > 0; shift -= 9) {
         int idx = (va >> shift) & 0x1ff;
         pte_t* pte = pgtbl + idx;
-        if ((*pte & PTE_V) == 0) {
-            if (alloc && (*pte = PA2PTE(alloc_pagetable())) != 0)
-                *pte |= PTE_V;
-            else return 0;
+        if ((*pte & PAMASK) == 0) {
+            if (alloc == WALK_NOALLOC || (*pte = PA2PTE(alloc_pagetable())) == 0)
+                return 0;
         } 
-        pgtbl = (pagetable_t) PTE2PA(*pte);
-    }
+        pgtbl = (pagetable_t) KERNEL_PA2VA(PTE2PA(*pte));
+    } 
 
     return (pgtbl + (va & 0x1ff));
 }
@@ -85,12 +88,13 @@ mappages(pagetable_t pgtbl, uint64 va, uint64 pa, uint64 sz, uint64 flags)
     uint64 start_va = PGROUNDDOWN(va);
     uint64 end_va = PGROUNDUP(va + sz - 1);
     int npages = (end_va - start_va) >> PGSHIFT;
-    pte_t *pte = walk(pgtbl, va, WALK_ALLOC);
+    pte_t* pte = walk(pgtbl, va, WALK_ALLOC);
     assert(pte);
     int nr_mapped = 0;
 
     while (nr_mapped++ < npages) {
-        *pte++ = PA2PTE(pa) | flags | PTE_V;
+        *pte = PA2PTE(pa) | flags | PTE_V;
+        pte++;
         pa += PGSIZE;
         // if this is the last pte in L0 pgtbl, start from another pgtbl
         if (IS_PGALIGNED(pte)) {

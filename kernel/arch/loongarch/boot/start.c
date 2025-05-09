@@ -5,6 +5,29 @@
 
 extern char init_stack[];
 extern int main();
+extern void tlb_refill();
+
+void info_exception() {
+    Log(ANSI_FG_RED, "ERA: %lx", r_csr_era());
+    uint64 estat = r_csr_estat();
+    int ecode = ((estat & CSR_ESTAT_Ecode) >> 16);
+    int esubcode = ((estat & CSR_ESTAT_EsubCode) >> 22);
+    Log(ANSI_FG_RED, "Ecode: %d, Esubcode: %d", ecode, esubcode);
+    Log(ANSI_FG_RED, "BADV: %lx", r_csr_badv());
+}
+
+__attribute__((aligned(PGSIZE))) void panic_exception() {
+    info_exception();
+    panic("Exception");
+}
+
+// __attribute__((aligned(PGSIZE))) void panic_tlb_refill_exception() {
+//     Log(ANSI_FG_RED, "TLBRERA: %lx", r_csr_tlbrera());
+//     Log(ANSI_FG_RED, "TLBRBAV: %lx", r_csr_tlbrbadv());
+//     Log(ANSI_FG_RED, "TLBRPRMD: %lx", r_csr_tlbrprmd());
+//     Log(ANSI_FG_RED, "CRMD: %lx", r_csr_crmd());
+//     panic("TLB refill exception");
+// }
 
 void start() {
     // set each core stack
@@ -41,6 +64,11 @@ void start() {
     csr_write(CSR_CRMD, crmd);
 
     invtlb();
+
+    w_csr_ecfg(0);
+    w_csr_eentry((uint64)panic_exception);
+    w_csr_tlbrentry((uint64)tlb_refill);   
+
     main();
 
     panic("_start should never return");
