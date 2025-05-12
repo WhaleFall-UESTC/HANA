@@ -4,9 +4,12 @@
 #include <debug.h>
 #include <mm/mm.h>
 #include <mm/memlayout.h>
+#include <trap/trap.h>
 
 typedef int (*putchar_t)(int);
 extern putchar_t put_char;
+
+extern void timer_enable();
 
 // temporary stack for boot
 char init_stack[KSTACK_SIZE * NCPU] __attribute__((aligned(PGSIZE)));
@@ -30,10 +33,21 @@ int main() {
     debug("CRMD: %lx", r_csr_crmd());
     debug("DMW0: %lx", r_csr_dmw0());
     PASS("loongarch64 start!!!");
+
     kinit();
     log("kinit");
     kvminit();
     log("kvminit");
     kvminithart();
     test_kvm();
+
+    trap_init();
+    trap_init_hart();
+    log("trap init");
+    
+    intr_on();
+    timer_enable();
+
+    debug("tcfg: %lx ecfg: %lx crmd:%lx", r_csr_tcfg(), r_csr_ecfg(), r_csr_crmd());
+    for (;;) ;
 }

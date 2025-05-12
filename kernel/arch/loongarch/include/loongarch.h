@@ -40,8 +40,8 @@ typedef pte_t *pagetable_t;
 #define CSR_MISC        0x3    // 杂项控制
 #define CSR_ECFG        0x4    // 例外配置
 #define CSR_ESTAT       0x5    // 例外状态
-#define CSR_ERA         0x6    // 例外返回地址
-#define CSR_BADV        0x7    // 出错虚地址
+#define CSR_ERA         0x6    // 例外返回地址，保存了发生异常时的下一条指令地址
+#define CSR_BADV        0x7    // 出错虚地址，保存导致异常的虚拟地址
 #define CSR_BADI        0x8    // 出错指令
 #define CSR_EENTRY      0xC    // 例外入口地址
 
@@ -417,7 +417,16 @@ static inline void w_csr_misc(uint64 val) { csr_write(CSR_MISC, val); }
     
 static inline uint64 r_csr_ecfg() { uint64 val; csr_read(CSR_ECFG, val); return val; }
 static inline void w_csr_ecfg(uint64 val) { csr_write(CSR_ECFG, val); }
-    
+
+static inline uint64 r_csr_tcfg() { uint64 val; csr_read(CSR_TCFG, val); return val; }
+static inline void w_csr_tcfg(uint64 val) { csr_write(CSR_TCFG, val); }
+
+static inline uint64 r_csr_tid() { uint64 val; csr_read(CSR_TID, val); return val; }
+static inline void w_csr_tid(uint64 val) { csr_write(CSR_TID, val); }
+
+static inline uint64 r_csr_ticlr() { uint64 val; csr_read(CSR_TICLR, val); return val; }
+static inline void w_csr_ticlr(uint64 val) { csr_write(CSR_TICLR, val); }
+
 static inline uint64 r_csr_estat() { uint64 val; csr_read(CSR_ESTAT, val); return val; }
 static inline void w_csr_estat(uint64 val) { csr_write(CSR_ESTAT, val); }
     
@@ -561,7 +570,7 @@ cpucfg(uint64 num)
 static inline void 
 intr_on() 
 {
-    csr_set_bits(CSR_CRMD, CSR_CRMD_IE);
+    w_csr_crmd(r_csr_crmd() | CSR_CRMD_IE);
 }
 
 static inline void 

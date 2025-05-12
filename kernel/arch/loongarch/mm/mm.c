@@ -7,7 +7,9 @@
 
 // extern char trampoline[];
 extern char end[];
+extern void tlb_refill();
 
+// store kernel pagetable physical address
 pagetable_t kernel_pagetable;
 
 void
@@ -19,9 +21,10 @@ kinit()
 void 
 tlbinit()
 {
-    csr_write(CSR_STLBPS, PGSHIFT);
-    csr_write(CSR_TLBREHI, PGSHIFT);
-    csr_write(CSR_ASID, 0);
+    w_csr_stlbps(PGSHIFT);
+    w_csr_tlbrehi(PGSHIFT);
+    w_csr_asid(0);
+    w_csr_tlbrentry((uint64)tlb_refill);
     invtlb();
 }
 
@@ -30,11 +33,11 @@ kvminit()
 {
     kernel_pagetable = kvmmake();
 
+    // Sv39-like style
     // pagetable config
-    csr_write(CSR_PWCL, (PTBASE | (DIRWIDTH << 5) | (DIRBASE(1) << 10) | (DIRWIDTH << 15) | (DIRBASE(2) << 20) | (DIRWIDTH << 25)) | CSR_PWCL_PTEWidth64);
-    // csr_write(CSR_PWCH, CSR_PWCH_HPTW_En);
-    csr_write(CSR_PWCH, 0);
-    csr_write(CSR_RVACFG, 8);
+    w_csr_pwcl((PTBASE | (DIRWIDTH << 5) | (DIRBASE(1) << 10) | (DIRWIDTH << 15) | (DIRBASE(2) << 20) | (DIRWIDTH << 25)) | CSR_PWCL_PTEWidth64);
+    w_csr_pwch(0);
+    w_csr_rvacfg(8);
 }
 
 // set pagetable and enable paging
