@@ -5,7 +5,7 @@
 #include <debug.h>
 #include <loongarch.h>
 
-// extern char trampoline[];
+extern char trampoline[];
 extern char end[];
 extern void tlb_refill();
 
@@ -107,3 +107,69 @@ mappages(pagetable_t pgtbl, uint64 va, uint64 pa, uint64 sz, uint64 flags)
     }
 }
 
+
+// Look up va in given pgtbl
+// return its pa or NULL if not mapped
+uint64
+walkaddr(pagetable_t pgtbl, uint64 va)
+{
+    pgtbl = (pagetable_t) KERNEL_PA2VA(pgtbl);
+    pte_t* pte = walk(pgtbl, va, WALK_NOALLOC);
+
+    if ((*pte & PTE_V) == 0)
+        return 0;
+
+    uint64 offset = va & (PGSIZE - 1);
+    uint64 pa = (uint64) PTE2PA(*pte) | offset;
+
+    return pa;
+}
+
+
+// make user pagetable
+// user_pa: address of a 2 PGSIZE space
+pagetable_t
+uvmmake(uint64 trapframe)
+{
+    pagetable_t upgtbl = alloc_pagetable();
+
+    // map TRAMPOLINE
+    mappages(upgtbl, TRAMPOLINE, (uint64)trampoline, PGSIZE, PTE_PLV3 | PTE_MAT_CC | PTE_P);
+
+    // map TRAPFRAME
+    mappages(upgtbl, TRAPFRAME, trapframe, PGSIZE, PTE_PLV3 | PTE_MAT_CC | PTE_P | PTE_W | PTE_NX);
+
+    return upgtbl;
+}
+
+
+// just for init proc
+pagetable_t
+uvminit(uint64 trapframe, char* init_code, int sz)
+{
+    assert(init_code);
+    assert(sz <= PGSIZE);
+    
+    void* userspace = kalloc(2*PGSIZE);
+    memmove(userspace, init_code, sz);
+
+    pagetable_t upgtbl = uvmmake(trapframe);
+
+    mappages(upgtbl, 0, (uint64)userspace, PGSIZE, PTE_PLV3 | PTE_MAT_CC | PTE_P);
+
+    // map guard page, for uvmcpoy
+    mappages(upgtbl, PGSIZE, 0, PGSIZE, 0);
+
+    mappages(upgtbl, 2 * PGSIZE, (uint64)userspace + PGSIZE, PGSIZE, PTE_PLV3 | PTE_MAT_CC | PTE_P | PTE_W | PTE_NX);
+
+    return (pagetable_t) KERNEL_VA2PA(upgtbl);
+}
+
+void 
+map_stack(pagetable_t pgtbl, uint64 stack_va) 
+{
+    void* stack = kalloc(KSTACK_SIZE);
+    Assert(stack, "out of memory");
+    log("map stack va: %lx, pa %lx", stack_va, KERNEL_VA2PA(stack));
+    mappages(pgtbl, stack_va, KERNEL_VA2PA(stack), KSTACK_SIZE, PTE_PLV0 | PTE_MAT_CC | PTE_P | PTE_NX | PTE_W | PTE_RPLV);
+}

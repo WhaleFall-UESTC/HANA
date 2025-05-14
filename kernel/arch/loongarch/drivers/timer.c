@@ -3,7 +3,6 @@
 #include <debug.h>
 
 #define INTERVAL 0x1000000UL
-// #define INTERVAL 100UL
 
 void timer_init() {
     // set timer id

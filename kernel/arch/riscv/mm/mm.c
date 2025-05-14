@@ -198,3 +198,12 @@ uvmcopy(pagetable_t cpgtbl, pagetable_t ppgtbl, uint64 sz)
         } while (addr < sz && !IS_PGALIGNED(ppte));
     }
 }
+
+void 
+map_stack(pagrtable_t pgtbl, uint64 stack_va) 
+{
+    void* stack = kalloc(KSTACK_SIZE);
+    Assert(stack, "out of memory");
+    mappages(pgtbl, stack_va, (uint64)stack, KSTACK_SIZE, PTE_R | PTE_W);
+}
+

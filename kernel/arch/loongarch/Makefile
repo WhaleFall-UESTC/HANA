@@ -40,6 +40,8 @@ SRC_S = $(shell find $(ARCH_SRC) -type f -name '*.S')
 SRC_C := $(shell find $(ARCH_SRC) -type f -name '*.c') \
 		 $(shell find $(KERNEL_SRC)/lib -type f -name '*.c') \
 		 $(shell find $(KERNEL_SRC)/mm -type f -name '*.c') \
+		 $(shell find $(KERNEL_SRC)/proc -type f -name '*.c') \
+		 $(shell find $(KERNEL_SRC)/irq -type f -name '*.c') \
 
 BUILD_SRC_C := $(SRC_C:$(PROJ_BASE)%=$(BUILD_DIR)%) 
 

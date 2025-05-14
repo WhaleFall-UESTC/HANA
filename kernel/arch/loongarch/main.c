@@ -5,6 +5,10 @@
 #include <mm/mm.h>
 #include <mm/memlayout.h>
 #include <trap/trap.h>
+#include <trap/context.h>
+#include <irq/interrupt.h>
+#include <proc/proc.h>
+#include <proc/sched.h>
 
 typedef int (*putchar_t)(int);
 extern putchar_t put_char;
@@ -13,6 +17,7 @@ extern void timer_enable();
 
 // temporary stack for boot
 char init_stack[KSTACK_SIZE * NCPU] __attribute__((aligned(PGSIZE)));
+struct cpu cpus[NCPU];
 
 void uart_init(void);
 
@@ -21,7 +26,7 @@ void test_kvm() {
     debug("tmp addr: %p", tmp);
     uint64 pa = (((uint64)tmp) & ~DMW_MASK);
     log("map to pa %lx", pa);
-    mappages(kernel_pagetable, TRAPFRAME, pa, PGSIZE, PTE_P | PTE_NX | PTE_PLV0 | PTE_RPLV);
+    mappages(kernel_pagetable, TRAPFRAME, pa, PGSIZE, PTE_P | PTE_NX | PTE_PLV0 | PTE_RPLV | PTE_W | PTE_MAT_CC);
     *tmp = 0x01919810UL;
     log("va read: %lx", *((uint64*)TRAPFRAME));
     assert(*((uint64*)TRAPFRAME) == 0x01919810UL);
@@ -45,9 +50,12 @@ int main() {
     trap_init_hart();
     log("trap init");
     
+    proc_init();
+
     intr_on();
     timer_enable();
 
     debug("tcfg: %lx ecfg: %lx crmd:%lx", r_csr_tcfg(), r_csr_ecfg(), r_csr_crmd());
-    for (;;) ;
+    
+    scheduler();
 }

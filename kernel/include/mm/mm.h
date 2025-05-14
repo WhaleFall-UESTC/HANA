@@ -26,6 +26,7 @@ uint64      walkaddr(pagetable_t pgtbl, uint64 va);
 pagetable_t uvmmake(uint64 trapframe);
 pagetable_t uvminit(uint64 trapframe, char* init_code, int sz);
 void        uvmcopy(pagetable_t cpgtbl, pagetable_t ppgtbl, uint64 sz);
+void        map_stack(pagetable_t pgtbl, uint64 stack_va);
 
 static inline uint64 virt_to_phys(uint64 va) {
     return va;

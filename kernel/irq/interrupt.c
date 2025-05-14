@@ -1,15 +1,18 @@
 #include <common.h>
+
+#ifdef ARCH_RISCV
+#include <drivers/plic.h>
+#elif defined(ARCH_LOONGARCH)
+#include <loongarch.h>
+#endif
+
 #include <irq/interrupt.h>
 #include <debug.h>
+#include <trap/context.h>
 #include <proc/proc.h>
 #include <drivers/uart.h>
 
 #ifdef ARCH_RISCV
-#include <drivers/plic.h>
-#else
-/* other archs */
-#endif
-
 static irq_handler_t irq_handlers[MAX_NR_IRQ];
 static void* irq_privates[MAX_NR_IRQ];
 
@@ -64,6 +67,7 @@ void irq_init(void) {
     irq_register(UART0_IRQ, uart_isr, NULL);
     #endif
 }
+#endif
 
 void irq_pushoff() {
     int old_intr_status = intr_get();

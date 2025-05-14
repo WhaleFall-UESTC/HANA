@@ -33,6 +33,53 @@ typedef pte_t *pagetable_t;
 #define DIRBASE(n) (PTBASE + n * DIRWIDTH)
 
 
+
+/* IOCSR */
+
+#define IOCSR_BASE 0x1fe00000UL
+#define EXT_INT_En 0x0  // 扩展 IO 中断使能，qemu 默认开启
+
+#define EXT_IOIen       0x1600  // 扩展 IO 中断的中断使能配置
+
+#define EXT_IOIbounce0  0x1690  // 扩展 IO 中断的自动轮转使能配置，qemu 可读/可写，但没有实际效果
+#define EXT_IOIbounce(n) (EXT_IOIbounce + (n))
+// #define EXT_IOIsr       0x1700  // 扩展 IO 中断的中断状态，qemu 不支持
+
+#define perCore_EXT_IOIsr    0x1800  // 路由至当前处理器核的扩展 IO 中断的中断状态
+#define EXT_IOIsr(hart)      (perCore_EXT_IOIsr + (hart) * 0x100)
+#define EXT_IOImap(n)        (0x14c0 + (n))  // EXT_IOI[32(n+1)-1 :32n]的引脚路由方式
+#define EXT_IOImap_Core(n)   (0x1c00 + (n))  // EXT_IOI[n]的处理器核路由方式
+#define EXT_IOI_node_type(n) (0x14a0 + (n))  // 16 个结点的映射向量类型n
+
+#define UART0_IRQ 2
+
+
+static inline uint32 __iocsrrd_w(uint64 iocsr) {
+    uint32 val;
+    asm volatile("iocsrrd.w %0, %1" : "=r"(val) : "r"(iocsr));
+    return val;
+}
+
+static inline uint64 __iocsrrd_d(uint64 iocsr) {
+    uint64 val;
+    asm volatile("iocsrrd.d %0, %1" : "=r"(val) : "r"(iocsr));
+    return val;
+}
+
+static inline void __iocsrwr_w(uint32 val, uint64 iocsr) {
+    asm volatile("iocsrwr.w %0, %1" : : "r"(val), "r"(iocsr));
+}
+
+static inline void __iocsrwr_d(uint64 val, uint64 iocsr) {
+    asm volatile("iocsrwr.d %0, %1" : : "r"(val), "r"(iocsr));
+}
+
+#define iocsr_readl(iocsr) __iocsrrd_w(iocsr)
+#define iocsr_readq(iocsr) __iocsrrd_d(iocsr)
+#define iocsr_writel(iocsr, val) __iocsrwr_w(val, iocsr)
+#define iocsr_writeq(iocsr, val) __iocsrwr_d(val, iocsr)
+
+
 /* 基础控制寄存器 */
 #define CSR_CRMD        0x0    // 当前模式信息
 #define CSR_PRMD        0x1    // 例外前模式信息
@@ -577,6 +624,12 @@ static inline void
 intr_off() 
 {
     w_csr_crmd(r_csr_crmd() & ~CSR_CRMD_IE);
+}
+
+static inline int
+intr_get() 
+{
+    return (r_csr_crmd() & CSR_CRMD_IE) != 0;
 }
 
 

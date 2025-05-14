@@ -2,9 +2,14 @@
 #include <loongarch.h>
 #include <debug.h>
 #include <mm/mm.h>
+#include <mm/memlayout.h>
 #include <trap/trap.h>
+#include <trap/context.h>
+#include <irq/interrupt.h>
+#include <proc/proc.h>
+#include <proc/sched.h>
 
-extern char kernelvec[];
+extern char kernelvec[], uservec[], trampoline[], userret[];
 
 extern void timer_isr();
 
@@ -91,9 +96,61 @@ kernel_trap()
     uint64 prmd = r_csr_prmd();
 
     if (trap(ecode) != 0) {
+        info_exception();
         panic("KERNEL TRAP ERROR");
     }
 
     w_csr_era(era);
     w_csr_prmd(prmd);
 }
+
+void
+user_trap()
+{
+    int ecode = r_ecode();
+
+    w_csr_eentry((uint64)kernelvec);
+
+    struct proc* p = myproc();
+    p->trapframe->era = r_csr_era();
+
+    if (trap(ecode) != 0) {
+        info_exception();
+        p->killed = 1;
+    }
+
+    if (p->killed)
+        exit(-1);
+
+    dive_to_user();
+}
+
+void
+dive_to_user()
+{
+    struct proc* p = myproc();
+    intr_off();
+
+    w_csr_eentry(TRAMPOLINE + (uservec - trampoline));
+
+    uint64 prmd = r_csr_prmd();
+    prmd |= (CSR_PRMD_PPLV | CSR_PRMD_PIE);
+    w_csr_prmd(prmd);
+
+    w_csr_era(p->trapframe->era);
+
+    p->trapframe->kernel_sp = p->stack + KSTACK_SIZE;
+    p->trapframe->kernel_hartid = r_tp();
+    p->trapframe->kernel_trap = (uint64) user_trap;
+
+    uint64 pgdl = r_csr_pgdl();
+    if (pgdl != (uint64) p->pagetable) {
+        w_csr_pgdl((uint64) p->pagetable);
+        invtlb();
+    }
+
+    uint64 trapframe = TRAPFRAME + (uint64)p->trapframe - PGROUNDDOWN(p->trapframe);
+    uint64 fn = TRAMPOLINE + (userret - trampoline);
+    ((void (*)(uint64))fn)(trapframe);
+}
+
