@@ -1,6 +1,9 @@
 # WhaleOS
 WhaleOS 是个暂时的名字，在将仓库移到 gitlab 之前会改
 <br><br>
+关于 loongarch 分支的一个和说明：
+现在的 loongarch 还在开发中，临时的 loongarch 内核的 Makefile 位于 /kernel/arch/loongarch 下。需要调试的话还请先 cd 至此目录下
+<br><br>
 ## Get Start
 ### riscv-gnu-toolchains
 按照[官方文档](https://github.com/riscv-collab/riscv-gnu-toolchain)安装即可

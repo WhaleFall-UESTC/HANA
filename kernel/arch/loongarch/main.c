@@ -40,12 +40,13 @@ void test_kvm() {
     uint64* tmp = kalloc(PGSIZE);
     debug("tmp addr: %p", tmp);
     uint64 pa = KERNEL_VA2PA(tmp);
-    log("map va %lx to pa %lx", KSTACK(0), pa);
-    mappages(kernel_pagetable, KSTACK(0), pa, PGSIZE, PTE_P | PTE_NX | PTE_PLV0 | PTE_RPLV | PTE_W | PTE_MAT_CC | PTE_D);
-    *((uint64*)KSTACK(0)) = 0x114514;
+    uint64 va = TRAMPOLINE - PGSIZE;
+    log("map va %lx to pa %lx", va, pa);
+    mappages(kernel_pagetable, va, pa, PGSIZE, PTE_P | PTE_NX | PTE_PLV0 | PTE_RPLV | PTE_W | PTE_MAT_CC | PTE_D);
+    *((uint64*)va) = 0x114514;
     *tmp = 0x01919810UL;
-    log("va read: %lx", *((uint64*)KSTACK(0)));
-    assert(*((uint64*)KSTACK(0)) == 0x01919810UL);
+    log("va read: %lx", *((uint64*)va));
+    assert(*((uint64*)va) == 0x01919810UL);
     PASS("pass kvm test");
 }
 

@@ -31,12 +31,12 @@
 #define LS7A_INT_POLARITY   (LS7A1000 | LS7A1000_INT_POLARITY)
 
 #define TRAMPOLINE  0xFFFFFFFFFFFFF000UL
-#define TRAPFRAME   (TRAMPOLINE - PGSIZE)
+// #define TRAPFRAME   (TRAMPOLINE - PGSIZE)
 
-#define MAXVA (1UL << (12 + 9 + 9 + 9))
-#define USER_TRAPFRAME (MAXVA - PGSIZE - PGSIZE)
+#define MAXVA (1UL << (12 + 9 + 9 + 9 - 1))
+#define TRAPFRAME (MAXVA - PGSIZE)
 
-#define KSTACK(n)   (TRAPFRAME - (2 * (n)) * PGSIZE)
+#define KSTACK(n)   (TRAMPOLINE - (2 * (n)) * PGSIZE)
 
 
 /*

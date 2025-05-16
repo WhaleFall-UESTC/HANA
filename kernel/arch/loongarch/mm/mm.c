@@ -5,8 +5,7 @@
 #include <debug.h>
 #include <loongarch.h>
 
-extern char trampoline[];
-extern char end[];
+extern char end[], trampoline[];
 extern void tlb_refill();
 
 // store kernel pagetable physical address
@@ -56,7 +55,7 @@ kvmmake()
 
     // anything else is mapped by DMW0
 
-    mappages(kpgtbl, TRAMPOLINE, (uint64) trampoline, PGSIZE, PTE_PLV3 | PTE_MAT_CC | PTE_G | PTE_P);
+    mappages(kpgtbl, TRAMPOLINE, KERNEL_VA2PA(trampoline), PGSIZE, PTE_PLV3 | PTE_MAT_CC | PTE_G | PTE_P);
 
     return kpgtbl;
 }
@@ -137,7 +136,7 @@ uvmmake(uint64 trapframe)
     // mappages(upgtbl, TRAMPOLINE, (uint64)trampoline, PGSIZE, PTE_PLV3 | PTE_MAT_CC | PTE_P);
 
     // map TRAPFRAME
-    mappages(upgtbl, TRAPFRAME, trapframe, PGSIZE, PTE_PLV3 | PTE_MAT_CC | PTE_P | PTE_W | PTE_NX);
+    mappages(upgtbl, TRAPFRAME, KERNEL_VA2PA(trapframe) , PGSIZE, PTE_PLV0 | PTE_RPLV | PTE_MAT_CC | PTE_P | PTE_W | PTE_NX | PTE_D);
 
     return upgtbl;
 }
@@ -152,15 +151,16 @@ uvminit(uint64 trapframe, char* init_code, int sz)
     
     void* userspace = kalloc(2*PGSIZE);
     memmove(userspace, init_code, sz);
+    uint64 userspace_pa = KERNEL_VA2PA(userspace);
 
     pagetable_t upgtbl = uvmmake(trapframe);
 
-    mappages(upgtbl, 0, (uint64)userspace, PGSIZE, PTE_PLV3 | PTE_MAT_CC | PTE_P);
+    mappages(upgtbl, 0, userspace_pa, PGSIZE, PTE_PLV3 | PTE_MAT_CC | PTE_P);
 
     // map guard page, for uvmcpoy
     mappages(upgtbl, PGSIZE, 0, PGSIZE, 0);
 
-    mappages(upgtbl, 2 * PGSIZE, (uint64)userspace + PGSIZE, PGSIZE, PTE_PLV3 | PTE_MAT_CC | PTE_P | PTE_W | PTE_NX | PTE_D);
+    mappages(upgtbl, 2 * PGSIZE, userspace_pa + PGSIZE, PGSIZE, PTE_PLV3 | PTE_MAT_CC | PTE_P | PTE_W | PTE_NX | PTE_D);
 
     return (pagetable_t) KERNEL_VA2PA(upgtbl);
 }
@@ -171,6 +171,6 @@ map_stack(pagetable_t pgtbl, uint64 stack_va)
     pgtbl = (pagetable_t) KERNEL_PA2VA(pgtbl);
     void* stack = kalloc(KSTACK_SIZE);
     Assert(stack, "out of memory");
-    log("map stack va: %lx, pa %lx", stack_va, KERNEL_VA2PA(stack));
+    // log("map stack va: %lx, pa %lx", stack_va, KERNEL_VA2PA(stack));
     mappages(pgtbl, stack_va, KERNEL_VA2PA(stack), KSTACK_SIZE, PTE_PLV0 | PTE_MAT_CC | PTE_P | PTE_NX | PTE_W | PTE_RPLV | PTE_D);
 }

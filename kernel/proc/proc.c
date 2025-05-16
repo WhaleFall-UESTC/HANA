@@ -26,7 +26,7 @@ struct proc* init_proc = NULL;
 #ifdef ARCH_RISCV
 char init_code[] = {0x67, 0x00, 0x00, 0x00};
 #elif defined(ARCH_LOONGARCH)
-char init_code[] = {0x58, 0x00, 0x00, 0x00};
+char init_code[] = {0x00, 0x00, 0x00, 0x50};
 #endif
 
 int

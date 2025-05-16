@@ -1,6 +1,10 @@
 #include <common.h>
 #include <loongarch.h>
 #include <debug.h>
+#include <irq/interrupt.h>
+#include <trap/context.h>
+#include <proc/proc.h>
+#include <proc/sched.h>
 
 #define INTERVAL 0x1000000UL
 
@@ -19,4 +23,5 @@ void timer_enable() {
 void timer_isr() {
     log("recieve timer interrupt");
     w_csr_ticlr(CSR_TICLR_CLR);
+    yield();
 }

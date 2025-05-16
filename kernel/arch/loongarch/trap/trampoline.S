@@ -1,6 +1,17 @@
 #define CSR_SAVE0 0x30
 #define CSR_SAVE1 0x31
+#define CSR_SAVE2 0x32
+#define CSR_SAVE3 0x33
+#define CSR_SAVE4 0x34
+#define CSR_SAVE5 0x35
+#define CSR_SAVE6 0x36
+#define CSR_ESTAT 0x5    
+#define CSR_ERA   0x6   
+#define CSR_BADV  0x7    
+#define CSR_BADI  0x8    
+
 #define CSR_PGDL  0x19
+
 #define TRAPFRAME_OFFSET 40
 
 .section trampsec
@@ -9,6 +20,17 @@ trampoline:
 .align 4
 .globl uservec
 uservec:
+    # just for debug
+    csrwr   $t0, CSR_SAVE1
+    csrwr   $t1, CSR_SAVE2
+    csrwr   $t2, CSR_SAVE3
+    csrwr   $t0, CSR_ESTAT
+    csrwr   $t1, CSR_ERA
+    csrwr   $t2, CSR_BADV
+    csrwr   $t0, CSR_SAVE1
+    csrwr   $t1, CSR_SAVE2
+    csrwr   $t2, CSR_SAVE3
+    
     csrwr   $a0, CSR_SAVE0
 
     st.d    $ra, $a0, 0+TRAPFRAME_OFFSET

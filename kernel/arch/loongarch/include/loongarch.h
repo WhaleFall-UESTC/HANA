@@ -2,7 +2,7 @@
 
 #define PALEN 48
 #define VALEN 48
-#define MAXVA (1UL << (9 + 12 - 1)) // lower half virtual address
+// #define MAXVA (1UL << (9 + 12 - 1)) // lower half virtual address
 
 typedef uint64 pte_t;
 typedef pte_t *pagetable_t;
