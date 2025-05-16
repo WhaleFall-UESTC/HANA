@@ -21,15 +21,31 @@ struct cpu cpus[NCPU];
 
 void uart_init(void);
 
+void __info_exception() {
+    Log(ANSI_FG_RED, "ERA: %lx", r_csr_era());
+    uint64 estat = r_csr_estat();
+    int ecode = ((estat & CSR_ESTAT_Ecode) >> 16);
+    int esubcode = ((estat & CSR_ESTAT_EsubCode) >> 22);
+    Log(ANSI_FG_RED, "Ecode: %d, Esubcode: %d", ecode, esubcode);
+    Log(ANSI_FG_RED, "BADV: %lx", r_csr_badv());
+}
+
+__attribute__((aligned(PGSIZE))) void __panic_exception() {
+    __info_exception();
+    panic("Exception");
+}
+
 void test_kvm() {
+    w_csr_eentry((uint64)__panic_exception);
     uint64* tmp = kalloc(PGSIZE);
     debug("tmp addr: %p", tmp);
-    uint64 pa = (((uint64)tmp) & ~DMW_MASK);
-    log("map to pa %lx", pa);
-    mappages(kernel_pagetable, TRAPFRAME, pa, PGSIZE, PTE_P | PTE_NX | PTE_PLV0 | PTE_RPLV | PTE_W | PTE_MAT_CC);
+    uint64 pa = KERNEL_VA2PA(tmp);
+    log("map va %lx to pa %lx", KSTACK(0), pa);
+    mappages(kernel_pagetable, KSTACK(0), pa, PGSIZE, PTE_P | PTE_NX | PTE_PLV0 | PTE_RPLV | PTE_W | PTE_MAT_CC | PTE_D);
+    *((uint64*)KSTACK(0)) = 0x114514;
     *tmp = 0x01919810UL;
-    log("va read: %lx", *((uint64*)TRAPFRAME));
-    assert(*((uint64*)TRAPFRAME) == 0x01919810UL);
+    log("va read: %lx", *((uint64*)KSTACK(0)));
+    assert(*((uint64*)KSTACK(0)) == 0x01919810UL);
     PASS("pass kvm test");
 }
 

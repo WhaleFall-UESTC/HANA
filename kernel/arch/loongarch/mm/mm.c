@@ -56,7 +56,7 @@ kvmmake()
 
     // anything else is mapped by DMW0
 
-    // mappages(kpgtbl, TRAMPOLINE, (uint64) trampoline, PGSIZE, PTE_PLV0 | PTE_MAT_CC | PTE_G | PTE_P | PTE_RPLV);
+    mappages(kpgtbl, TRAMPOLINE, (uint64) trampoline, PGSIZE, PTE_PLV3 | PTE_MAT_CC | PTE_G | PTE_P);
 
     return kpgtbl;
 }
@@ -134,7 +134,7 @@ uvmmake(uint64 trapframe)
     pagetable_t upgtbl = alloc_pagetable();
 
     // map TRAMPOLINE
-    mappages(upgtbl, TRAMPOLINE, (uint64)trampoline, PGSIZE, PTE_PLV3 | PTE_MAT_CC | PTE_P);
+    // mappages(upgtbl, TRAMPOLINE, (uint64)trampoline, PGSIZE, PTE_PLV3 | PTE_MAT_CC | PTE_P);
 
     // map TRAPFRAME
     mappages(upgtbl, TRAPFRAME, trapframe, PGSIZE, PTE_PLV3 | PTE_MAT_CC | PTE_P | PTE_W | PTE_NX);
@@ -160,7 +160,7 @@ uvminit(uint64 trapframe, char* init_code, int sz)
     // map guard page, for uvmcpoy
     mappages(upgtbl, PGSIZE, 0, PGSIZE, 0);
 
-    mappages(upgtbl, 2 * PGSIZE, (uint64)userspace + PGSIZE, PGSIZE, PTE_PLV3 | PTE_MAT_CC | PTE_P | PTE_W | PTE_NX);
+    mappages(upgtbl, 2 * PGSIZE, (uint64)userspace + PGSIZE, PGSIZE, PTE_PLV3 | PTE_MAT_CC | PTE_P | PTE_W | PTE_NX | PTE_D);
 
     return (pagetable_t) KERNEL_VA2PA(upgtbl);
 }
@@ -168,8 +168,9 @@ uvminit(uint64 trapframe, char* init_code, int sz)
 void 
 map_stack(pagetable_t pgtbl, uint64 stack_va) 
 {
+    pgtbl = (pagetable_t) KERNEL_PA2VA(pgtbl);
     void* stack = kalloc(KSTACK_SIZE);
     Assert(stack, "out of memory");
     log("map stack va: %lx, pa %lx", stack_va, KERNEL_VA2PA(stack));
-    mappages(pgtbl, stack_va, KERNEL_VA2PA(stack), KSTACK_SIZE, PTE_PLV0 | PTE_MAT_CC | PTE_P | PTE_NX | PTE_W | PTE_RPLV);
+    mappages(pgtbl, stack_va, KERNEL_VA2PA(stack), KSTACK_SIZE, PTE_PLV0 | PTE_MAT_CC | PTE_P | PTE_NX | PTE_W | PTE_RPLV | PTE_D);
 }

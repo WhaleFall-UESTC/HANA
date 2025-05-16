@@ -1,4 +1,6 @@
 #define CSR_SAVE0 0x30
+#define CSR_SAVE1 0x31
+#define CSR_PGDL  0x19
 #define TRAPFRAME_OFFSET 40
 
 .section trampsec
@@ -59,6 +61,12 @@ uservec:
 
 .globl userret
 userret:
+    csrrd   $t0, CSR_PGDL
+    beq     $t0, $a1, load
+    csrwr   $a1, CSR_PGDL
+    invtlb  0x0, $zero, $zero
+
+load:
     # load a0 in trapframe, and restore it in SAVE0
     ld.d    $t0, $a0, 24+TRAPFRAME_OFFSET
     csrwr   $t0, CSR_SAVE0

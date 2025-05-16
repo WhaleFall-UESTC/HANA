@@ -33,6 +33,9 @@
 #define TRAMPOLINE  0xFFFFFFFFFFFFF000UL
 #define TRAPFRAME   (TRAMPOLINE - PGSIZE)
 
+#define MAXVA (1UL << (12 + 9 + 9 + 9))
+#define USER_TRAPFRAME (MAXVA - PGSIZE - PGSIZE)
+
 #define KSTACK(n)   (TRAPFRAME - (2 * (n)) * PGSIZE)
 
 
