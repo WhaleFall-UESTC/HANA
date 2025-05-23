@@ -15,6 +15,7 @@ QEMUOPTS := -machine virt -kernel $(KERNEL) -m $(MEM) -nographic -smp $(SMP) -bi
         	-drive file=$(DISK),if=none,format=raw,id=x1 -device virtio-blk-device,drive=x1,bus=virtio-mmio-bus.1
 RISCV_CFLAGS = -mcmodel=medany -march=rv64imafd -mabi=lp64
 RISCV_CFLAGS += -DARCH_RISCV 
+RISCV_CFLAGS += -DBIOS_SBI
 
 else ifeq ($(ARCH), loongarch)
 KERNEL := kernel-la
@@ -53,7 +54,6 @@ CFLAGS += -I $(KERNEL_SRC)/include -I $(ARCH_SRC)/include -I $(KERNEL_SRC)/test/
 CFLAGS += -MD -MP -MF $@.d
 CFLAGS += -Wno-unused-va$(@F).driable -Wno-unused-function
 CFLAGS += -DDEBUG 
-CFLAGS += -DBIOS_SBI
 
 ASFLAGS = $(CFLAGS) -D__ASSEMBLY__
 LDFLAGS = -nostdlib -T $(ARCH_SRC)/kernel.ld

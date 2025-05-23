@@ -4,26 +4,20 @@
 #include <klib.h>
 #include <platform.h>
 #include <debug.h>
-
-#ifdef ARCH_RISCV
 #include <riscv.h>
-#endif
-
 
 extern char etext[];
+extern char end[];
 extern char trampoline[];
 extern char *init_stack_top;
 
 pagetable_t kernel_pagetable;
 
-static inline pagetable_t
-alloc_pagetable()
+void
+kinit()
 {
-    pagetable_t pgtbl = (pagetable_t) kalloc(PGSIZE);
-    memset(pgtbl, 0, PGSIZE);
-    return pgtbl;
+    kmem_init((uint64)end, PHYSTOP);
 }
-
 
 void 
 kvminit()
@@ -31,6 +25,7 @@ kvminit()
     kernel_pagetable = kvmmake();
     // mappages(kernel_pagetable, KSTACK(0), (uint64)init_stack_top, PGSIZE, PTE_R | PTE_W);
 }
+
 
 // set pagetable and enable paging
 void
@@ -40,7 +35,7 @@ kvminithart()
     sfence_vma();
 
     // init_stack is in rodata
-    // which va mapped to the same pa
+    // whose va mapped to the same pa
 }
 
 
@@ -98,7 +93,7 @@ walk(pagetable_t pgtbl, uint64 va, int alloc)
 
 
 void
-mappages(pagetable_t pgtbl, uint64 va, uint64 pa, uint64 sz, int flags)
+mappages(pagetable_t pgtbl, uint64 va, uint64 pa, uint64 sz, uint64 flags)
 {
     uint64 start_va = PGROUNDDOWN(va);
     uint64 end_va = PGROUNDUP(va + sz - 1);
@@ -203,3 +198,12 @@ uvmcopy(pagetable_t cpgtbl, pagetable_t ppgtbl, uint64 sz)
         } while (addr < sz && !IS_PGALIGNED(ppte));
     }
 }
+
+void 
+map_stack(pagrtable_t pgtbl, uint64 stack_va) 
+{
+    void* stack = kalloc(KSTACK_SIZE);
+    Assert(stack, "out of memory");
+    mappages(pgtbl, stack_va, (uint64)stack, KSTACK_SIZE, PTE_R | PTE_W);
+}
+

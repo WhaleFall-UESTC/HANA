@@ -16,8 +16,9 @@
 // #include <drivers/virtio.h>
 
 #ifdef ARCH_RISCV
-#include <drivers/uart.h>
 #include <riscv.h>
+#elif defined(ARCH_LOONGARCH)
+#include <loongarch.h>
 #endif
 
 #include <testdefs.h>
@@ -27,14 +28,12 @@ char *init_stack_top = &init_stack[KSTACK_SIZE];
 
 struct cpu cpus[NCPU];
 
-extern char end[];
-
 int 
 main()
 {
     uart_init();
     out("Initialize uart0");
-    kinit((uint64) end, PHYSTOP);
+    kinit();
     kvminit();
     out("Initialize vm");
     kvminithart();

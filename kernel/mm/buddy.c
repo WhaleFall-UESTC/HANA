@@ -77,13 +77,12 @@ buddy_init(uint64 start, uint64 end)
 {
     uint64 s = PGROUNDUP(start);
     uint64 e = PGROUNDDOWN(end);
+    debug("buddy alloc %lx - %lx", s, e);
     uint64 npages = ((e - s) >> PGSHIFT);
     uint64 npages_copy = npages;
-
-    log("start at %p, end at %p", (void*)s, (void*)e);
-    log("npages: %#lx, size is: %#lx", npages, npages << PGSHIFT);
+    debug("npages: %#lx, size is: %#lx", npages, npages << PGSHIFT);
     memset(&zone, 0, sizeof(struct zone));
-    assert(s <= e);
+    Assert(s <= e, "Get s %lx, but e %lx", s, e);
     // log("compute the number of init blocks for each free_area");
 
     // compute the number of init blocks for each free_area
@@ -182,7 +181,7 @@ buddy_free_helper(void* addr, int order)
     struct block* buddy = (struct block*) BUDDY_BLOCK(addr, order);
     if (order < MAX_ORDER - 1 
         && buddy->magic == BUDDY_MAGIC && buddy->order == order  
-        && IN_KERNEL(buddy->prev) && IN_KERNEL(buddy->next))
+        && IN_RAM(buddy->prev) && IN_RAM(buddy->next))
     {
         remove(buddy);
         // memset((void*) BUDDY_HIGH(addr, order), 0, sizeof(struct block));

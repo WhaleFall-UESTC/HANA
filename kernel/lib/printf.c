@@ -1,10 +1,8 @@
 
 #include <stdarg.h>
 #include <klib.h>
-
-#ifdef ARCH_RISCV 
 #include <drivers/uart.h>
-#endif
+
 
 #define ZEROPAD 1   // defalut blank pad
 #define BIN     2
@@ -35,6 +33,7 @@ skip_atoi(const char** s)
     return i;
 }
 
+#ifdef ARCH_RISCV
 extern void irq_pushoff();
 extern void irq_popoff();
 
@@ -46,6 +45,15 @@ write(char *buf, size_t n)
         putchar(buf[i]);
     irq_popoff();
 }
+#elif defined(ARCH_LOONGARCH)
+// loongarch has not implement irq
+static inline void
+write(char *buf, size_t n)
+{
+    for (int i = 0; i < n; i++)
+        putchar(buf[i]);
+}
+#endif
 
 static inline char
 digits(unsigned num)
@@ -57,7 +65,7 @@ digits(unsigned num)
 // number convert to formatted string
 // actually unsupport upper character
 static char* 
-number(char *str, int num, int size, int precision, int type)
+number(char *str, long num, int size, int precision, int type)
 {
     char c = 0, sign = 0, num_str[36];
     int i = 0;
@@ -83,7 +91,7 @@ number(char *str, int num, int size, int precision, int type)
     if (num == 0)
         num_str[i++] = '0';
     else {
-        unsigned unum = num;
+        unsigned long unum = num;
         do {
             num_str[i++] = digits(unum % base);
             unum /= base;

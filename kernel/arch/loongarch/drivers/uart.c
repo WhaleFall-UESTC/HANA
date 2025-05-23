@@ -1,9 +1,5 @@
-#include <platform.h>
 #include <common.h>
-#include <riscv.h>
-#include <trap/context.h>
-#include <proc/proc.h>
-#include <locking/spinlock.h>
+#include <mm/memlayout.h>
 
 #define RHR 0       // receive holding register
 #define THR 0       // transmit holding register
@@ -33,7 +29,7 @@
 #define IIR_RX_READY    (1 << 3)
 #define IIR_RX_TIMEOUT  (1 << 6)
 
-#define UART_REG(reg) ((volatile uint8 *)(VIRT_UART0 + reg))
+#define UART_REG(reg) ((volatile uint8 *)(UART0 + reg))
 #define uart_read_reg(reg) (*UART_REG(reg))
 #define uart_write_reg(reg, v) (*UART_REG(reg) = v)
 
@@ -60,8 +56,6 @@ static inline char uart_buf_read() {
 
 typedef int (*putchar_t)(int);
 putchar_t put_char;
-typedef int (*getchar_t)();
-getchar_t get_char;
 
 int uart_putc_sync(int c);
 
@@ -71,10 +65,6 @@ int sbi_console_putc(int c) {
     sbiret_t ret = sbi_console_putchar(c);
     return ret.error == SBI_SUCCESS ? ret.value : -1;
 }
-int sbi_console_getc() {
-    sbiret_t ret = sbi_console_getchar();
-    return ret.error == SBI_SUCCESS ? ret.value : -1;
-}
 #endif
 
 void 
@@ -82,7 +72,6 @@ uart_init()
 {
     #ifdef BIOS_SBI
     put_char = sbi_console_putc;
-    get_char = sbi_console_getc;
     return;
     #else
 
@@ -126,72 +115,3 @@ uart_putc_sync(int c)
     return ret;
 }
 
-// transmit all characters in uart_buf
-static void
-uart_start()
-{
-    while (1) {
-        if (uart_buf_empty()) {
-            // disable TX interrupt
-            uart_write_reg(IER, IER_RX_EN);
-            return;
-        }
-        if ((uart_read_reg(LSR) & LSR_TX_IDLE) == 0) return;
-
-        char c = uart_buf_read();
-
-        wakeup(&uart_tx_r);
-
-        uart_write_reg(THR, c);
-    }
-}
-
-
-void
-uart_putc(int c)
-{
-    // enable TX interrupt
-    uart_write_reg(IER, IER_RX_EN | IER_TX_EN);
-    while (1) {
-        if (uart_buf_full()) {
-            sleep(&uart_tx_r);
-        } else {
-            uart_buf_write(c);
-            uart_start();
-            return;
-        }
-    }
-}
-
-
-int
-uart_getc()
-{
-    if (uart_read_reg(LSR) & 0x01) {
-        return uart_read_reg(RHR);
-    } else {
-        return -1;
-    }
-}
-
-
-int
-uart_isr()
-{
-    uint8 iir = uart_read_reg(IIR);
-    if (iir & IIR_NO_INT) 
-        return -1;
-
-    switch (iir & IIR_ID_MASK) {
-        case IIR_RX_TIMEOUT:
-        case IIR_RX_READY:
-            break;
-        case IIR_TX_EMPTY:
-            uart_start();
-            break;
-        default:
-            return -1;
-    }
-
-    return 0;
-}

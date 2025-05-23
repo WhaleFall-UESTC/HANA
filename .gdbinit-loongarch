@@ -5,6 +5,7 @@ set print pretty on
 set history size 10000
 
 layout split
+b start
 b _start
 b main
 c

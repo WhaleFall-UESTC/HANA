@@ -34,12 +34,13 @@ static inline void irq_store(int *flags) {
     }
 }
 
-#endif
-
 int irq_register(uint32, irq_handler_t, void *);
 void irq_free(uint32);
 void irq_response(void);
 void irq_init(void);
+
+#endif
+
 void irq_pushoff();
 void irq_popoff();
 
