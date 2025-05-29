@@ -1,4 +1,5 @@
-#pragma once
+#ifndef __ARCH_H__
+#define __ARCH_H__
 
 #define PTE_V (1L << 0)
 #define PTE_R (1L << 1)
@@ -408,3 +409,5 @@ sfence_vma()
       : "r"(&(var)), "r"(value) \
       : "memory");              \
 })
+
+#endif // __ARCH_H__

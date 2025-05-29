@@ -10,7 +10,7 @@
 #include <klib.h>
 
 #ifdef ARCH_RISCV
-#include <riscv.h>
+#include <arch.h>
 #endif
 
 #define VIRTIO_BLK_DEV_NAME "virtio-blk"

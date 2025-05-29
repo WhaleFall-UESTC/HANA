@@ -3,7 +3,7 @@
 #include <debug.h>
 
 #ifdef ARCH_RISCV
-#include <riscv.h>
+#include <arch.h>
 #elif defined(ARCH_LOONGARCH)
 #include <loongarch.h>
 #endif

@@ -10,7 +10,7 @@
 #include <trap/trap.h>
 
 #ifdef ARCH_RISCV
-#include <riscv.h>
+#include <arch.h>
 #endif
 
 struct proc* proc_list;

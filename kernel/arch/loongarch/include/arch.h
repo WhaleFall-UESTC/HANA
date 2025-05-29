@@ -1,4 +1,5 @@
-#pragma once
+#ifndef __ARCH_H__
+#define __ARCH_H__
 
 #define PALEN 48
 #define VALEN 48
@@ -47,12 +48,9 @@ typedef pte_t *pagetable_t;
 
 #define perCore_EXT_IOIsr    0x1800  // 路由至当前处理器核的扩展 IO 中断的中断状态
 #define EXT_IOIsr(hart)      (perCore_EXT_IOIsr + (hart) * 0x100)
-#define EXT_IOImap(n)        (0x14c0 + (n))  // EXT_IOI[32(n+1)-1 :32n]的引脚路由方式
-#define EXT_IOImap_Core(n)   (0x1c00 + (n))  // EXT_IOI[n]的处理器核路由方式
-#define EXT_IOI_node_type(n) (0x14a0 + (n))  // 16 个结点的映射向量类型n
-
-#define UART0_IRQ 2
-
+#define EXT_IOImap_Base      0x14c0 // EXT_IOI[32(n+1)-1 :32n]的引脚路由方式
+#define EXT_IOImap_Core_Base 0x1c00 // EXT_IOI[n]的处理器核路由方式
+#define EXT_IOI_node_type_Base 0x14a0 // 16 个结点的映射向量类型n
 
 static inline uint32 __iocsrrd_w(uint64 iocsr) {
     uint32 val;
@@ -635,3 +633,5 @@ intr_get()
 
 // Invalidate TLB Entry
 #define invtlb() asm volatile("invtlb  0x0, $zero, $zero")
+
+#endif // __ARCH_H__

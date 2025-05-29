@@ -1,25 +1,8 @@
 #include <common.h>
-#include <klib.h>
-#include <loongarch.h>
 #include <debug.h>
+#include <arch.h>
 #include <mm/mm.h>
 #include <mm/memlayout.h>
-#include <trap/trap.h>
-#include <trap/context.h>
-#include <irq/interrupt.h>
-#include <proc/proc.h>
-#include <proc/sched.h>
-
-typedef int (*putchar_t)(int);
-extern putchar_t put_char;
-
-extern void timer_enable();
-
-// temporary stack for boot
-char init_stack[KSTACK_SIZE * NCPU] __attribute__((aligned(PGSIZE)));
-struct cpu cpus[NCPU];
-
-void uart_init(void);
 
 void __info_exception() {
     Log(ANSI_FG_RED, "ERA: %lx", r_csr_era());
@@ -50,29 +33,6 @@ void test_kvm() {
     PASS("pass kvm test");
 }
 
-int main() {
-    uart_init();
-    debug("CRMD: %lx", r_csr_crmd());
-    debug("DMW0: %lx", r_csr_dmw0());
-    PASS("loongarch64 start!!!");
-
-    kinit();
-    log("kinit");
-    kvminit();
-    log("kvminit");
-    kvminithart();
+void test_arch() {
     test_kvm();
-
-    trap_init();
-    trap_init_hart();
-    log("trap init");
-    
-    proc_init();
-
-    intr_on();
-    timer_enable();
-
-    debug("tcfg: %lx ecfg: %lx crmd:%lx", r_csr_tcfg(), r_csr_ecfg(), r_csr_crmd());
-    
-    scheduler();
 }

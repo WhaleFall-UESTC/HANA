@@ -4,7 +4,7 @@
 #include <klib.h>
 #include <platform.h>
 #include <debug.h>
-#include <riscv.h>
+#include <arch.h>
 
 extern char etext[];
 extern char end[];

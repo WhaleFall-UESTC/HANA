@@ -4,7 +4,7 @@
 #include <klib.h>
 
 #ifdef ARCH_RISCV
-#include <riscv.h>
+#include <arch.h>
 #endif
 
 #define is_power_of_2(x) ((x) != 0 && (((x) & ((x) - 1)) == 0))

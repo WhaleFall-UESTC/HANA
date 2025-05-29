@@ -2,12 +2,7 @@
 #define __MM_H__
 
 #include <klib.h>
-
-#ifdef ARCH_RISCV
-#include <riscv.h>
-#elif defined(ARCH_LOONGARCH)
-#include <loongarch.h>
-#endif
+#include <arch.h>
 
 extern pagetable_t kernel_pagetable;
 

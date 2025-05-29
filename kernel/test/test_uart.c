@@ -1,9 +1,7 @@
 #include <common.h>
 
-#ifdef ARCH_RISCV
-#include <riscv.h>
+#include <arch.h>
 #include <drivers/uart.h>
-#endif
 
 #include <klib.h>
 #include <debug.h>

@@ -1,6 +1,8 @@
 #ifndef __TRAP_H__
 #define __TRAP_H__
 
+#include <arch.h>
+
 struct trapframe {
     /*   0 */ uint64 kernel_pgtbl;  // kernel page table
     /*   8 */ uint64 kernel_sp;     // top of process's kernel stack

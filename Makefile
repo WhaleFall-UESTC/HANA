@@ -1,4 +1,4 @@
-ARCH ?= riscv
+ARCH ?= loongarch
 BUILD_DIR := build/$(ARCH)
 FS := rootfs.img
 SMP := 1
@@ -44,6 +44,7 @@ OBJDUMP = $(TOOLPREFIX)objdump
 
 KERNEL_SRC = kernel
 ARCH_SRC = $(KERNEL_SRC)/arch/$(ARCH)
+ARCH_TEST_SRC = $(KERNEL_SRC)/test/arch/$(ARCH)
 
 KERNELDUMP = $(KERNEL).asm
 
@@ -62,7 +63,9 @@ LDFLAGS = -nostdlib -T $(ARCH_SRC)/kernel.ld
 SRC_S = $(shell find $(ARCH_SRC) -type f -name '*.S')
 
 SRC_C := $(shell find $(ARCH_SRC) -type f -name '*.c') \
+		 $(shell find $(ARCH_TEST_SRC) -type -f name '*.c') \
 		 $(shell find $(KERNEL_SRC) -type f -name '*.c' \
+		 	-not -path '$(KERNEL_SRC)/test/arch/*' \
 			-not -path '$(KERNEL_SRC)/arch/*')   # do not delete this line
 
 OBJS = $(addprefix $(BUILD_DIR)/, $(SRC_C:.c=.o) $(SRC_S:.S=.o))

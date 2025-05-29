@@ -3,7 +3,7 @@
 
 #include <irq/interrupt.h>
 
-/* arch/riscv/drivers/uart.c */
+/* arch/<arch>/drivers/uart.c */
 void            uart_init(void);
 int             uart_putc_sync(int c);
 void            uart_putc(int c);

@@ -1,5 +1,5 @@
 #include <common.h>
-#include <riscv.h>
+#include <arch.h>
 #include <platform.h>
 #include <drivers/plic.h>
 

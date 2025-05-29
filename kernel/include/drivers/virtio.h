@@ -5,7 +5,7 @@
 #include <io/blk.h>
 
 #ifdef ARCH_RISCV
-#include <riscv.h>
+#include <arch.h>
 #endif
 
 #define VIRTIO_MAGIC 0x74726976

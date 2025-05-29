@@ -2,6 +2,7 @@
 #define __INTERRUPT_H__
 
 #include <common.h>
+#include <arch.h>
 
 typedef uint32 irqret_t;
 typedef irqret_t (*irq_handler_t)(uint32, void*);
@@ -15,31 +16,10 @@ typedef irqret_t (*irq_handler_t)(uint32, void*);
 #define DEFAULT_PRI 2
 #define DEFAULT_THRESHOLD 0
 
-#ifdef ARCH_RISCV
-#include <riscv.h>
-
-static inline void irq_save(int *flags) {
-    if(intr_get()) {
-        *flags = 1;
-        intr_off();
-    }
-    else {
-        *flags = 0;
-    }
-}
-
-static inline void irq_store(int *flags) {
-    if(*flags) {
-        intr_on();
-    }
-}
-
 int irq_register(uint32, irq_handler_t, void *);
 void irq_free(uint32);
 void irq_response(void);
 void irq_init(void);
-
-#endif
 
 void irq_pushoff();
 void irq_popoff();

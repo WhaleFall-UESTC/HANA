@@ -27,6 +27,7 @@ int puts(char* buf);
 #define log(info, ...)  Log(ANSI_FG_BLUE, info, ## __VA_ARGS__)
 #define error(info, ...) Log(ANSI_FG_RED, info, ## __VA_ARGS__)
 #define warn(info, ...) Log(ANSI_FG_YELLOW, info, ##__VA_ARGS__)
+#define info(info, ...) Log(ANSI_FG_WHITE, info, ##__VA_ARGS__)
 
 #ifdef DEBUG
 #define debug(info, ...) Log(ANSI_FG_MAGENTA, info, ##__VA_ARGS__)

@@ -1,5 +1,5 @@
 #include <common.h>
-#include <riscv.h>
+#include <arch.h>
 #include <sbi/sbi.h>
 
 sbiret_t 

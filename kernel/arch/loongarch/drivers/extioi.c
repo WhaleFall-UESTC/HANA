@@ -1,24 +1,40 @@
 #include <common.h>
-#include <loongarch.h>
+#include <arch.h>
 #include <debug.h>
+#include <drivers/intc.h>
+
+#define ioscr_set_bit(base, cnt) \
+    iocsr_writeq((base) + ((cnt) >> 3UL), \
+        iocsr_readq((base) + ((cnt) >> 3UL)) | (0x1UL << ((cnt) & 0x7UL)));
+#define ioscr_reset_bit(base, cnt) \
+    iocsr_writeq((base) + ((cnt) >> 3UL), \
+        iocsr_readq((base) + ((cnt) >> 3UL)) & ~(0x1UL << ((cnt) & 0x7UL)));
 
 void
-extioi_init()
+extioi_init(int hart)
 {
-    // Enable uart0 interrupt
-    iocsr_writeq(EXT_IOIen, 0x1UL << UART0_IRQ);
+    /* extioi[31:0] map to cpu irq pin INT1, other to INT0 */
+    iocsr_writeq(EXT_IOImap_Base, 1);
 
-    // iocsr_writeq(EXT_IOIbounce, 0x1UL << UART0_IRQ);
-
-    // 0-31 intr all mapped to HWI1
-    iocsr_writeq(EXT_IOImap(0), 1);
-
-    // node type1, route intr to core0 
-    iocsr_writeq(EXT_IOImap_Core(UART0_IRQ), 0x01);
-
+    /* nodetype0 set to 1, always trigger at node 0 */
     iocsr_writeq(EXT_IOI_node_type(0), 1);
 }
 
+
+void extioi_enable_irq(int hart, int irq)
+{
+    // iocsr_writeq(EXT_IOIbounce, 0x1UL << UART0_IRQ);
+    /* Enable interrupt */
+    ioscr_set_bit(EXT_IOIen, irq);
+    /* extioi route to core [hart] */
+    iocsr_writeq(EXT_IOImap_Core_Base + irq, 0x1UL << hart);
+}
+
+void extioi_disable_irq(int hart, int irq)
+{
+    iocsr_writeq(EXT_IOImap_Core_Base + irq, 0);
+    ioscr_reset_bit(EXT_IOIen, irq);
+}
 
 uint64
 extioi_claim(int hart)
@@ -27,7 +43,7 @@ extioi_claim(int hart)
 }
 
 void
-extioi_complete(int irq, int hart)
+extioi_complete(int hart, int irq)
 {
     iocsr_writeq(EXT_IOIsr(hart), irq);
 }

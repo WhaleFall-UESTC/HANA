@@ -9,17 +9,13 @@
 #include <trap/context.h>
 #include <proc/proc.h>
 #include <proc/sched.h>
-#include <io/devinit.h>
+#include <init.h>
 #include <io/blk.h>
 #include <fs/fs.h>
 
 // #include <drivers/virtio.h>
 
-#ifdef ARCH_RISCV
-#include <riscv.h>
-#elif defined(ARCH_LOONGARCH)
-#include <loongarch.h>
-#endif
+#include <arch.h>
 
 #include <testdefs.h>
 
@@ -33,11 +29,21 @@ main()
 {
     uart_init();
     out("Initialize uart0");
+
+#ifdef ARCH_LOONGARCH
+    debug("CRMD: %lx", r_csr_crmd());
+    debug("DMW0: %lx", r_csr_dmw0());
+    PASS("loongarch64 start!!!");
+#endif
+
     kinit();
     kvminit();
     out("Initialize vm");
     kvminithart();
     out("Enable paging");
+
+    test_arch();
+
     trap_init();
     trap_init_hart();
     out("Initialize trap");
@@ -52,6 +58,12 @@ main()
     out("Initialize vfs");
 
     test_proc_init((uint64) test);
+
+#ifdef ARCH_LOONGARCH
+    intr_on();
+    timer_enable();
+    debug("tcfg: %lx ecfg: %lx crmd:%lx", r_csr_tcfg(), r_csr_ecfg(), r_csr_crmd());
+#endif 
 
     out("call scheduler");
     scheduler();

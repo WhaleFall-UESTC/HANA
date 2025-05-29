@@ -3,7 +3,7 @@
 #include <debug.h>
 
 #ifdef ARCH_RISCV
-#include <riscv.h>
+#include <arch.h>
 #endif
 
 #include <mm/mm.h>

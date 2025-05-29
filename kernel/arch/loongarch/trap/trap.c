@@ -1,5 +1,5 @@
 #include <common.h>
-#include <loongarch.h>
+#include <arch.h>
 #include <debug.h>
 #include <mm/mm.h>
 #include <mm/memlayout.h>
@@ -50,6 +50,7 @@ trap_init()
 
     // register handler
     register_trap_handler(INTERRUPT, TI, timer_isr);
+    register_trap_handler(INTERRUPT, HWI0, irq_response);
 }
 
 void 
