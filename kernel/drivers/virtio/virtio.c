@@ -129,74 +129,64 @@ void virtq_show(struct virtq_info *virtq_info)
 	}
 }
 
-void virtio_check_capabilities(virtio_regs *regs)
+void virtio_check_capabilities(virtio_regs *regs, struct virtio_cap *caps, uint32 n)
 {
-	// uint32 i;
-	// uint32 bank = 0;
-	// uint32 driver = 0;
-	// uint32 device;
+	uint32 i;
+	uint32 sel = 0;
+	uint32 driver = 0;
+	uint32 device;
 
-	uint64 features = READ32(regs->HostFeatures);
-	
-    features &= ~(1 << VIRTIO_BLK_F_RO);
-    features &= ~(1 << VIRTIO_BLK_F_SCSI);
-    features &= ~(1 << VIRTIO_BLK_F_CONFIG_WCE);
-    features &= ~(1 << VIRTIO_BLK_F_MQ);
-    features &= ~(1 << VIRTIO_F_ANY_LAYOUT);
-    features &= ~(1 << VIRTIO_RING_F_EVENT_IDX);
-    features &= ~(1 << VIRTIO_RING_F_INDIRECT_DESC);
-    WRITE32(regs->GuestFeatures, features);
+	WRITE32(regs->HostFeaturesSel, sel);
+	mb();
+	device = READ32(regs->HostFeatures);
 
-	// WRITE32(regs->HostFeaturesSel, bank);
-	// mb();
-	// device = READ32(regs->HostFeatures);
-
-	// for (i = 0; i < n; i++)
-	// {
-	// 	if (caps[i].bit / 32 != bank)
-	// 	{
-	// 		/* Time to write our selected bits for this bank */
-	// 		WRITE32(regs->GuestFeaturesSel, bank);
-	// 		mb();
-	// 		WRITE32(regs->GuestFeatures, driver);
-	// 		if (device)
-	// 		{
-	// 			/*log("%s: device supports unknown bits"
-	// 				   " 0x%x in bank %u\n", whom, device,
-	// 			   bank);*/
-	// 		}
-	// 		/* Now we set these variables for next time. */
-	// 		bank = caps[i].bit / 32;
-	// 		WRITE32(regs->HostFeaturesSel, bank);
-	// 		mb();
-	// 		device = READ32(regs->HostFeatures);
-	// 	}
-	// 	if (device & (1 << caps[i].bit))
-	// 	{
-	// 		if (caps[i].support)
-	// 		{
-	// 			driver |= (1 << caps[i].bit);
-	// 		}
-	// 		else
-	// 		{
-	// 			/*log("virtio supports unsupported option %s
-	// 			   "
-	// 				   "(%s)\n",
-	// 				   caps[i].name, caps[i].help);*/
-	// 		}
-	// 		/* clear this from device now */
-	// 		device &= ~(1 << caps[i].bit);
-	// 	}
-	// }
-	// /* Time to write our selected bits for this bank */
-	// WRITE32(regs->GuestFeaturesSel, bank);
-	// mb();
-	// WRITE32(regs->GuestFeatures, driver);
-	// if (device)
-	// {
-	// 	/*log("%s: device supports unknown bits"
-	// 		   " 0x%x in bank %u\n", whom, device, bank);*/
-	// }
+	for (i = 0; i < n; i++)
+	{
+		if (caps[i].bit / 32 != sel)
+		{
+			/* Time to write our selected bits for this sel */
+			WRITE32(regs->GuestFeaturesSel, sel);
+			mb();
+			WRITE32(regs->GuestFeatures, driver);
+			if (device)
+			{
+				/*log("%s: device supports unknown bits"
+					   " 0x%x in sel %u\n", whom, device,
+				   sel);*/
+			}
+			/* Now we set these variables for next time. */
+			sel = caps[i].bit / 32;
+			WRITE32(regs->HostFeaturesSel, sel);
+			mb();
+			device = READ32(regs->HostFeatures);
+		}
+		if (device & (1 << caps[i].bit))
+		{
+			if (caps[i].support)
+			{
+				driver |= (1 << caps[i].bit);
+			}
+			else
+			{
+				/*log("virtio supports unsupported option %s
+				   "
+					   "(%s)\n",
+					   caps[i].name, caps[i].help);*/
+			}
+			/* clear this from device now */
+			device &= ~(1 << caps[i].bit);
+		}
+	}
+	/* Time to write our selected bits for this sel */
+	WRITE32(regs->GuestFeaturesSel, sel);
+	mb();
+	WRITE32(regs->GuestFeatures, driver);
+	if (device)
+	{
+		/*log("%s: device supports unknown bits"
+			   " 0x%x in sel %u\n", whom, device, sel);*/
+	}
+	mb();
 }
 
 static int virtio_dev_init(uint64 virt, uint32 intid)

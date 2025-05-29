@@ -21,32 +21,32 @@
  */
 typedef volatile struct __attribute__((aligned(4)))
 {
-    /* 0x000 */ uint32 MagicValue;       // R
-    /* 0x004 */ uint32 Version;          // R
-    /* 0x008 */ uint32 DeviceID;         // R
-    /* 0x00c */ uint32 VendorID;         // R
-    /* 0x010 */ uint32 HostFeatures;     // R
-    /* 0x014 */ uint32 HostFeaturesSel;  // W
+    /* 0x000 */ uint32 MagicValue;      // R
+    /* 0x004 */ uint32 Version;         // R
+    /* 0x008 */ uint32 DeviceID;        // R
+    /* 0x00c */ uint32 VendorID;        // R
+    /* 0x010 */ uint32 HostFeatures;    // R
+    /* 0x014 */ uint32 HostFeaturesSel; // W
     /* 0x018 */ uint32 _reserved0[2];
     /* 0x020 */ uint32 GuestFeatures;    // W
     /* 0x024 */ uint32 GuestFeaturesSel; // W
     /* 0x028 */ uint32 GuestPageSize;    // W
     /* 0x02c */ uint32 _reserved1;
-    /* 0x030 */ uint32 QueueSel;         // W
-    /* 0x034 */ uint32 QueueNumMax;      // R
-    /* 0x038 */ uint32 QueueNum;         // W
-    /* 0x03c */ uint32 QueueAlign;       // W
-    /* 0x040 */ uint32 QueuePFN;         // RW
+    /* 0x030 */ uint32 QueueSel;    // W
+    /* 0x034 */ uint32 QueueNumMax; // R
+    /* 0x038 */ uint32 QueueNum;    // W
+    /* 0x03c */ uint32 QueueAlign;  // W
+    /* 0x040 */ uint32 QueuePFN;    // RW
     /* 0x044 */ uint32 _reserved2[3];
-    /* 0x050 */ uint32 QueueNotify;      // W
+    /* 0x050 */ uint32 QueueNotify; // W
     /* 0x054 */ uint32 _reserved3[3];
-    /* 0x060 */ uint32 InterruptStatus;  // R
-    /* 0x064 */ uint32 InterruptACK;     // W
+    /* 0x060 */ uint32 InterruptStatus; // R
+    /* 0x064 */ uint32 InterruptACK;    // W
     /* 0x068 */ uint32 _reserved4[2];
-    /* 0x070 */ uint32 Status;           // RW
+    /* 0x070 */ uint32 Status; // RW
     /* 0x074 */ uint32 _reserved5[3];
     /* 0x080 */ uint32 _reserved6[0x20];
-    /* 0x100 */ uint32 Config[];         // RW
+    /* 0x100 */ uint32 Config[]; // RW
 } virtio_regs;
 
 #define VIRTIO_STATUS_ACKNOWLEDGE (1)
@@ -119,18 +119,16 @@ struct virtqueue_used
 #define VIRTIO_DEFAULT_QUEUE_SIZE 128
 #define VIRTIO_DEFAULT_ALIGN PGSIZE
 #define VIRTIO_DEFAULT_QUEUE_STRUCT_SIZE 8192
-#define VIRTIO_DEFAULT_QUEUE_PADDING \
-    ( \
-        VIRTIO_DEFAULT_ALIGN - \
+#define VIRTIO_DEFAULT_QUEUE_PADDING                                \
+    (                                                               \
+        VIRTIO_DEFAULT_ALIGN -                                      \
         sizeof(struct virtqueue_desc) * VIRTIO_DEFAULT_QUEUE_SIZE - \
-        sizeof(struct virtqueue_avail) \
-    )
+        sizeof(struct virtqueue_avail))
 
 #define QALIGN(x) (((x) + (VIRTIO_DEFAULT_ALIGN - 1)) & (~(VIRTIO_DEFAULT_ALIGN - 1)))
 static inline unsigned virtq_size(unsigned int qsz)
 {
-    return QALIGN(sizeof(struct virtqueue_desc) * qsz + sizeof(uint16) * (2 + qsz))
-         + QALIGN(sizeof(struct virtqueue_used_elem) * qsz);
+    return QALIGN(sizeof(struct virtqueue_desc) * qsz + sizeof(uint16) * (2 + qsz)) + QALIGN(sizeof(struct virtqueue_used_elem) * qsz);
 }
 
 struct virtqueue
@@ -155,7 +153,7 @@ struct virtq_info
     uint32 seen_used;
     uint32 free_desc;
 
-    volatile struct virtqueue* virtq;
+    volatile struct virtqueue *virtq;
     void *desc_virt[VIRTIO_DEFAULT_QUEUE_SIZE];
 };
 
@@ -253,15 +251,10 @@ struct virtio_net
 struct virtqueue *virtq_create();
 uint32 virtq_alloc_desc(struct virtq_info *virtq_info, void *addr);
 void virtq_free_desc(struct virtq_info *virtq_info, uint32 desc);
-struct virtq_info* virtq_add_to_device(volatile virtio_regs *regs, uint32 queue_sel);
+struct virtq_info *virtq_add_to_device(volatile virtio_regs *regs, uint32 queue_sel);
 void virtq_show(struct virtq_info *virtq_info);
 
-/*
- * General purpose routines for virtio drivers
- */
-// void virtio_check_capabilities(virtio_regs *device, struct virtio_cap *caps,
-//                                uint32 n, char *whom);
-void virtio_check_capabilities(virtio_regs *device);
+void virtio_check_capabilities(virtio_regs *regs, struct virtio_cap *caps, uint32 n);
 
 #define VIRTIO_INDP_CAPS                                              \
     {"VIRTIO_F_RING_INDIRECT_DESC", 28, false,                        \
@@ -277,8 +270,6 @@ void virtio_check_capabilities(virtio_regs *device);
          "a"                                                          \
          " simple way to detect legacy devices or drivers."},
 
-/*
- */
 int virtio_blk_init(volatile virtio_regs *regs, uint32 intid);
 int virtio_net_init(virtio_regs *regs, uint32 intid);
 

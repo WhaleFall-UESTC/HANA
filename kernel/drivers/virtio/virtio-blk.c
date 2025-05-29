@@ -232,19 +232,7 @@ int virtio_blk_init(volatile virtio_regs *regs, uint32 intid)
     vdev = kalloc(sizeof(struct virtio_blk));
 
     // Read and write feature bits
-    // virtio_check_capabilities(regs, blk_caps, nr_elem(blk_caps), "virtio-blk");
-    virtio_check_capabilities(regs);
-
-    uint64 features = READ32(regs->HostFeatures);
-    features &= ~(1 << VIRTIO_BLK_F_RO);
-    features &= ~(1 << VIRTIO_BLK_F_SCSI);
-    features &= ~(1 << VIRTIO_BLK_F_CONFIG_WCE);
-    features &= ~(1 << VIRTIO_BLK_F_MQ);
-    features &= ~(1 << VIRTIO_F_ANY_LAYOUT);
-    features &= ~(1 << VIRTIO_RING_F_EVENT_IDX);
-    features &= ~(1 << VIRTIO_RING_F_INDIRECT_DESC);
-    WRITE32(regs->GuestFeatures, features);
-    mb();
+    virtio_check_capabilities(regs, blk_caps, nr_elem(blk_caps));
 
     WRITE32(regs->Status, READ32(regs->Status) | VIRTIO_STATUS_FEATURES_OK);
 	mb();
