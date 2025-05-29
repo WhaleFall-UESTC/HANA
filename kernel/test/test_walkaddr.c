@@ -1,10 +1,7 @@
 #include <common.h>
 #include <klib.h>
 #include <debug.h>
-
-#ifdef ARCH_RISCV
 #include <arch.h>
-#endif
 
 #include <mm/mm.h>
 #include <mm/memlayout.h>

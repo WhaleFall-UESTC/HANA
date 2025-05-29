@@ -1,11 +1,8 @@
 #ifndef __PROC_H__
 #define __PROC_H__
 
-#ifdef ARCH_RISCV
 #include <trap/context.h>
 #include <trap/trap.h>
-#endif
-
 #include <irq/interrupt.h>
 
 struct proc {

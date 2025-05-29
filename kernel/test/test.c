@@ -1,10 +1,7 @@
 #include <common.h>
 #include <testdefs.h>
 #include <debug.h>
-
-#ifdef ARCH_RISCV
 #include <arch.h>
-#endif
 
 extern void exit(int);
 

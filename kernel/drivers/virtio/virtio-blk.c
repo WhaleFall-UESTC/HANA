@@ -8,10 +8,7 @@
 #include <proc/proc.h>
 #include <io/blk.h>
 #include <klib.h>
-
-#ifdef ARCH_RISCV
 #include <arch.h>
-#endif
 
 #define VIRTIO_BLK_DEV_NAME "virtio-blk"
 

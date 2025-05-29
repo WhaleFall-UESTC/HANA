@@ -1,4 +1,4 @@
-#include <io/devinit.h>
+#include <init.h>
 #include <io/blk.h>
 #include <drivers/virtio.h>
 #include <common.h>
