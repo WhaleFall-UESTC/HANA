@@ -1,10 +1,10 @@
-#include <io/devinit.h>
+#include <init.h>
 #include <io/blk.h>
 #include <drivers/virtio.h>
 #include <common.h>
 #include <debug.h>
 #include <klib.h>
-#include <riscv.h>
+#include <arch.h>
 #include <mm/mm.h>
 
 #define VIRTIO_BLK_DEV_NAME "virtio-blk1"

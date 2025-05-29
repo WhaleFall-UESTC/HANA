@@ -3,10 +3,7 @@
 #include <fs/devfs/devfs.h>
 #include <mm/mm.h>
 #include <fs/fcntl.h>
-
-#ifdef ARCH_RISCV
-#include <drivers/plic.h>
-#endif
+#include <drivers/intc.h>
 
 static void uart_putchar(struct chrdev *chrdev, char c) {
 	putchar(c);
@@ -17,13 +14,11 @@ static char uart_getchar(struct chrdev *chrdev) {
 }
 
 static irqret_t uart_irq_handle(struct chrdev *chrdev) {
-#ifndef BIOS_SBI
 	int ret;
 	ret = uart_isr();
 
 	if(ret < 0)
 		return IRQ_ERR;
-#endif
 	return IRQ_HANDLED;
 }
 

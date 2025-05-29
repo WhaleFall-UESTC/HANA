@@ -64,7 +64,7 @@ struct inode
 // 	int (*symlink) (struct inode *,struct dentry *,const char *);
 // 	int (*mkdir) (struct inode *,struct dentry *,umode_t);
 // 	int (*rmdir) (struct inode *,struct dentry *);
-// int (*mknod) (struct inode *,struct dentry *,umode_t,dev_t);
+// int (*mknod) (struct inode *,struct dentry *,umode_t,devid_t);
 // 	int (*rename) (struct inode *, struct dentry *,
 // 			struct inode *, struct dentry *, unsigned int);
 //     int (*setattr) (struct dentry *, struct iattr *);

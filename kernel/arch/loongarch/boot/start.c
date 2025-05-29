@@ -1,9 +1,10 @@
 #include <common.h>
-#include <loongarch.h>
+#include <arch.h>
 #include <mm/memlayout.h>
+#include <debug.h>
 
-// temporary stack for boot
-char init_stack[KSTACK_SIZE * NCPU] __attribute__((aligned(PGSIZE)));
+extern int main();
+extern void timer_init();
 
 void start() {
     /* set direct mapping windows */
@@ -12,12 +13,11 @@ void start() {
        MAT = CC (Coherent Cache)
        if virtual address is not in the range, it will be translated by page table
     */
-    csr_write(CSR_DMW0, KERNELBASE | CSR_DMW_PLV0 | CSR_DMW_MAT_CC);
-    csr_write(CSR_DMW1, 0);
-    csr_write(CSR_DMW2, 0);
-    csr_write(CSR_DMW3, 0);
+    w_csr_dmw0(DMW_MASK | CSR_DMW_PLV0 | CSR_DMW_MAT_CC);
+    w_csr_dmw1(0);
+    w_csr_dmw2(0);
+    w_csr_dmw3(0);
 
-    csr_write(CSR_TLBRENTRY, 0);
     // current mode PLV0 & disable global interrupt
     uint64 crmd = (CSR_CRMD_PLV0 & ~CSR_CRMD_IE);
     // Enable address mapping
@@ -29,6 +29,14 @@ void start() {
     // the access type depends on DMW MAT
     // else, it depends on page table entry MAT
     crmd |= (CSR_CRMD_DATF_CC | CSR_CRMD_DATM_CC);
-    csr_write(CSR_CRMD, crmd);
+    w_csr_crmd(crmd);
+
     invtlb();
+
+    timer_init();
+
+    main();
+
+    panic("_start should never return");
 }
+

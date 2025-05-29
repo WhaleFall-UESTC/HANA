@@ -216,6 +216,13 @@ void test_fs()
     }
     PASS("read testfile success");
     call_sys_close(fd);
+    if ((fd = call_sys_openat(AT_FDCWD, "testfile", O_RDONLY, 0)) < 0)
+    {
+        error("reopen testfile failed: %d", fd);
+        goto cleanup_file;
+    }
+    PASS("Reopen testfile success");
+    call_sys_close(fd);
     // 创建硬链接
     if ((ret = call_sys_linkat(AT_FDCWD, "testfile", AT_FDCWD, "linkfile", 0)) != 0)
     {
@@ -284,13 +291,18 @@ void test_fs()
     PASS("fstat success");
 // 清理流程
 cleanup_link:
+    log("cleanup link");
     call_sys_unlinkat(AT_FDCWD, "linkfile", 0);
 cleanup_file:
+    log("cleanup file");
     call_sys_unlinkat(AT_FDCWD, "testfile", 0);
 cleanup_chdir:
+    log("cleanup chdir");
     call_sys_chdir("/");
 cleanup_dir:
+    log("cleanup dir");
     call_sys_unlinkat(AT_FDCWD, "/testdir", AT_REMOVEDIR);
 umount:
+    log("umount");
     call_sys_umount2("/", 0);
 }

@@ -1,10 +1,7 @@
 #include <common.h>
 #include <testdefs.h>
 #include <debug.h>
-
-#ifdef ARCH_RISCV
-#include <riscv.h>
-#endif
+#include <arch.h>
 
 extern void exit(int);
 
@@ -12,7 +9,8 @@ void test() {
     // intr_off();
     PASS("test start!!!");
 
-    test_kalloc();
+    // test_slab();
+    // test_kalloc();
 
     // test_uart();
     // test_virtio();

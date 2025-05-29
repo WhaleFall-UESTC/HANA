@@ -12,7 +12,7 @@ struct chrdev_ops;
 
 struct chrdev
 {
-    dev_t devid;
+    devid_t devid;
     uint32 intr;
     char name[CHRDEV_NAME_MAX_LEN];
     const struct chrdev_ops *ops;
@@ -35,12 +35,12 @@ void char_subsys_init(void);
 /**
  * alloc a char device and do initialization
  */
-struct chrdev *chrdev_alloc(dev_t devid, int intr, const char *name, const struct chrdev_ops *ops);
+struct chrdev *chrdev_alloc(devid_t devid, int intr, const char *name, const struct chrdev_ops *ops);
 
 /**
  * initialize a char device
  */
-void chrdev_init(struct chrdev *dev, dev_t devid, int intr, const char *name, const struct chrdev_ops *ops);
+void chrdev_init(struct chrdev *dev, devid_t devid, int intr, const char *name, const struct chrdev_ops *ops);
 
 /**
  * register char device in list
@@ -56,7 +56,7 @@ struct chrdev *chrdev_get_by_name(const char *name);
 /**
  * get a chrdev struct by its device id
  */
-struct chrdev *chrdev_get_by_id(dev_t id);
+struct chrdev *chrdev_get_by_id(devid_t id);
 
 /**
  * general setup for char device irq response

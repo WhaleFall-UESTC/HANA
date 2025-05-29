@@ -102,7 +102,7 @@ void test_kalloc()
 
     for (int i = 0; i < MAX_ORDER - 1; i++)
     {
-        debug("order: %d", i);
+        debug_dynamic("order: %d", i);
         void *tmp = kalloc(PGSIZE << i);
         void *tmp2 = kalloc((PGSIZE << i) + PGSIZE);
         memset(tmp, 0, PGSIZE << i);

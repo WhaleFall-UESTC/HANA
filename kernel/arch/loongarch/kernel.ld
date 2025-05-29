@@ -9,11 +9,14 @@ PHDRS {
 }
 
 SECTIONS {
-    . = 0x80000000;
+    . = 0x9000000000200000;
 
     .text : {
         *(.text._start)
         *(.text .text.*)
+        . = ALIGN(0x1000);
+        _trampoline = .;
+        *(trampsec)
         . = ALIGN(0x1000);
         PROVIDE(etext = .);
     } :text

@@ -1,0 +1,176 @@
+#include <common.h>
+#include <mm/memlayout.h>
+#include <mm/mm.h>
+#include <klib.h>
+#include <debug.h>
+#include <arch.h>
+
+extern char end[], trampoline[];
+extern void tlb_refill();
+
+// store kernel pagetable physical address
+pagetable_t kernel_pagetable;
+
+void
+kinit()
+{
+    kmem_init((uint64)end, RAMTOP);
+}
+
+void 
+tlbinit()
+{
+    w_csr_stlbps(PGSHIFT);
+    w_csr_tlbrehi(PGSHIFT);
+    w_csr_asid(0);
+    w_csr_tlbrentry((uint64)tlb_refill);
+    invtlb();
+}
+
+void 
+kvminit()
+{
+    kernel_pagetable = kvmmake();
+
+    // Sv39-like style
+    // pagetable config
+    w_csr_pwcl((PTBASE | (DIRWIDTH << 5) | (DIRBASE(1) << 10) | (DIRWIDTH << 15) | (DIRBASE(2) << 20) | (DIRWIDTH << 25)) | CSR_PWCL_PTEWidth64);
+    w_csr_pwch(0);
+    w_csr_rvacfg(8);
+}
+
+// set pagetable and enable paging
+void
+kvminithart()
+{
+    // csr_write(CSR_PGDH, (uint64) kernel_pagetable);
+    w_csr_pgdh(KERNEL_VA2PA(kernel_pagetable));
+    tlbinit();
+}
+
+pagetable_t 
+kvmmake()
+{
+    pagetable_t kpgtbl = alloc_pagetable();
+
+    // anything else is mapped by DMW0
+
+    mappages(kpgtbl, TRAMPOLINE, KERNEL_VA2PA(trampoline), PGSIZE, PTE_PLV3 | PTE_MAT_CC | PTE_G | PTE_P);
+
+    return kpgtbl;
+}
+
+
+// find the pte's address of given va
+// when pte in L2, L1 is NULL and alloc is set
+// walk will alloc pagetable
+// if alloc == 0 or kalloc failed, return NULL
+pte_t*
+walk(pagetable_t pgtbl, uint64 va, int alloc)
+{
+    va >>= 12;
+    pgtbl = (pagetable_t) KERNEL_PA2VA(pgtbl);
+    for (int shift = 18; shift > 0; shift -= 9) {
+        int idx = (va >> shift) & 0x1ff;
+        pte_t* pte = pgtbl + idx;
+        if ((*pte & PAMASK) == 0) {
+            if (alloc == WALK_NOALLOC || (*pte = PA2PTE(alloc_pagetable())) == 0)
+                return 0;
+        } 
+        pgtbl = (pagetable_t) KERNEL_PA2VA(PTE2PA(*pte));
+    } 
+
+    return (pgtbl + (va & 0x1ff));
+}
+
+
+void
+mappages(pagetable_t pgtbl, uint64 va, uint64 pa, uint64 sz, uint64 flags)
+{
+    uint64 start_va = PGROUNDDOWN(va);
+    uint64 end_va = PGROUNDUP(va + sz - 1);
+    int npages = (end_va - start_va) >> PGSHIFT;
+    pte_t* pte = walk(pgtbl, va, WALK_ALLOC);
+    assert(pte);
+    int nr_mapped = 0;
+
+    while (nr_mapped++ < npages) {
+        *pte = PA2PTE(pa) | flags | PTE_V;
+        pte++;
+        pa += PGSIZE;
+        // if this is the last pte in L0 pgtbl, start from another pgtbl
+        if (IS_PGALIGNED(pte)) {
+            pte = walk(pgtbl, va + nr_mapped * PGSIZE, WALK_ALLOC);
+            assert(pte);
+        }
+    }
+}
+
+
+// Look up va in given pgtbl
+// return its pa or NULL if not mapped
+uint64
+walkaddr(pagetable_t pgtbl, uint64 va)
+{
+    pgtbl = (pagetable_t) KERNEL_PA2VA(pgtbl);
+    pte_t* pte = walk(pgtbl, va, WALK_NOALLOC);
+
+    if ((*pte & PTE_V) == 0)
+        return 0;
+
+    uint64 offset = va & (PGSIZE - 1);
+    uint64 pa = (uint64) PTE2PA(*pte) | offset;
+
+    return pa;
+}
+
+
+// make user pagetable
+// user_pa: address of a 2 PGSIZE space
+pagetable_t
+uvmmake(uint64 trapframe)
+{
+    pagetable_t upgtbl = alloc_pagetable();
+
+    // map TRAMPOLINE
+    // mappages(upgtbl, TRAMPOLINE, (uint64)trampoline, PGSIZE, PTE_PLV3 | PTE_MAT_CC | PTE_P);
+
+    // map TRAPFRAME
+    mappages(upgtbl, TRAPFRAME, KERNEL_VA2PA(trapframe) , PGSIZE, PTE_PLV0 | PTE_RPLV | PTE_MAT_CC | PTE_P | PTE_W | PTE_NX | PTE_D);
+
+    return upgtbl;
+}
+
+
+// just for init proc
+pagetable_t
+uvminit(uint64 trapframe, char* init_code, int sz)
+{
+    assert(init_code);
+    assert(sz <= PGSIZE);
+    
+    void* userspace = kalloc(2*PGSIZE);
+    memmove(userspace, init_code, sz);
+    uint64 userspace_pa = KERNEL_VA2PA(userspace);
+
+    pagetable_t upgtbl = uvmmake(trapframe);
+
+    mappages(upgtbl, 0, userspace_pa, PGSIZE, PTE_PLV3 | PTE_MAT_CC | PTE_P);
+
+    // map guard page, for uvmcpoy
+    mappages(upgtbl, PGSIZE, 0, PGSIZE, 0);
+
+    mappages(upgtbl, 2 * PGSIZE, userspace_pa + PGSIZE, PGSIZE, PTE_PLV3 | PTE_MAT_CC | PTE_P | PTE_W | PTE_NX | PTE_D);
+
+    return (pagetable_t) KERNEL_VA2PA(upgtbl);
+}
+
+void 
+map_stack(pagetable_t pgtbl, uint64 stack_va) 
+{
+    pgtbl = (pagetable_t) KERNEL_PA2VA(pgtbl);
+    void* stack = kalloc(KSTACK_SIZE);
+    Assert(stack, "out of memory");
+    // log("map stack va: %lx, pa %lx", stack_va, KERNEL_VA2PA(stack));
+    mappages(pgtbl, stack_va, KERNEL_VA2PA(stack), KSTACK_SIZE, PTE_PLV0 | PTE_MAT_CC | PTE_P | PTE_NX | PTE_W | PTE_RPLV | PTE_D);
+}

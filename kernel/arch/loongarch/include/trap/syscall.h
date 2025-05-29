@@ -1,0 +1,12 @@
+#ifndef __LOONGARCH_SYSCALL_H__
+#define __LOONGARCH_SYSCALL_H__
+
+#include <common.h>
+
+#define __sys_get_register(n) \
+    myproc()->trapframe->a##n
+
+#define argraw(n) \
+    p->trapframe->a##n
+
+#endif // __LOONGARCH_SYSCALL_H__

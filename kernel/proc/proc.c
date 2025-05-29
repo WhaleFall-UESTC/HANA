@@ -1,11 +1,7 @@
 #include <common.h>
 #include <klib.h>
 #include <debug.h>
-
-#ifdef ARCH_RISCV
-#include <riscv.h>
-#endif
-
+#include <arch.h>
 #include <irq/interrupt.h>
 #include <trap/context.h>
 #include <proc/proc.h>
@@ -21,7 +17,11 @@ volatile int next_pid = 1;
 struct proc* init_proc = NULL;
 
 // dead loop
+#ifdef ARCH_RISCV
 char init_code[] = {0x67, 0x00, 0x00, 0x00};
+#elif defined(ARCH_LOONGARCH)
+char init_code[] = {0x00, 0x00, 0x00, 0x50};
+#endif
 
 int
 alloc_pid()
@@ -41,9 +41,7 @@ alloc_proc()
     p->pid = alloc_pid();
     p->stack = KSTACK(p->pid);
 
-    void* stack = kalloc(KSTACK_SIZE);
-    Assert(stack, "out of memory");
-    mappages(kernel_pagetable, p->stack, (uint64)stack, KSTACK_SIZE, PTE_R | PTE_W);
+    map_stack(kernel_pagetable, p->stack);
 
     p->state = INIT;
     p->killed = 0;
@@ -53,8 +51,8 @@ alloc_proc()
 
     memset(&p->context, 0, sizeof(struct context));
     // leave space for pt_regs
-    p->context.sp = p->stack + KSTACK_SIZE;
-    p->context.ra = (uint64) dive_to_user; 
+    context_set_stack(p, p->stack + KSTACK_SIZE);
+    context_set_init_func(p, (uint64) dive_to_user);
     
     p->next = NULL;
     p->parent = NULL;
@@ -62,9 +60,11 @@ alloc_proc()
     p->cwd = strdup("/");
     Assert(p->cwd, "out of memory");
 
+    #ifdef ARCH_RISCV
     p->fdt = (struct files_struct*) kalloc(sizeof(struct files_struct));
     Assert(p->fdt, "out of memory");
     fdt_init(p->fdt, "fdt_lock");
+    #endif
 
     return p;
 }
@@ -79,8 +79,10 @@ proc_init()
     p->pagetable = uvminit((uint64)p->trapframe, init_code, sizeof(init_code));
     p->sz = 2*PGSIZE;
 
-    p->trapframe->epc = 0;
-    p->trapframe->sp = 3*PGSIZE;
+    trapframe_set_era(p, 0);
+    trapframe_set_stack(p, 3*PGSIZE);
+    // p->trapframe->epc = 0;
+    // p->trapframe->sp = 3*PGSIZE;
 
     strcpy(p->name, "init");
     
@@ -97,7 +99,7 @@ void
 test_proc_init(uint64 test_func)
 {
     struct proc* test_proc = alloc_proc();
-    test_proc->context.ra = test_func;
+    context_set_init_func(test_proc, test_func);
 
     strcpy(test_proc->name, "test");
     test_proc->state = RUNNABLE;
@@ -178,7 +180,7 @@ kill(int pid)
     return -1;
 }
 
-
+#ifdef ARCH_RISCV
 // Create new process, copying form parent
 int
 fork()
@@ -196,7 +198,7 @@ fork()
     // copy trapframe
     *(cp->trapframe) = *(p->trapframe);
     // let fork return 0 in child proc
-    cp->trapframe->a0 = 0;
+    trapframe_set_return(cp, 0);
 
     // files
 
@@ -205,4 +207,4 @@ fork()
 
     return cp->pid;
 }
-
+#endif

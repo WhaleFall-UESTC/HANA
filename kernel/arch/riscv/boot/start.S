@@ -8,7 +8,7 @@ _start:
 
     # set initial stack
     la sp, init_stack
-    li t0, 4096
+    li t0, 8192
     mul a0, tp, t0
     add a0, a0, t0
     add sp, sp, a0

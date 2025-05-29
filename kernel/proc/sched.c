@@ -8,10 +8,7 @@
 #include <proc/proc.h>
 #include <proc/sched.h>
 #include <trap/trap.h>
-
-#ifdef ARCH_RISCV
-#include <riscv.h>
-#endif
+#include <arch.h>
 
 struct proc* proc_list;
 

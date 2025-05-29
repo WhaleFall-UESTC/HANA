@@ -11,6 +11,7 @@
 #define ANSI_FG_MAGENTA "\033[35m"
 #define ANSI_FG_CYAN    "\033[36m"
 #define ANSI_FG_WHITE   "\033[37m"
+#define ANSI_OVERWRITE_MAGENTA "\033[1A\033[2K\r\033[35m"
 
 int printf(const char *fmt, ...);
 int puts(char* buf);
@@ -26,9 +27,11 @@ int puts(char* buf);
 #define log(info, ...)  Log(ANSI_FG_BLUE, info, ## __VA_ARGS__)
 #define error(info, ...) Log(ANSI_FG_RED, info, ## __VA_ARGS__)
 #define warn(info, ...) Log(ANSI_FG_YELLOW, info, ##__VA_ARGS__)
+#define info(info, ...) Log(ANSI_FG_WHITE, info, ##__VA_ARGS__)
 
 #ifdef DEBUG
 #define debug(info, ...) Log(ANSI_FG_MAGENTA, info, ##__VA_ARGS__)
+#define debug_dynamic(info, ...) Log(ANSI_OVERWRITE_MAGENTA, info, ##__VA_ARGS__)
 #else
 #define debug(info, ...)
 #endif

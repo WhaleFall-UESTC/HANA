@@ -99,7 +99,5 @@ typedef uint64 (*syscall_func_t)(void);
 
 void syscall();
 
-#ifdef ARCH_RISCV
 #include <trap/syscall.h>
-#endif
 #endif // __SYSCALL_H__

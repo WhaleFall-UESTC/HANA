@@ -28,4 +28,7 @@ void        test_walkaddr();
 /* test_fs.c */
 void        test_fs();
 
+/* test_arch.c */
+void        test_arch();
+
 #endif // __TESTDEFS_H__

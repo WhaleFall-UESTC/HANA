@@ -38,8 +38,14 @@ struct trapframe {
     /* 264 */ uint64 t4;
     /* 272 */ uint64 t5;
     /* 280 */ uint64 t6;
-  };
+};
 
+#define trapframe_set_stack(proc, _sp) proc->trapframe->sp = (_sp)
+#define trapframe_set_init_func(proc, func) proc->trapframe->ra = (func)
+#define trapframe_set_return(proc, item, ret) proc->trapframe->a0 = (ret)
+#define trapframe_set_era(proc, addr) proc->trapframe->epc = (addr)
+#define context_set_init_func(proc, func) proc->context.ra = (func)
+#define context_set_stack(proc, _sp) proc->context.sp = (_sp);
 
 /* trap/trap.c */
 void            trap_init();

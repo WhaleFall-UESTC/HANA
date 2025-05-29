@@ -2,10 +2,7 @@
 #include <debug.h>
 #include <mm/mm.h>
 #include <klib.h>
-
-#ifdef ARCH_RISCV
-#include <riscv.h>
-#endif
+#include <arch.h>
 
 #define is_power_of_2(x) ((x) != 0 && (((x) & ((x) - 1)) == 0))
 #define min(a, b) (((a) < (b)) ? (a) : (b))

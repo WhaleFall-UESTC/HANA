@@ -1,5 +1,5 @@
-#ifndef __PLIC_H__
-#define __PLIC_H__
+#ifndef __INTC_H__
+#define __INTC_H__
 
 #define PLIC_PRIORITY_OFFSET    0x0
 #define PLIC_PENDING_OFFSET     0x1000
@@ -18,8 +18,12 @@
     do { \
         plic_init(); \
         plic_init_hart(hart); \
-    } while(0);
-#define __irq_init_default() __irq_init(DEFAULT_HART)
+    } while(0)
+#define __irq_init_default() \
+    do { \
+        __irq_init(DEFAULT_HART); \
+        w_sie(r_sie() | SIE_SSIE | SIE_SEIE); \
+    } while(0)
 #define __irq_enable_default(irq) \
     plic_enable_irq(DEFAULT_HART, irq, DEFAULT_PRI)
 #define __irq_disable_default(irq) \
@@ -34,4 +38,4 @@ void plic_complete_irq(int hart, int irq);
 void plic_init();
 void plic_init_hart(int hart);
 
-#endif // __PLIC_H__
+#endif // __INTC_H__

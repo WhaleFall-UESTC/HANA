@@ -2,7 +2,7 @@
 #include <mm/memlayout.h>
 #include <debug.h>
 #include <irq/interrupt.h>
-#include <riscv.h>
+#include <arch.h>
 #include <trap/trap.h>
 #include <trap/context.h>
 #include <proc/proc.h>

@@ -1,6 +1,6 @@
 #include <platform.h>
 #include <common.h>
-#include <riscv.h>
+#include <arch.h>
 #include <trap/context.h>
 #include <proc/proc.h>
 #include <locking/spinlock.h>
@@ -178,6 +178,7 @@ uart_getc()
 int
 uart_isr()
 {
+#ifndef BIOS_SBI
     uint8 iir = uart_read_reg(IIR);
     if (iir & IIR_NO_INT) 
         return -1;
@@ -192,6 +193,6 @@ uart_isr()
         default:
             return -1;
     }
-
+#endif
     return 0;
 }

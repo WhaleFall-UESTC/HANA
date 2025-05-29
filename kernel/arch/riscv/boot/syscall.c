@@ -1,7 +1,7 @@
 #include <common.h>
 #include <klib.h>
 #include <debug.h>
-#include <riscv.h>
+#include <arch.h>
 #include <syscall.h>
 #include <irq/interrupt.h>
 #include <trap/trap.h>

@@ -3,10 +3,7 @@
 
 #include <common.h>
 #include <io/blk.h>
-
-#ifdef ARCH_RISCV
-#include <riscv.h>
-#endif
+#include <arch.h>
 
 #define VIRTIO_MAGIC 0x74726976
 #define VIRTIO_VERSION 0x1

@@ -73,7 +73,7 @@ struct blkdev_ops;
 
 struct blkdev
 {
-    dev_t devid;
+    devid_t devid;
     uint32 intr;
     unsigned long size; // blkdev capacity in bytes
     uint64 sector_size;
@@ -147,13 +147,13 @@ void block_subsys_init(void);
 /**
  * alloc a block device and do initialization
  */
-struct blkdev *blkdev_alloc(dev_t devid, unsigned long size, uint64 sector_size,
+struct blkdev *blkdev_alloc(devid_t devid, unsigned long size, uint64 sector_size,
                             int intr, const char *name, const struct blkdev_ops *ops);
 
 /**
  * initialize a block device
  */
-void blkdev_init(struct blkdev *dev, dev_t devid, unsigned long size, uint64 sector_size,
+void blkdev_init(struct blkdev *dev, devid_t devid, unsigned long size, uint64 sector_size,
                  int intr, const char *name, const struct blkdev_ops *ops);
 
 /**
@@ -170,7 +170,7 @@ struct blkdev *blkdev_get_by_name(const char *name);
 /**
  * get a blkdev struct by its device id
  */
-struct blkdev *blkdev_get_by_id(dev_t id);
+struct blkdev *blkdev_get_by_id(devid_t id);
 
 /**
  * submit a request to block device

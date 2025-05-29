@@ -1,4 +1,4 @@
-ARCH ?= riscv
+ARCH ?= loongarch
 BUILD_DIR := build/$(ARCH)
 FS := rootfs.img
 SMP := 1
@@ -15,6 +15,7 @@ QEMUOPTS := -machine virt -kernel $(KERNEL) -m $(MEM) -nographic -smp $(SMP) -bi
         	-drive file=$(DISK),if=none,format=raw,id=x1 -device virtio-blk-device,drive=x1,bus=virtio-mmio-bus.1
 RISCV_CFLAGS = -mcmodel=medany -march=rv64imafd -mabi=lp64
 RISCV_CFLAGS += -DARCH_RISCV 
+RISCV_CFLAGS += -DBIOS_SBI
 
 else ifeq ($(ARCH), loongarch)
 KERNEL := kernel-la
@@ -43,17 +44,17 @@ OBJDUMP = $(TOOLPREFIX)objdump
 
 KERNEL_SRC = kernel
 ARCH_SRC = $(KERNEL_SRC)/arch/$(ARCH)
+ARCH_TEST_SRC = $(KERNEL_SRC)/test/arch/$(ARCH)
 
 KERNELDUMP = $(KERNEL).asm
 
 
-CFLAGS = -Wall -Werror -O -fno-omit-frame-pointer -ggdb -nostdlib
+CFLAGS = -Wall -Werror -O0 -fno-omit-frame-pointer -ggdb -nostdlib
 CFLAGS += $(if $(RISCV_CFLAGS),$(RISCV_CFLAGS),$(LOONGARCH_CFLAGS)) 
 CFLAGS += -I $(KERNEL_SRC)/include -I $(ARCH_SRC)/include -I $(KERNEL_SRC)/test/include
 CFLAGS += -MD -MP -MF $@.d
 CFLAGS += -Wno-unused-va$(@F).driable -Wno-unused-function
 CFLAGS += -DDEBUG 
-CFLAGS += -DBIOS_SBI
 
 ASFLAGS = $(CFLAGS) -D__ASSEMBLY__
 LDFLAGS = -nostdlib -T $(ARCH_SRC)/kernel.ld
@@ -62,7 +63,10 @@ LDFLAGS = -nostdlib -T $(ARCH_SRC)/kernel.ld
 SRC_S = $(shell find $(ARCH_SRC) -type f -name '*.S')
 
 SRC_C := $(shell find $(ARCH_SRC) -type f -name '*.c') \
+		 $(shell find $(ARCH_TEST_SRC) -type f -name '*.c') \
 		 $(shell find $(KERNEL_SRC) -type f -name '*.c' \
+		 	-not -path '$(KERNEL_SRC)/test/arch/*' \
+		 	-not -path '$(KERNEL_SRC)/drivers/virtio/*' \
 			-not -path '$(KERNEL_SRC)/arch/*')   # do not delete this line
 
 OBJS = $(addprefix $(BUILD_DIR)/, $(SRC_C:.c=.o) $(SRC_S:.S=.o))
@@ -106,13 +110,12 @@ $(KERNELDUMP): $(KERNEL)
 distclean: clean
 	rm -f $(KERNEL) $(KERNELDUMP) $(DISK) $(FS)
 
-build: $(KERNEL) $(DISK) 
+build: $(KERNEL) $(DISK) $(FS)
 	@echo "[BUILD] Kernel and disk images are ready."
 
 build_all: $(KERNELDUMP) $(DISK)
 
 run: build
-	mkfs.ext4 $(FS)
 	$(QEMU) $(QEMUOPTS)
 
 gdb: build_all .gdbinit-$(ARCH)

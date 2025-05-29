@@ -1,4 +1,5 @@
-#pragma once
+#ifndef __ARCH_H__
+#define __ARCH_H__
 
 #define PTE_V (1L << 0)
 #define PTE_R (1L << 1)
@@ -14,8 +15,6 @@
 #define PTE_FLAGS(pte) ((pte) & 0x3ff)
 
 #define CHECK_PTE(pte_addr, flags) (((pte_addr) != NULL) && ((*(pte_addr) & (flags)) != 0))
-#define WALK_ALLOC 1
-#define WALK_NOALLOC 0
 
 #define PX(i, va) (((va) >> (9 * i + 12)) & 0x1ff)
 
@@ -410,3 +409,5 @@ sfence_vma()
       : "r"(&(var)), "r"(value) \
       : "memory");              \
 })
+
+#endif // __ARCH_H__

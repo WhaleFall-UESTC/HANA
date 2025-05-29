@@ -7,19 +7,21 @@
 struct page* pages;
 
 void
-kinit(uint64 start, uint64 end)
+kmem_init(uint64 va_start, uint64 va_end)
 {
-    uint64 s = PGROUNDUP(start);
-    uint64 e = PGROUNDDOWN(end);
-    uint npages = ((e - s) >> PGSHIFT);
+    uint64 s = PGROUNDUP(va_start);
+    uint64 e = PGROUNDDOWN(va_end);
+    // debug("RAM starts at %lx, end at %lx", s, e);
+    uint64 npages = ((e - s) >> PGSHIFT);
     pages = (struct page*) s;
-    s += PGROUNDUP(npages * sizeof(struct page));
-    log("Initialize pages take %#x size, a single page takes %d bytes", (uint)PGROUNDUP(npages * sizeof(struct page)), (int)sizeof(struct page));
+    s += PGROUNDUP(npages * sizeof(struct page)); // should pgroundup, but has bug here
+    // debug("Initialize npages %#lx, a single page takes %d bytes", npages, (int)sizeof(struct page));
     buddy_init(s, e);  
     out("Initialize buddy system");
     slab_init();
     out("Initialize slab");
 }
+
 
 void*
 kalloc(uint64 sz)

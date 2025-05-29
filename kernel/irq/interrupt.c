@@ -1,14 +1,11 @@
 #include <common.h>
+#include <arch.h>
+#include <drivers/intc.h>
 #include <irq/interrupt.h>
 #include <debug.h>
+#include <trap/context.h>
 #include <proc/proc.h>
-
-#ifdef ARCH_RISCV
-#include <drivers/plic.h>
 #include <drivers/uart.h>
-#else
-/* other archs */
-#endif
 
 static irq_handler_t irq_handlers[MAX_NR_IRQ];
 static void* irq_privates[MAX_NR_IRQ];
@@ -55,14 +52,6 @@ out:
 
 void irq_init(void) {
     __irq_init_default();
-    w_sie(r_sie() | SIE_SSIE | SIE_SEIE);
-
-    /**
-     * TODO: move register uart irq to uart_init
-     */
-    #ifndef BIOS_SBI
-    irq_register(UART0_IRQ, uart_isr, NULL);
-    #endif
 }
 
 void irq_pushoff() {
