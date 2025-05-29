@@ -12,6 +12,7 @@
 #include <init.h>
 #include <io/blk.h>
 #include <fs/fs.h>
+#include <drivers/uart.h>
 
 // #include <drivers/virtio.h>
 
@@ -23,6 +24,10 @@ char init_stack[KSTACK_SIZE * NCPU] __attribute__((aligned(PGSIZE)));
 char *init_stack_top = &init_stack[KSTACK_SIZE];
 
 struct cpu cpus[NCPU];
+
+#ifdef ARCH_LOONGARCH
+extern void timer_enable();
+#endif
 
 int 
 main()
@@ -54,10 +59,15 @@ main()
     
     // ecall();
 
-    vfilesys_init();
-    out("Initialize vfs");
+#ifdef ARCH_LOONGARCH
+#include <drivers/pci.h>
+    pci_init();
+#endif
 
-    test_proc_init((uint64) test);
+    // vfilesys_init();
+    // out("Initialize vfs");
+
+    // test_proc_init((uint64) test);
 
 #ifdef ARCH_LOONGARCH
     intr_on();

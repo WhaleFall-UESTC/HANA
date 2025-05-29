@@ -1,5 +1,5 @@
 #include <common.h>
-#include <loongarch.h>
+#include <arch.h>
 #include <debug.h>
 #include <irq/interrupt.h>
 #include <trap/context.h>

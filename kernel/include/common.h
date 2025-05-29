@@ -76,14 +76,14 @@ typedef unsigned long sector_t;
 typedef unsigned long size_t;
 typedef long ssize_t;
 typedef long off_t;
-typedef unsigned long time_t;
+typedef long time_t;
 
 typedef unsigned short umode_t;
 typedef unsigned int fmode_t;
 
 typedef long int ptrdiff_t;
 
-typedef unsigned int dev_t;
+typedef unsigned int devid_t;
 
 #define bool _Bool
 #define true 1

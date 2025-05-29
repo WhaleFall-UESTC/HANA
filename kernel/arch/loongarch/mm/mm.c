@@ -3,7 +3,7 @@
 #include <mm/mm.h>
 #include <klib.h>
 #include <debug.h>
-#include <loongarch.h>
+#include <arch.h>
 
 extern char end[], trampoline[];
 extern void tlb_refill();

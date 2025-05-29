@@ -14,7 +14,7 @@ void block_subsys_init(void)
     spinlock_init(&blkdev_list_lock, "blkdev_list_lock");
 }
 
-struct blkdev *blkdev_alloc(dev_t devid, unsigned long size, uint64 sector_size, int intr, const char *name, const struct blkdev_ops *ops)
+struct blkdev *blkdev_alloc(devid_t devid, unsigned long size, uint64 sector_size, int intr, const char *name, const struct blkdev_ops *ops)
 {
     KALLOC(struct blkdev, dev);
     assert(dev != NULL);
@@ -24,7 +24,7 @@ struct blkdev *blkdev_alloc(dev_t devid, unsigned long size, uint64 sector_size,
     return dev;
 }
 
-void blkdev_init(struct blkdev *dev, dev_t devid, unsigned long size, uint64 sector_size, int intr, const char *name, const struct blkdev_ops *ops)
+void blkdev_init(struct blkdev *dev, devid_t devid, unsigned long size, uint64 sector_size, int intr, const char *name, const struct blkdev_ops *ops)
 {
     assert(dev != NULL);
     assert(name != NULL);
@@ -76,7 +76,7 @@ struct blkdev *blkdev_get_by_name(const char *name)
     return NULL;
 }
 
-struct blkdev *blkdev_get_by_id(dev_t id) {
+struct blkdev *blkdev_get_by_id(devid_t id) {
     struct blkdev *blkdev;
 
     spinlock_acquire(&blkdev_list_lock);

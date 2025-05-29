@@ -1,13 +1,7 @@
 #include <common.h>
 #include <klib.h>
 #include <debug.h>
-
-#ifdef ARCH_RISCV
 #include <arch.h>
-#elif defined(ARCH_LOONGARCH)
-#include <loongarch.h>
-#endif
-
 #include <irq/interrupt.h>
 #include <trap/context.h>
 #include <proc/proc.h>

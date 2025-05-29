@@ -12,7 +12,7 @@ void char_subsys_init(void)
     spinlock_init(&chrdev_list_lock, "chrdev_list_lock");
 }
 
-struct chrdev *chrdev_alloc(dev_t devid, int intr, const char *name, const struct chrdev_ops *ops)
+struct chrdev *chrdev_alloc(devid_t devid, int intr, const char *name, const struct chrdev_ops *ops)
 {
     KALLOC(struct chrdev, dev);
     assert(dev != NULL);
@@ -22,7 +22,7 @@ struct chrdev *chrdev_alloc(dev_t devid, int intr, const char *name, const struc
     return dev;
 }
 
-void chrdev_init(struct chrdev *dev, dev_t devid, int intr, const char *name, const struct chrdev_ops *ops)
+void chrdev_init(struct chrdev *dev, devid_t devid, int intr, const char *name, const struct chrdev_ops *ops)
 {
     assert(dev != NULL);
     assert(name != NULL);
@@ -67,7 +67,7 @@ struct chrdev *chrdev_get_by_name(const char *name)
     return NULL;
 }
 
-struct chrdev *chrdev_get_by_id(dev_t id)
+struct chrdev *chrdev_get_by_id(devid_t id)
 {
     struct chrdev *chrdev;
 

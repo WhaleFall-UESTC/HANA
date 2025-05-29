@@ -448,6 +448,53 @@ static inline void __iocsrwr_d(uint64 val, uint64 iocsr) {
 #define csr_set_bits(CSR, BITS) \
     asm volatile("csrxchg $zero, %0, %1" : : "r"(BITS), "i"(CSR));
 
+/*
+ * Hint encoding:
+ *
+ * Bit4: ordering or completion (0: completion, 1: ordering)
+ * Bit3: barrier for previous read (0: true, 1: false)
+ * Bit2: barrier for previous write (0: true, 1: false)
+ * Bit1: barrier for succeeding read (0: true, 1: false)
+ * Bit0: barrier for succeeding write (0: true, 1: false)
+ *
+ * Hint 0x700: barrier for "read after read" from the same address
+ */
+
+#define DBAR(hint) __asm__ __volatile__("dbar %0 " : : "I"(hint) : "memory")
+
+#define crwrw		0b00000
+#define cr_r_		0b00101
+#define c_w_w		0b01010
+
+#define orwrw		0b10000
+#define or_r_		0b10101
+#define o_w_w		0b11010
+
+#define orw_w		0b10010
+#define or_rw		0b10100
+
+#define c_sync()	DBAR(crwrw)
+#define c_rsync()	DBAR(cr_r_)
+#define c_wsync()	DBAR(c_w_w)
+
+#define o_sync()	DBAR(orwrw)
+#define o_rsync()	DBAR(or_r_)
+#define o_wsync()	DBAR(o_w_w)
+
+#define ldacq_mb()	DBAR(or_rw)
+#define strel_mb()	DBAR(orw_w)
+
+#define mb()		c_sync()
+#define rmb()		c_rsync()
+#define wmb()		c_wsync()
+#define iob()		c_sync()
+#define wbflush()	c_sync()
+
+#define smp_mb()	o_sync()
+#define smp_rmb()	o_rsync()
+#define smp_wmb()	o_wsync()
+
+
 static inline uint64 r_csr_crmd() { uint64 val; csr_read(CSR_CRMD, val); return val; }
 static inline void w_csr_crmd(uint64 val) { csr_write(CSR_CRMD, val); }
     

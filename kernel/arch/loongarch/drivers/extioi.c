@@ -10,6 +10,16 @@
     iocsr_writeq((base) + ((cnt) >> 3UL), \
         iocsr_readq((base) + ((cnt) >> 3UL)) & ~(0x1UL << ((cnt) & 0x7UL)));
 
+static inline uint64 lowbit(uint64 val) {
+    return val & (-val);
+}
+
+static inline uint64 _log2(uint64 val) {
+    uint64 res = 0;
+    while(val >>= 1) res ++;
+    return res;
+}
+
 void
 extioi_init(int hart)
 {
@@ -17,7 +27,7 @@ extioi_init(int hart)
     iocsr_writeq(EXT_IOImap_Base, 1);
 
     /* nodetype0 set to 1, always trigger at node 0 */
-    iocsr_writeq(EXT_IOI_node_type(0), 1);
+    iocsr_writeq(EXT_IOI_node_type_Base, 1);
 }
 
 
@@ -39,11 +49,11 @@ void extioi_disable_irq(int hart, int irq)
 uint64
 extioi_claim(int hart)
 {
-    return iocsr_readq(EXT_IOIsr(hart));
+    return _log2(lowbit(iocsr_readq(EXT_IOIsr(hart))));
 }
 
 void
 extioi_complete(int hart, int irq)
 {
-    iocsr_writeq(EXT_IOIsr(hart), irq);
+    ioscr_reset_bit(EXT_IOIsr(hart), irq);
 }

@@ -63,9 +63,10 @@ LDFLAGS = -nostdlib -T $(ARCH_SRC)/kernel.ld
 SRC_S = $(shell find $(ARCH_SRC) -type f -name '*.S')
 
 SRC_C := $(shell find $(ARCH_SRC) -type f -name '*.c') \
-		 $(shell find $(ARCH_TEST_SRC) -type -f name '*.c') \
+		 $(shell find $(ARCH_TEST_SRC) -type f -name '*.c') \
 		 $(shell find $(KERNEL_SRC) -type f -name '*.c' \
 		 	-not -path '$(KERNEL_SRC)/test/arch/*' \
+		 	-not -path '$(KERNEL_SRC)/drivers/virtio/*' \
 			-not -path '$(KERNEL_SRC)/arch/*')   # do not delete this line
 
 OBJS = $(addprefix $(BUILD_DIR)/, $(SRC_C:.c=.o) $(SRC_S:.S=.o))

@@ -1,6 +1,5 @@
 #include <io/blk.h>
 #include <io/chr.h>
-#include <io/devinit.h>
 #include <fs/io.h>
 #include <fs/fs.h>
 #include <fs/fcntl.h>
@@ -11,6 +10,7 @@
 #include <klib.h>
 #include <locking/spinlock.h>
 #include <mm/mm.h>
+#include <init.h>
 
 static struct list_head devfs_list;
 static spinlock_t devfs_list_lk;

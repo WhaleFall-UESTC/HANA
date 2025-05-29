@@ -1,5 +1,5 @@
 #include <common.h>
-#include <loongarch.h>
+#include <arch.h>
 #include <mm/memlayout.h>
 #include <debug.h>
 
