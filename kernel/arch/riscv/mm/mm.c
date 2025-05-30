@@ -200,7 +200,7 @@ uvmcopy(pagetable_t cpgtbl, pagetable_t ppgtbl, uint64 sz)
 }
 
 void 
-map_stack(pagrtable_t pgtbl, uint64 stack_va) 
+map_stack(pagetable_t pgtbl, uint64 stack_va) 
 {
     void* stack = kalloc(KSTACK_SIZE);
     Assert(stack, "out of memory");

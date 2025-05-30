@@ -40,6 +40,21 @@
     } while (0)
 #endif
 
+#define WRITE16(_reg, _val) \
+    do { \
+        register uint16 __myval__ = (_val); \
+        *(volatile uint16 *)&(_reg) = __myval__; \
+    } while (0)
+
+#define WRITE8(_reg, _val) \
+    do { \
+        register uint8 __myval__ = (_val); \
+        *(volatile uint8 *)&(_reg) = __myval__; \
+    } while (0)
+
+#define READ16(_reg) (*((volatile uint16 *)(&(_reg))))
+#define READ8(_reg) (*((volatile uint8 *)(&(_reg))))
+
 #ifdef __READ32
 #define READ32 __READ32
 #else

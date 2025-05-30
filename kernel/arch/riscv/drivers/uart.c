@@ -64,6 +64,7 @@ typedef int (*getchar_t)();
 getchar_t get_char;
 
 int uart_putc_sync(int c);
+int uart_getc();
 
 #ifdef BIOS_SBI
 #include <sbi/sbi.h>
@@ -87,6 +88,7 @@ uart_init()
     #else
 
     put_char = uart_putc_sync;
+    get_char = uart_getc;
 
     // disable interrupts
     uart_write_reg(IER, 0x00);

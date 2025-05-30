@@ -1,6 +1,6 @@
 #include <init.h>
 #include <io/blk.h>
-#include <drivers/virtio.h>
+#include <drivers/virtio-mmio.h>
 #include <common.h>
 #include <debug.h>
 #include <klib.h>

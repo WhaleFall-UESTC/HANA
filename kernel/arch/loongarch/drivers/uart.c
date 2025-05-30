@@ -56,13 +56,17 @@ static inline char uart_buf_read() {
 
 typedef int (*putchar_t)(int);
 putchar_t put_char;
+typedef int (*getchar_t)();
+getchar_t get_char;
 
 int uart_putc_sync(int c);
+int uart_getc();
 
 void 
 uart_init()
 {
     put_char = uart_putc_sync;
+    get_char = uart_getc;
 
     // disable interrupts
     uart_write_reg(IER, 0x00);
@@ -99,6 +103,12 @@ uart_putc_sync(int c)
     // irq_popoff();
 
     return ret;
+}
+
+int
+uart_getc()
+{
+    return 0;
 }
 
 int

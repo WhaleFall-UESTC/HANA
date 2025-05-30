@@ -9,6 +9,7 @@
 #include <common.h>
 #include <debug.h>
 #include <mm/mm.h>
+#include <drivers/virtio-mmio.h>
 #include <drivers/virtio.h>
 #include <platform.h>
 #include <klib.h>

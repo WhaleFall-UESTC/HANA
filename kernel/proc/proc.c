@@ -180,31 +180,31 @@ kill(int pid)
     return -1;
 }
 
-#ifdef ARCH_RISCV
-// Create new process, copying form parent
-int
-fork()
-{
-    struct proc* p = myproc();
-    struct proc* cp = alloc_proc();
-    assert(cp);
+// #ifdef ARCH_RISCV
+// // Create new process, copying form parent
+// int
+// fork()
+// {
+//     struct proc* p = myproc();
+//     struct proc* cp = alloc_proc();
+//     assert(cp);
 
-    cp->pagetable = uvmmake((uint64)p->trapframe);
+//     cp->pagetable = uvmmake((uint64)p->trapframe);
 
-    // copy user pagetable from p
-    // COW later
-    uvmcopy(cp->pagetable, p->pagetable, p->sz);
+//     // copy user pagetable from p
+//     // COW later
+//     uvmcopy(cp->pagetable, p->pagetable, p->sz);
 
-    // copy trapframe
-    *(cp->trapframe) = *(p->trapframe);
-    // let fork return 0 in child proc
-    trapframe_set_return(cp, 0);
+//     // copy trapframe
+//     *(cp->trapframe) = *(p->trapframe);
+//     // let fork return 0 in child proc
+//     trapframe_set_return(cp, 0);
 
-    // files
+//     // files
 
-    cp->parent = p;
-    cp->state = RUNNABLE;
+//     cp->parent = p;
+//     cp->state = RUNNABLE;
 
-    return cp->pid;
-}
-#endif
+//     return cp->pid;
+// }
+// #endif

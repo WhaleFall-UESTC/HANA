@@ -3,48 +3,10 @@
 
 #include <common.h>
 #include <io/blk.h>
-#include <arch.h>
 
-#define VIRTIO_MAGIC 0x74726976
-#define VIRTIO_VERSION 0x1
 #define VIRTIO_DEV_NET 0x1
 #define VIRTIO_DEV_BLK 0x2
 #define wrap(x, len) ((x) & ~(len))
-
-/**
- * Legacy register layout
- * See Section 4.2.4 of VIRTIO 1.0 Spec:
- * http://docs.oasis-open.org/virtio/virtio/v1.0/cs04/virtio-v1.0-cs04.html
- */
-typedef volatile struct __attribute__((aligned(4)))
-{
-    /* 0x000 */ uint32 MagicValue;      // R
-    /* 0x004 */ uint32 Version;         // R
-    /* 0x008 */ uint32 DeviceID;        // R
-    /* 0x00c */ uint32 VendorID;        // R
-    /* 0x010 */ uint32 HostFeatures;    // R
-    /* 0x014 */ uint32 HostFeaturesSel; // W
-    /* 0x018 */ uint32 _reserved0[2];
-    /* 0x020 */ uint32 GuestFeatures;    // W
-    /* 0x024 */ uint32 GuestFeaturesSel; // W
-    /* 0x028 */ uint32 GuestPageSize;    // W
-    /* 0x02c */ uint32 _reserved1;
-    /* 0x030 */ uint32 QueueSel;    // W
-    /* 0x034 */ uint32 QueueNumMax; // R
-    /* 0x038 */ uint32 QueueNum;    // W
-    /* 0x03c */ uint32 QueueAlign;  // W
-    /* 0x040 */ uint32 QueuePFN;    // RW
-    /* 0x044 */ uint32 _reserved2[3];
-    /* 0x050 */ uint32 QueueNotify; // W
-    /* 0x054 */ uint32 _reserved3[3];
-    /* 0x060 */ uint32 InterruptStatus; // R
-    /* 0x064 */ uint32 InterruptACK;    // W
-    /* 0x068 */ uint32 _reserved4[2];
-    /* 0x070 */ uint32 Status; // RW
-    /* 0x074 */ uint32 _reserved5[3];
-    /* 0x080 */ uint32 _reserved6[0x20];
-    /* 0x100 */ uint32 Config[]; // RW
-} virtio_regs;
 
 #define VIRTIO_STATUS_ACKNOWLEDGE (1)
 #define VIRTIO_STATUS_DRIVER (2)
@@ -210,64 +172,9 @@ struct virtio_blk_req
 #define VIRTIO_BLK_S_IOERR 1
 #define VIRTIO_BLK_S_UNSUPP 2
 
-struct packet;
-struct virtio_net_hdr
-{
-#define VIRTIO_NET_HDR_F_NEEDS_CSUM 1
-    uint8 flags;
-#define VIRTIO_NET_HDR_GSO_NONE 0
-#define VIRTIO_NET_HDR_GSO_TCPV4 1
-#define VIRTIO_NET_HDR_GSO_UDP 3
-#define VIRTIO_NET_HDR_GSO_TCPV6 4
-#define VIRTIO_NET_HDR_GSO_ECN 0x80
-    uint8 gso_type;
-    uint16 hdr_len;
-    uint16 gso_size;
-    uint16 csum_start;
-    uint16 csum_offset;
-    uint16 num_buffers;
-    struct packet *packet;
-} __attribute__((packed));
-
-#define VIRTIO_NET_HDRLEN 10
-
-#define VIRTIO_NET_Q_RX 0
-#define VIRTIO_NET_Q_TX 1
-
-struct virtio_net
-{
-    virtio_regs *regs;
-    volatile struct virtio_net_config *cfg;
-    struct virtqueue *rx;
-    struct virtqueue *tx;
-};
-
-/*
- * virtqueue routines
- */
 struct virtqueue *virtq_create();
 uint32 virtq_alloc_desc(struct virtq_info *virtq_info, void *addr);
 void virtq_free_desc(struct virtq_info *virtq_info, uint32 desc);
-struct virtq_info *virtq_add_to_device(volatile virtio_regs *regs, uint32 queue_sel);
 void virtq_show(struct virtq_info *virtq_info);
-
-void virtio_check_capabilities(virtio_regs *regs, struct virtio_cap *caps, uint32 n);
-
-#define VIRTIO_INDP_CAPS                                              \
-    {"VIRTIO_F_RING_INDIRECT_DESC", 28, false,                        \
-     "Negotiating this feature indicates that the driver can use"     \
-     " descriptors with the VIRTQ_DESC_F_INDIRECT flag set, as"       \
-     " described in 2.4.5.3 Indirect Descriptors."},                  \
-        {"VIRTIO_F_RING_EVENT_IDX", 29, false,                        \
-         "This feature enables the used_event and the avail_event "   \
-         "fields"                                                     \
-         " as described in 2.4.7 and 2.4.8."},                        \
-        {"VIRTIO_F_VERSION_1", 32, false,                             \
-         "This indicates compliance with this specification, giving " \
-         "a"                                                          \
-         " simple way to detect legacy devices or drivers."},
-
-int virtio_blk_init(volatile virtio_regs *regs, uint32 intid);
-int virtio_net_init(virtio_regs *regs, uint32 intid);
 
 #endif // __VIRTIO_H__

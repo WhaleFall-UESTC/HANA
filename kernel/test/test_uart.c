@@ -10,5 +10,5 @@ void test_uart() {
     char buf[] = "1234567890qwertyuiop[]\\asdfghjkl;'zxcvbnm,./";
     int len = sizeof(buf);
     for (int i = 0; i < len; i++)
-        uart_putc(buf[i]);
+        put_char(buf[i]);
 }

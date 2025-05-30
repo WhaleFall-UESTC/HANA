@@ -24,10 +24,10 @@ DISK := disk-la.img
 TOOLPREFIX := loongarch64-unknown-linux-gnu-
 QEMU := qemu-system-loongarch64
 QEMUOPTS := -kernel $(KERNEL) -m $(MEM) -nographic -smp $(SMP) -drive file=$(FS),if=none,format=raw,id=x0  \
-            -device virtio-blk-pci,drive=x0,bus=virtio-mmio-bus.0 -no-reboot  -device virtio-net-pci,netdev=net0 \
+            -device virtio-blk-pci,drive=x0,bus=pcie.0 -no-reboot  -device virtio-net-pci,netdev=net0 \
             -netdev user,id=net0,hostfwd=tcp::5555-:5555,hostfwd=udp::5555-:5555  \
-            -rtc base=utc \
-            -drive file=$(DISK),if=none,format=raw,id=x1 -device virtio-blk-pci,drive=x1,bus=virtio-mmio-bus.1
+            -rtc base=utc
+            # -drive file=$(DISK),if=none,format=raw,id=x1 -device virtio-blk-pci,drive=x1,bus=pcie.1
 LOONGARCH_CFLAGS = -march=loongarch64 -mabi=lp64d
 LOONGARCH_CFLAGS += -DARCH_LOONGARCH
 
@@ -66,7 +66,6 @@ SRC_C := $(shell find $(ARCH_SRC) -type f -name '*.c') \
 		 $(shell find $(ARCH_TEST_SRC) -type f -name '*.c') \
 		 $(shell find $(KERNEL_SRC) -type f -name '*.c' \
 		 	-not -path '$(KERNEL_SRC)/test/arch/*' \
-		 	-not -path '$(KERNEL_SRC)/drivers/virtio/*' \
 			-not -path '$(KERNEL_SRC)/arch/*')   # do not delete this line
 
 OBJS = $(addprefix $(BUILD_DIR)/, $(SRC_C:.c=.o) $(SRC_S:.S=.o))

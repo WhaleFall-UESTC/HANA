@@ -1,7 +1,7 @@
 #include <common.h>
 #include <debug.h>
 #include <mm/mm.h>
-#include <drivers/virtio.h>
+#include <drivers/virtio-mmio.h>
 // #include <locking/spinsem.h>
 #include <locking/spinlock.h>
 #include <irq/interrupt.h>

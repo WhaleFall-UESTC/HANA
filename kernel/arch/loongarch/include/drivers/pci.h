@@ -3,8 +3,8 @@
 
 #include <common.h>
 
-#define PCI_CONFIG0_BASE 0x1a000000 /*PCI配置空间数据端口,type0 一般设备*/
-#define PCI_CONFIG1_BASE 0x1b000000 /*PCI配置空间数据端口,type1 PCI Bridge*/
+#define PCI_CONFIG0_BASE 0x1a000000UL /*PCI配置空间数据端口,type0 一般设备*/
+#define PCI_CONFIG1_BASE 0x1b000000UL /*PCI配置空间数据端口,type1 PCI Bridge*/
 
 #define PCI_MAX_BAR 6         /*每个设备最多有6地址信息*/
 #define PCI_MAX_BUS 256       /*PCI总共有256个总线*/

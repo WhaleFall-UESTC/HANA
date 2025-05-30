@@ -1,7 +1,7 @@
 #include <common.h>
 #include <arch.h>
 #include <platform.h>
-#include <drivers/plic.h>
+#include <drivers/intc.h>
 
 #define PLIC VIRT_PLIC
 #define PLIC_ENABLE_S_MODE (PLIC + PLIC_SENABLE_OFFSET)
