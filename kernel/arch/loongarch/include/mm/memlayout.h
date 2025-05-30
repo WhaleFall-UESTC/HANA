@@ -4,6 +4,7 @@
 #include <platform.h>
 
 #define DMW_MASK    0x9000000000000000UL
+#define WD_ADDR(addr) ((addr) | DMW_MASK)
 
 #define KERNEL_BASE 0x200000UL
 #define RAM_BASE    0x90000000UL
@@ -38,7 +39,6 @@
 #define TRAPFRAME (MAXVA - PGSIZE)
 
 #define KSTACK(n)   (TRAMPOLINE - (2 * (n)) * PGSIZE)
-
 
 /*
 info mtree
@@ -134,4 +134,4 @@ memory-region: system
     0000000040000000-000000007fffffff (prio 0, i/o): alias pcie-mmio @gpex_mmio_window 0000000040000000-000000007fffffff
 */
 
-#endif
+#endif // __MEMLAYOUT_H__

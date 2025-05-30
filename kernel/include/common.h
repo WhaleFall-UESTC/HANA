@@ -30,6 +30,14 @@
 #define ALIGN(x, a) __ALIGN_MASK(x, (typeof(x))(a) - 1)
 #define __ALIGN_MASK(x, mask) (((x) + (mask)) & ~(mask))
 
+#define ADDRVAL(n, addr) *(volatile uint##n *)(addr)
+
+#define WRITE64(_reg, _val) \
+    do { \
+        register uint64 __myval__ = (_val); \
+        *(volatile uint64 *)&(_reg) = __myval__; \
+    } while (0)
+
 #ifdef __WRITE32
 #define WRITE32 __WRITE32
 #else

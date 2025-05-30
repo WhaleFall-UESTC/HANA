@@ -25,10 +25,10 @@
 
 struct virtio_cap
 {
-    char *name;
+    const char *name;
     uint32 bit;
     bool support;
-    char *help;
+    const char *help;
 };
 
 struct virtqueue_desc
@@ -107,8 +107,13 @@ struct virtqueue
 
 struct virtq_info
 {
-    /* Physical page frame number of struct virtqueue. */
-    uint32 pfn;
+    union
+    {
+        uint64 phyaddr;
+        /* Physical page frame number of struct virtqueue. */
+        uint64 pfn;
+    };
+
     uint32 seen_used;
     uint32 free_desc;
 
@@ -176,5 +181,19 @@ struct virtqueue *virtq_create();
 uint32 virtq_alloc_desc(struct virtq_info *virtq_info, void *addr);
 void virtq_free_desc(struct virtq_info *virtq_info, uint32 desc);
 void virtq_show(struct virtq_info *virtq_info);
+
+#define VIRTIO_INDP_CAPS                                              \
+    {"VIRTIO_F_RING_INDIRECT_DESC", 28, false,                        \
+     "Negotiating this feature indicates that the driver can use"     \
+     " descriptors with the VIRTQ_DESC_F_INDIRECT flag set, as"       \
+     " described in 2.4.5.3 Indirect Descriptors."},                  \
+        {"VIRTIO_F_RING_EVENT_IDX", 29, false,                        \
+         "This feature enables the used_event and the avail_event "   \
+         "fields"                                                     \
+         " as described in 2.4.7 and 2.4.8."},                        \
+        {"VIRTIO_F_VERSION_1", 32, false,                             \
+         "This indicates compliance with this specification, giving " \
+         "a"                                                          \
+         " simple way to detect legacy devices or drivers."},
 
 #endif // __VIRTIO_H__

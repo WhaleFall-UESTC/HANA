@@ -64,6 +64,8 @@ main()
     pci_init();
 #endif
 
+    virtio_device_init();
+
     // vfilesys_init();
     // out("Initialize vfs");
 

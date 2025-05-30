@@ -14,57 +14,6 @@
 #include <platform.h>
 #include <klib.h>
 
-struct virtqueue *virtq_create()
-{
-	int i;
-	struct virtqueue *virtq;
-
-	// log("virtq size: %u\n", virtq_size(VIRTIO_DEFAULT_QUEUE_SIZE));
-	// log("struct virtqueue layout:");
-	// log("  desc offset: %lu, size: %lu", offsetof(struct virtqueue, desc), sizeof(((struct virtqueue *)0)->desc));
-	// log("  avail offset: %lu, size: %lu", offsetof(struct virtqueue, avail), sizeof(((struct virtqueue *)0)->avail));
-	// log("  used offset: %lu, size: %lu", offsetof(struct virtqueue, used), sizeof(((struct virtqueue *)0)->used));
-
-	virtq = (struct virtqueue *)kalloc(sizeof(struct virtqueue));
-	assert(virtq != NULL);
-	memset(virtq, 0, sizeof(struct virtqueue));
-
-	debug("virtq_create: virtq=0x%lx", (uint64)virtq);
-
-	virtq->avail.idx = 0;
-	virtq->used.idx = 0;
-
-	for (i = 0; i < VIRTIO_DEFAULT_QUEUE_SIZE; i++)
-	{
-		virtq->desc[i].next = i + 1;
-	}
-
-	return virtq;
-}
-
-uint32 virtq_alloc_desc(struct virtq_info *virtq_info, void *addr)
-{
-	uint32 desc = virtq_info->free_desc;
-	uint32 next = virtq_info->virtq->desc[desc].next;
-	if (desc == VIRTIO_DEFAULT_QUEUE_SIZE)
-		error("ran out of virtqueue descriptors");
-	virtq_info->free_desc = next;
-
-	virtq_info->virtq->desc[desc].addr = virt_to_phys((uint64)addr);
-	virtq_info->desc_virt[desc] = addr;
-
-	// log("virtq_alloc_desc: %u, addr= 0x%p 0x%lx", desc, addr, virtq_info->virtq->desc[desc].addr);
-
-	return desc;
-}
-
-void virtq_free_desc(struct virtq_info *virtq_info, uint32 desc)
-{
-	virtq_info->virtq->desc[desc].next = virtq_info->free_desc;
-	virtq_info->free_desc = desc;
-	virtq_info->desc_virt[desc] = NULL;
-}
-
 struct virtq_info* virtq_add_to_device(volatile virtio_regs *regs, uint32 queue_sel)
 {
 	uint32 max_queue_size;
@@ -112,22 +61,6 @@ struct virtq_info* virtq_add_to_device(volatile virtio_regs *regs, uint32 queue_
 	WRITE32(regs->QueuePFN, virtq_info->pfn);
 
 	return virtq_info;
-}
-
-void virtq_show(struct virtq_info *virtq_info)
-{
-	int count = 0;
-	uint32 i = virtq_info->free_desc;
-	log("Current free_desc: %u, len=%u", virtq_info->free_desc, VIRTIO_DEFAULT_QUEUE_SIZE);
-	while (i != VIRTIO_DEFAULT_QUEUE_SIZE && count++ <= VIRTIO_DEFAULT_QUEUE_SIZE)
-	{
-		log("  next: %u -> %u", i, virtq_info->virtq->desc[i].next);
-		i = virtq_info->virtq->desc[i].next;
-	}
-	if (count > VIRTIO_DEFAULT_QUEUE_SIZE)
-	{
-		log("Overflowed descriptors?");
-	}
 }
 
 void virtio_check_capabilities(virtio_regs *regs, struct virtio_cap *caps, uint32 n)
@@ -227,6 +160,9 @@ static int virtio_dev_init(uint64 virt, uint32 intid)
 	/* Hello, I am a driver for you */
 	WRITE32(regs->Status, READ32(regs->Status) | VIRTIO_STATUS_DRIVER);
 	mb();
+
+    WRITE32(regs->GuestPageSize, PGSIZE);
+    mb();
 
 	switch (device_id)
 	{

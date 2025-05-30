@@ -51,20 +51,6 @@ struct virtq_info *virtq_add_to_device(volatile virtio_regs *regs, uint32 queue_
 
 void virtio_check_capabilities(virtio_regs *regs, struct virtio_cap *caps, uint32 n);
 
-#define VIRTIO_INDP_CAPS                                              \
-    {"VIRTIO_F_RING_INDIRECT_DESC", 28, false,                        \
-     "Negotiating this feature indicates that the driver can use"     \
-     " descriptors with the VIRTQ_DESC_F_INDIRECT flag set, as"       \
-     " described in 2.4.5.3 Indirect Descriptors."},                  \
-        {"VIRTIO_F_RING_EVENT_IDX", 29, false,                        \
-         "This feature enables the used_event and the avail_event "   \
-         "fields"                                                     \
-         " as described in 2.4.7 and 2.4.8."},                        \
-        {"VIRTIO_F_VERSION_1", 32, false,                             \
-         "This indicates compliance with this specification, giving " \
-         "a"                                                          \
-         " simple way to detect legacy devices or drivers."},
-
 int virtio_blk_init(volatile virtio_regs *regs, uint32 intid);
 // int virtio_net_init(virtio_regs *regs, uint32 intid);
 
