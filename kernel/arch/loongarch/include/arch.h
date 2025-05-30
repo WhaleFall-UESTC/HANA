@@ -219,8 +219,8 @@ static inline void __iocsrwr_d(uint64 val, uint64 iocsr) {
 /* 例外状态 (ESTAT) */
 #define CSR_ESTAT_IS    (0x1FFFUL << 0) // 中断状态位 R
 #define CSR_ESTAT_MsgInt (0x1 << 14)  // 消息中断状态 R
-#define CSR_ESTAT_Ecode (0x1FFFUL << 16) // 例外类型一级编码 R
-#define CSR_ESTAT_EsubCode (0x7FFFUL << 22) // 例外类型二级编码 R
+#define CSR_ESTAT_Ecode (0x1FUL << 16) // 例外类型一级编码 R
+#define CSR_ESTAT_EsubCode (0xFUL << 22) // 例外类型二级编码 R
 
 /* 例外程序返回地址 (ERA) */
 #define CSR_ERA_PC      (0xFFFFFFFFUL << 0) // 例外返回地址 RW
