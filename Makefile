@@ -25,7 +25,7 @@ QEMU := qemu-system-loongarch64
 QEMUOPTS := -kernel $(KERNEL) -m $(MEM) -nographic -smp $(SMP) -drive file=$(FS),if=none,format=raw,id=x0  \
             -device virtio-blk-pci,drive=x0,bus=pcie.0 -no-reboot  -device virtio-net-pci,netdev=net0 \
             -netdev user,id=net0,hostfwd=tcp::5555-:5555,hostfwd=udp::5555-:5555  \
-            -rtc base=utc -d guest_errors,int,trace:virtio*
+            -rtc base=utc -d guest_errors,int,trace:virtio*,trace:loongarch_extioi*,trace:plic*
             # -drive file=$(DISK),if=none,format=raw,id=x1 -device virtio-blk-pci,drive=x1,bus=pcie.0
 LOONGARCH_CFLAGS = -march=loongarch64 -mabi=lp64d
 LOONGARCH_CFLAGS += -DARCH_LOONGARCH

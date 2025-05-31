@@ -4,11 +4,11 @@
 #include <drivers/intc.h>
 
 #define ioscr_set_bit(base, cnt) \
-    iocsr_writeq((base) + ((cnt) >> 3UL), \
-        iocsr_readq((base) + ((cnt) >> 3UL)) | (0x1UL << ((cnt) & 0x7UL)));
+    iocsr_writeq((base) + ((cnt) >> 6UL), \
+        iocsr_readq((base) + ((cnt) >> 6UL)) | (0x1UL << ((cnt) & 0x7FUL)));
 #define ioscr_reset_bit(base, cnt) \
-    iocsr_writeq((base) + ((cnt) >> 3UL), \
-        iocsr_readq((base) + ((cnt) >> 3UL)) & ~(0x1UL << ((cnt) & 0x7UL)));
+    iocsr_writeq((base) + ((cnt) >> 6UL), \
+        iocsr_readq((base) + ((cnt) >> 6UL)) & ~(0x1UL << ((cnt) & 0x7FUL)));
 
 static inline uint64 lowbit(uint64 val) {
     return val & (-val);

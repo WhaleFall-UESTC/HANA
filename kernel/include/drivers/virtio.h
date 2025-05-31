@@ -107,12 +107,8 @@ struct virtqueue
 
 struct virtq_info
 {
-    union
-    {
-        uint64 phyaddr;
-        /* Physical page frame number of struct virtqueue. */
-        uint64 pfn;
-    };
+    /* Physical page frame number of struct virtqueue. */
+    uint64 pfn;
 
     uint32 seen_used;
     uint32 free_desc;

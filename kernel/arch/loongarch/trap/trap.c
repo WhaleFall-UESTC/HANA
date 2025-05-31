@@ -69,6 +69,7 @@ trap(int ecode)
 {
     handler fn = NULL;
     if (ecode == 0) {
+        log("intr get");
         uint64 estat_is = r_csr_estat() & CSR_ESTAT_IS;
         uint64 ecfg_lie = r_csr_ecfg() & CSR_ECFG_LIE;
         uint64 pending = estat_is & ecfg_lie;

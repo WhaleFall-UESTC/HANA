@@ -177,9 +177,9 @@ static unsigned int pic_get_device_connected()
 /*打印pci设备的地址信息*/
 void pci_device_bar_dump(pci_device_bar_t *bar)
 {
-	debug("pci_device_bar_dump: type: %s\n", bar->type == PCI_BAR_TYPE_IO ? "io base address" : "mem base address");
-	debug("pci_device_bar_dump: base address: %lx\n", bar->base_addr);
-	debug("pci_device_bar_dump: len: %lx\n", bar->length);
+	debug("pci_device_bar_dump: type: %s", bar->type == PCI_BAR_TYPE_IO ? "io base address" : "mem base address");
+	debug("pci_device_bar_dump: base address: %lx", bar->base_addr);
+	debug("pci_device_bar_dump: len: %lx", bar->length);
 }
 
 /*创建一个pci设备信息结构体*/
@@ -255,38 +255,38 @@ static void pci_device_init(
 /*打印配置信息*/
 void pci_device_dump(pci_device_t *device)
 {
-	//debug("status:      %d\n", device->flags);
+	//debug("status:      %d", device->flags);
 
-	debug("pci_device_dump: vendor id:      0x%x\n", device->vendor_id);
-	debug("pci_device_dump: device id:      0x%x\n", device->device_id);
-	debug("pci_device_dump: class code:     0x%x\n", device->class_code);
-	debug("pci_device_dump: revision id:    0x%x\n", device->revision_id);
-	debug("pci_device_dump: multi function: %d\n", device->multi_function);
-	debug("pci_device_dump: card bus CIS pointer: %x\n", device->card_bus_pointer);
-	debug("pci_device_dump: subsystem vendor id: %x\n", device->subsystem_vendor_id);
-	debug("pci_device_dump: subsystem device id: %x\n", device->subsystem_device_id);
-	debug("pci_device_dump: expansion ROM base address: %x\n", device->expansion_rom_base_addr);
-	debug("pci_device_dump: capability list pointer:  %x\n", device->capability_list);
-	debug("pci_device_dump: irq line: %d\n", device->irq_line);
-	debug("pci_device_dump: irq pin:  %d\n", device->irq_pin);
-	debug("pci_device_dump: min Gnt: %d\n", device->min_gnt);
-	debug("pci_device_dump: max Lat:  %d\n", device->max_lat);
+	debug("pci_device_dump: vendor id:      0x%x", device->vendor_id);
+	debug("pci_device_dump: device id:      0x%x", device->device_id);
+	debug("pci_device_dump: class code:     0x%x", device->class_code);
+	debug("pci_device_dump: revision id:    0x%x", device->revision_id);
+	debug("pci_device_dump: multi function: %d", device->multi_function);
+	debug("pci_device_dump: card bus CIS pointer: %x", device->card_bus_pointer);
+	debug("pci_device_dump: subsystem vendor id: %x", device->subsystem_vendor_id);
+	debug("pci_device_dump: subsystem device id: %x", device->subsystem_device_id);
+	debug("pci_device_dump: expansion ROM base address: %x", device->expansion_rom_base_addr);
+	debug("pci_device_dump: capability list pointer:  %x", device->capability_list);
+	debug("pci_device_dump: irq line: %d", device->irq_line);
+	debug("pci_device_dump: irq pin:  %d", device->irq_pin);
+	debug("pci_device_dump: min Gnt: %d", device->min_gnt);
+	debug("pci_device_dump: max Lat:  %d", device->max_lat);
 	int i;
 	for (i = 0; i < PCI_MAX_BAR; i++) {
 		/*if not a invalid bar*/
 		if (device->bar[i].type != PCI_BAR_TYPE_INVALID) {
-			debug("pci_device_dump: bar %d:\n", i);
+			debug("pci_device_dump: bar %d:", i);
 			pci_device_bar_dump(&device->bar[i]);
 		}
 	}
-	debug("\n");
+	debug("");
 }
 
 static void pci_scan_device(unsigned char bus, unsigned char device, unsigned char function)
 {
 	/*读取总线设备的设备id*/
 	uint32 val;
-	// info("read config a\n");
+	// info("read config a");
 	pci_read_config(PCI_CONFIG_BASE,bus, device, function, PCI_DEVICE_VENDER,(uint32*)&val);
 	uint16 vendor_id = val & 0xffff;
 	uint16 device_id = val >> 16;
@@ -301,7 +301,7 @@ static void pci_scan_device(unsigned char bus, unsigned char device, unsigned ch
 	}
 
 	/*读取设备类型*/
-	// info("read config b\n");
+	// info("read config b");
 	pci_read_config(PCI_CONFIG_BASE, bus, device, function, PCI_BIST_HEADER_TYPE_LATENCY_TIMER_CACHE_LINE,(uint32*)&val);
 	unsigned char header_type = ((val >> 16));
 	/*读取 command 寄存器*/
@@ -385,7 +385,7 @@ static void pci_scan_device(unsigned char bus, unsigned char device, unsigned ch
 	pci_dev->min_gnt = (val >> 16) & 0xff;
 	pci_dev->max_lat = (val >> 24) & 0xff;
 
-	/*debug("pci_scan_device: pci device at bus: %d, device: %d function: %d\n", bus, device, function);
+	/*debug("pci_scan_device: pci device at bus: %d, device: %d function: %d", bus, device, function);
 	  pci_device_dump(pci_dev);*/
 
 }
@@ -399,12 +399,12 @@ static void pci_scan_buses()
 	for (bus = 0; bus < PCI_MAX_BUS; bus++) {//遍历总线
 		for (device = 0; device < PCI_MAX_DEV; device++) {//遍历总线上的每一个设备
 			for (function = 0; function < PCI_MAX_FUN; function++) {//遍历每个功能号
-				// info("bus: %d, device: %d, function: %d\n",bus ,device ,function);
+				// info("bus: %d, device: %d, function: %d",bus ,device ,function);
 				pci_scan_device(bus, device, function);
 			}
 		}
 	}
-	info("pci_scan_buses done\n");
+	info("pci_scan_buses done");
 }
 
 pci_device_t* pci_get_device(unsigned int vendor_id, unsigned int device_id)
@@ -455,7 +455,7 @@ pci_device_t* pci_get_device_by_bus(unsigned int bus, unsigned int dev,unsigned 
 			tmp->bus == bus &&
 			tmp->dev == dev &&
 			tmp->function == function) {
-			debug("pci_get_device_by_bus\n");
+			debug("pci_get_device_by_bus");
 			return tmp;
 		}
 	}
@@ -507,14 +507,14 @@ void pci_enable_bus_mastering(pci_device_t *device)
 	unsigned int val;
 	pci_read_config(PCI_BARS_ADDRESS0,device->bus, device->dev, device->function,PCI_STATUS_COMMAND,(uint32*)&val);
 	// #if DEBUG_LOCAL == 1
-	debug("pci_enable_bus_mastering: before command: %x\n", val);    
+	debug("pci_enable_bus_mastering: before command: %x", val);    
 	//#endif
 	val |= 4;
 	pci_write_config(PCI_BARS_ADDRESS0,device->bus, device->dev, device->function, PCI_STATUS_COMMAND, val);
 
 	pci_read_config(PCI_BARS_ADDRESS0,device->bus, device->dev, device->function, PCI_STATUS_COMMAND,(uint32*)&val);
 	//#if DEBUG_LOCAL == 1
-	debug("pci_enable_bus_mastering: after command: %x\n", val);    
+	debug("pci_enable_bus_mastering: after command: %x", val);    
 	//#endif
 }
 
@@ -528,7 +528,7 @@ pci_device_t* pci_get_next_device(devid_t* pdevid) {
 
 void pci_init()
 {
-	debug("pci_init start\n");
+	debug("pci_init start");
 	/*初始化pci设备信息结构体*/
 	int i;
 	for (i = 0; i < PCI_MAX_DEVICE_NR; i++) {
@@ -539,6 +539,6 @@ void pci_init()
 	debug("scan done");
 	/*pci_device_t *pci_dev=pci_get_device_by_bus(0, 8, 0);
 	  pci_device_dump(pci_dev);*/
-	info("init_pci: pci type device found %d.\n",
+	info("init_pci: pci type device found %d.",
 		   pic_get_device_connected());
 }
