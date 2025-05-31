@@ -17,7 +17,6 @@
 
 struct virtq_info* virtq_add_to_device(volatile virtio_pci_header *header, uint32 queue_sel)
 {
-	uint32 max_queue_size;
 	KALLOC(struct virtq_info, virtq_info);
 	assert(virtq_info != NULL);
 
@@ -33,10 +32,6 @@ struct virtq_info* virtq_add_to_device(volatile virtio_pci_header *header, uint3
 	}
 
 	// Step 3: Allocate and zero the queue pages
-
-	if(VIRTIO_DEFAULT_QUEUE_SIZE > max_queue_size) {
-		panic("Default queue size too big, must be lower than %d", max_queue_size);
-	}
 
 	virtq_info->free_desc = virtq_info->seen_used = 0;
 	virtq_info->virtq = virtq_create();
@@ -136,7 +131,7 @@ static int virtio_dev_init(pci_device_t* pci_dev)
 	{
 	case VIRTIO_DEV_BLK:
         debug("virtio block type");
-		return virtio_blk_init(header, pci_dev, pci_dev->irq_pin);
+		return virtio_blk_init(header, pci_dev);
         break;
 	case VIRTIO_DEV_NET:
         debug("virtio net type");

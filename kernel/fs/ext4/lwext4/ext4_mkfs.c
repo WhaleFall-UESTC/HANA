@@ -49,9 +49,8 @@
 #include <fs/ext4/lwext4/ext4_ialloc.h>
 #include <fs/ext4/lwext4/ext4_mkfs.h>
 
-#include <inttypes.h>
-#include <string.h>
-#include <stdlib.h>
+#include <common.h>
+#include <klib.h>
 
 struct fs_aux_info {
 	struct ext4_sblock *sb;

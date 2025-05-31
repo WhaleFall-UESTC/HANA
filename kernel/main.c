@@ -64,12 +64,13 @@ main()
     pci_init();
 #endif
 
+    block_subsys_init();
     virtio_device_init();
 
     // vfilesys_init();
     // out("Initialize vfs");
 
-    // test_proc_init((uint64) test);
+    test_proc_init((uint64) test);
 
 #ifdef ARCH_LOONGARCH
     intr_on();

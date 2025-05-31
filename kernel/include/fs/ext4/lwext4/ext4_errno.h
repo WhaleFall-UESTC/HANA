@@ -42,9 +42,6 @@ extern "C" {
 
 #include <fs/ext4/lwext4/ext4_config.h>
 
-#if !CONFIG_HAVE_OWN_ERRNO
-#include <errno.h>
-#else
 #define EPERM 1      /* Operation not permitted */
 #define ENOENT 2     /* No such file or directory */
 #define EIO 5        /* I/O error */
@@ -66,7 +63,6 @@ extern "C" {
 #define ENOTEMPTY 39 /* Directory not empty */
 #define ENODATA 61   /* No data available */
 #define ENOTSUP 95   /* Not supported */
-#endif
 
 #ifndef ENODATA
  #ifdef ENOATTR

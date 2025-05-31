@@ -9,7 +9,7 @@ static unsigned int pic_get_device_connected(void);
 static pci_device_t* pci_alloc_device(void);
 
 pci_device_t pci_device_table[PCI_MAX_DEVICE_NR]; /*存储设备信息的结构体数组*/
-uint64 pci_iospace_free_base = PCI_IO_BASE;
+uint64 pci_iospace_free_base = PCI_IOSPACE_STA;
 uint64 pci_memspace_free_base = PCI_MEM_BASE;
 
 /*
@@ -31,8 +31,9 @@ static inline void pci_write_config(unsigned long base_cfg_addr, unsigned int bu
 }
 
 /* 初始化pci设备的bar地址 */
-static void pci_device_bar_init(pci_device_bar_t *bar, unsigned int addr_reg_val, unsigned int len_reg_val)
+static uint32 pci_device_bar_init(pci_device_bar_t *bar, unsigned int addr_reg_val, unsigned int len_reg_val)
 {
+	uint32 retval;
 	/* if addr is 0xffffffff, we set it to 0 */
 	if (addr_reg_val == 0xffffffff) {
 		addr_reg_val = 0;
@@ -46,10 +47,12 @@ static void pci_device_bar_init(pci_device_bar_t *bar, unsigned int addr_reg_val
 		 * Bit63-32:保留
 		 */
 		bar->type = PCI_BAR_TYPE_IO;
-		bar->length = ~(len_reg_val & PCI_BASE_ADDR_IO_MASK) + 1;
+		bar->length = (uint32)~(len_reg_val & PCI_BAR_IO_ADDR_MASK) + 1;
 		
-		pci_iospace_free_base = ALIGN(pci_iospace_free_base, bar->length);
-		bar->base_addr = pci_iospace_free_base;
+		retval = pci_iospace_free_base = ALIGN(pci_iospace_free_base, bar->length);
+		bar->base_addr = PCI_IO_BASE | pci_iospace_free_base;
+
+		pci_iospace_free_base += bar->length;
 	} else {
 		/*
 		 * MEM 基地址存储器:
@@ -58,11 +61,14 @@ static void pci_device_bar_init(pci_device_bar_t *bar, unsigned int addr_reg_val
 		 * Bit64-4:基地址单元
 		 */
 		bar->type = PCI_BAR_TYPE_MEM;
-		bar->length = ~(len_reg_val & PCI_BASE_ADDR_MEM_MASK) + 1;
+		bar->length = (uint32)~(len_reg_val & PCI_BAR_MEM_ADDR_MASK) + 1;
 		
-		pci_memspace_free_base = ALIGN(pci_memspace_free_base, bar->length);
+		retval = pci_memspace_free_base = ALIGN(pci_memspace_free_base, bar->length);
 		bar->base_addr = pci_memspace_free_base;
+
+		pci_memspace_free_base += bar->length;
 	}
+	return retval;
 }
 
 /*获取io地址*/
@@ -106,9 +112,54 @@ unsigned int pci_device_get_mem_len(pci_device_t *device)
 /*获取中断号*/
 unsigned int pci_device_get_irq_line(pci_device_t *device)
 {
-	return device->irq_line;
+	uint32 val;
+	pci_read_config(PCI_CONFIG_BASE, device->bus, device->dev, device->function, PCI_MAX_LNT_MIN_GNT_IRQ_PIN_IRQ_LINE, &val);
+	return device->irq_line = (val & 0xFF);
 }
 
+/*获取中断引脚*/
+unsigned int pci_device_get_irq_pin(pci_device_t *device)
+{
+	uint32 val;
+	pci_read_config(PCI_CONFIG_BASE, device->bus, device->dev, device->function, PCI_MAX_LNT_MIN_GNT_IRQ_PIN_IRQ_LINE, &val);
+	return device->irq_pin = (val & 0xFF00) >> 8;
+}
+
+struct slot {
+	uint64 slot_id;
+	uint32 pin;
+	uint32 intid;
+};
+
+static struct slot slot_info[] = {
+	{0x00, 0x01, 0x10},
+	{0x00, 0x02, 0x11},
+	{0x00, 0x03, 0x12},
+	{0x00, 0x04, 0x13},
+	{0x800, 0x01, 0x11},
+	{0x800, 0x02, 0x12},
+	{0x800, 0x03, 0x13},
+	{0x800, 0x04, 0x10},
+	{0x1000, 0x01, 0x12},
+	{0x1000, 0x02, 0x13},
+	{0x1000, 0x03, 0x10},
+	{0x1000, 0x04, 0x11},
+	{0x1800, 0x01, 0x13},
+	{0x1800, 0x02, 0x10},
+	{0x1800, 0x03, 0x11},
+	{0x1800, 0x04, 0x12},
+};
+
+unsigned int pci_device_get_intc(pci_device_t* device) {
+	for(int i = 0; i < nr_elem(slot_info); i ++) {
+		if(((device->dev << 11) & 0x1800) == slot_info[i].slot_id) {
+			uint32 pin = pci_device_get_irq_pin(device);
+			if(pin == slot_info[i].pin)
+				return slot_info[i].intid;
+		}
+	}
+	return 0;
+}
 
 static unsigned int pic_get_device_connected()
 {
@@ -294,12 +345,12 @@ static void pci_scan_device(unsigned char bus, unsigned char device, unsigned ch
 		pci_write_config(PCI_CONFIG_BASE, bus, device, function, reg, val);
 		/* init pci device bar */
 		if (len != 0 && len != 0xffffffff) {
-			pci_device_bar_init(&pci_dev->bar[bar], val, len);
+			uint32 addr = pci_device_bar_init(&pci_dev->bar[bar], val, len);
 			if(pci_dev->bar[bar].type == PCI_BAR_TYPE_IO) {
-				pci_write_config(PCI_CONFIG_BASE, bus, device, function, reg, pci_iospace_free_base | (val & PCI_BASE_ADDR_IO_MASK));
+				pci_write_config(PCI_CONFIG_BASE, bus, device, function, reg, addr | (val & PCI_BAR_IO_ATTR_MASK));
 			}
 			else {
-				pci_write_config(PCI_CONFIG_BASE, bus, device, function, reg, pci_memspace_free_base | (val & PCI_BASE_ADDR_MEM_MASK));
+				pci_write_config(PCI_CONFIG_BASE, bus, device, function, reg, addr | (val & PCI_BAR_MEM_ATTR_MASK));
 			}
 		}
 	}
@@ -308,28 +359,28 @@ static void pci_scan_device(unsigned char bus, unsigned char device, unsigned ch
 	pci_write_config(PCI_CONFIG_BASE, bus, device, function, PCI_STATUS_COMMAND, pci_dev->command | PCI_COMMAND_IO | PCI_COMMAND_MEMORY);
 
 	/* 获取 card bus CIS 指针 */
-	pci_read_config(PCI_CONFIG_BASE,bus, device, function, PCI_CARD_BUS_POINTER,&val);
+	pci_read_config(PCI_CONFIG_BASE, bus, device, function, PCI_CARD_BUS_POINTER, &val);
 	pci_dev->card_bus_pointer = val;
 
 	/* 获取子系统设备 ID 和供应商 ID */
-	pci_read_config(PCI_CONFIG_BASE,bus, device, function, PCI_SUBSYSTEM_ID,&val);
+	pci_read_config(PCI_CONFIG_BASE, bus, device, function, PCI_SUBSYSTEM_ID, &val);
 	pci_dev->subsystem_vendor_id = val & 0xffff;
 	pci_dev->subsystem_device_id = (val >> 16) & 0xffff;
 
 	/* 获取扩展ROM基地址 */
-	pci_read_config(PCI_CONFIG_BASE,bus, device, function, PCI_EXPANSION_ROM_BASE_ADDR,&val);
+	pci_read_config(PCI_CONFIG_BASE, bus, device, function, PCI_EXPANSION_ROM_BASE_ADDR, &val);
 	pci_dev->expansion_rom_base_addr = val;
 
 	/* 获取能力列表 */
-	pci_read_config(PCI_CONFIG_BASE,bus, device, function, PCI_CAPABILITY_LIST,&val);
+	pci_read_config(PCI_CONFIG_BASE, bus, device, function, PCI_CAPABILITY_LIST, &val);
 	pci_dev->capability_list = val;
 
 	/*获取中断相关的信息*/
-	pci_read_config(PCI_CONFIG_BASE,bus, device, function, PCI_MAX_LNT_MIN_GNT_IRQ_PIN_IRQ_LINE,&val);
+	pci_read_config(PCI_CONFIG_BASE, bus, device, function, PCI_MAX_LNT_MIN_GNT_IRQ_PIN_IRQ_LINE, &val);
 	if ((val & 0xff) > 0 && (val & 0xff) < 32) {
 		unsigned int irq = val & 0xff;
 		pci_dev->irq_line = irq;
-		pci_dev->irq_pin = (val >> 8)& 0xff;
+		pci_dev->irq_pin = (val >> 8) & 0xff;
 	}
 	pci_dev->min_gnt = (val >> 16) & 0xff;
 	pci_dev->max_lat = (val >> 24) & 0xff;

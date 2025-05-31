@@ -6,7 +6,6 @@
 #include <drivers/pci.h>
 #include <locking/spinlock.h>
 #include <irq/interrupt.h>
-#include <proc/proc.h>
 #include <io/blk.h>
 #include <klib.h>
 #include <arch.h>
@@ -48,7 +47,7 @@ struct virtio_blk
 
 static void virtio_blk_handle_used(struct virtio_blk *dev, uint32 usedidx)
 {
-    struct virtq_info* virtq_info = dev->virtq_info;
+    struct virtq_info *virtq_info = dev->virtq_info;
     volatile struct virtqueue *virtq = virtq_info->virtq;
     uint32 desc1, desc2, desc3;
     struct virtio_blk_req *req;
@@ -100,7 +99,7 @@ static irqret_t virtio_blk_isr(struct blkdev *blkdev)
 {
     int i;
     struct virtio_blk *dev = get_vblkdev(blkdev);
-    struct virtq_info* virtq_info = dev->virtq_info;
+    struct virtq_info *virtq_info = dev->virtq_info;
 
     if (!dev)
     {
@@ -113,9 +112,9 @@ static irqret_t virtio_blk_isr(struct blkdev *blkdev)
         log("virtio-blk: IRQ not for this device");
         return IRQ_SKIP;
     }
-    
+
     for (i = virtq_info->seen_used; i != (virtq_info->virtq->used.idx % VIRTIO_DEFAULT_QUEUE_SIZE);
-    i = wrap(i + 1, VIRTIO_DEFAULT_QUEUE_SIZE))
+         i = wrap(i + 1, VIRTIO_DEFAULT_QUEUE_SIZE))
     {
         virtio_blk_handle_used(dev, i);
     }
@@ -140,12 +139,12 @@ static void virtio_blk_status(struct blkdev *dev)
     struct virtio_blk *blkdev = get_vblkdev(dev);
     volatile struct virtqueue *virtq = blkdev->virtq_info->virtq;
     log("virtio_blk_dev at 0x%lx",
-           virt_to_phys((uint64)blkdev->header));
+        virt_to_phys((uint64)blkdev->header));
     log("    Status=0x%x", READ8(blkdev->header->DeviceStatus));
     log("    DeviceID=0x%x", READ32(blkdev->pci_dev->device_id));
     log("    VendorID=0x%x", READ32(blkdev->pci_dev->vendor_id));
     log("    InterruptStatus=0x%x",
-           READ8(blkdev->header->ISRStatus));
+        READ8(blkdev->header->ISRStatus));
     log("  Queue 0:");
     log("    avail.idx = %u", virtq->avail.idx);
     log("    used.idx = %u", virtq->used.idx);
@@ -171,11 +170,11 @@ static void virtio_blk_submit(struct blkdev *dev, struct blkreq *req)
 {
     struct virtio_blk *blk = get_vblkdev(dev);
     struct virtio_blk_req *hdr = get_vblkreq(req);
-    struct virtq_info* virtq_info = blk->virtq_info;
+    struct virtq_info *virtq_info = blk->virtq_info;
     volatile struct virtqueue *virtq = blk->virtq_info->virtq;
     uint32 d1, d2, d3, datamode = 0;
 
-    if(req->size & (VIRTIO_BLK_SECTOR_SIZE - 1))
+    if (req->size & (VIRTIO_BLK_SECTOR_SIZE - 1))
     {
         error("size not aligned to sector size");
         return;
@@ -226,11 +225,13 @@ struct blkdev_ops virtio_blk_ops = {
     .irq_handle = virtio_blk_isr,
 };
 
-int virtio_blk_init(volatile virtio_pci_header *header, pci_device_t* pci_dev, uint32 intid)
+int virtio_blk_init(volatile virtio_pci_header *header, pci_device_t *pci_dev)
 {
     struct virtio_blk *vdev;
     struct virtq_info *virtq_info;
     uint64 blk_size, _blk_size;
+    uint32 irqid, irqpin;
+    uint32 intid;
 
     vdev = kalloc(sizeof(struct virtio_blk));
 
@@ -238,15 +239,23 @@ int virtio_blk_init(volatile virtio_pci_header *header, pci_device_t* pci_dev, u
     virtio_check_capabilities(header, blk_caps, nr_elem(blk_caps));
 
     WRITE8(header->DeviceStatus, READ8(header->DeviceStatus) | VIRTIO_STATUS_FEATURES_OK);
-	mb();
-	if (!(header->DeviceStatus & VIRTIO_STATUS_FEATURES_OK)) {
-		error("virtio-blk did not accept our features");
-		return -1;
-	}
+    mb();
+    if (!(header->DeviceStatus & VIRTIO_STATUS_FEATURES_OK))
+    {
+        error("virtio-blk did not accept our features");
+        return -1;
+    }
 
     // Perform device-specific setup
     virtq_info = virtq_add_to_device(header, 0);
     assert(virtq_info != NULL);
+
+    irqid = pci_device_get_irq_line(pci_dev);
+    irqpin = pci_device_get_irq_pin(pci_dev);
+
+    log("irqline : %d, irqpin: %d", irqid, irqpin);
+
+    intid = pci_device_get_intc(pci_dev);
 
     vdev->header = header;
     vdev->pci_dev = pci_dev;
@@ -257,19 +266,23 @@ int virtio_blk_init(volatile virtio_pci_header *header, pci_device_t* pci_dev, u
     // Read device configuration fields
     blk_size = READ64(vdev->config->capacity);
 
-    do {
+    do
+    {
         _blk_size = blk_size;
         mb();
         blk_size = READ64(vdev->config->capacity);
-    } while(blk_size != _blk_size);
-    
+    } while (blk_size != _blk_size);
+
     // Set DRIVER_OK status bit
     WRITE8(header->DeviceStatus, READ8(header->DeviceStatus) | VIRTIO_STATUS_DRIVER_OK);
     mb();
 
     blkdev_init(&vdev->blkdev, intid, blk_size * VIRTIO_BLK_SECTOR_SIZE,
                 VIRTIO_BLK_SECTOR_SIZE, intid, VIRTIO_BLK_DEV_NAME, &virtio_blk_ops);
-    debug("virtio-blk: %s, size=%lu, intid=%d", vdev->blkdev.name, vdev->blkdev.size, vdev->intid);
+    // debug("virtio-blk: %s, size=%lu, intid=%d", vdev->blkdev.name, vdev->blkdev.size, vdev->intid);
+    // debug("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+    debug("virtio-blk: %s, size=%lu", vdev->blkdev.name, vdev->blkdev.size);
+    debug("intid=%d", vdev->intid);
     blkdev_register(&vdev->blkdev);
 
     return 0;

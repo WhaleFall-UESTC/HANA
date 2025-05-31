@@ -1,10 +1,6 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
-
-#include <stdarg.h>
-#include <stdbool.h>
-
 #define XLEN 64
 #define NCPU 1
 #define MEMORY_SIZE_SHIFT 27
@@ -130,6 +126,8 @@ typedef unsigned int devid_t;
 #define PRIX32 "X"
 #define PRIXLEAST32 "X"
 #define PRIXFAST32 "X"
+
+#define PRIu16 "hu"
 
 #define SCNd32 "d"
 #define SCNdLEAST32 "d"

@@ -25,10 +25,10 @@
 
 struct virtio_cap
 {
-    const char *name;
+    char *name;
     uint32 bit;
     bool support;
-    const char *help;
+    char *help;
 };
 
 struct virtqueue_desc

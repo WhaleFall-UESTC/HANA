@@ -52,7 +52,6 @@
 
 #include <klib.h>
 #include <common.h>
-#include <stdlib.h>
 
 /**@brief Get hash version used in directory index.
  * @param ri Pointer to root info structure of index

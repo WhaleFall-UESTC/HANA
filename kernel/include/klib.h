@@ -2,7 +2,7 @@
 #define __KLIB_H__
 
 #include <common.h>
-#include <stdarg.h>
+#include <lib/stdarg.h>
 
 /* lib/string.c */
 size_t          strlen(const char *s);

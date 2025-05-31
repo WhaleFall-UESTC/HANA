@@ -5,7 +5,10 @@
 
 #define PCI_CONFIG_BASE 0x20000000UL /* PCI配置空间数据端口 */
 #define PCI_IO_BASE 0x18004000UL
+#define PCI_IOSPACE_STA 0x4000UL
+#define PCI_IOSPACE_END 0xFFFFUL
 #define PCI_MEM_BASE 0x40000000UL
+#define PCI_MEM_SIZE 0x40000000UL
 
 #define PCI_MAX_BAR 6         /*每个设备最多有6地址信息*/
 #define PCI_MAX_BUS 256       /*PCI总共有256个总线*/
@@ -45,8 +48,10 @@
 #define PCI_COMMAND_INTX_DISABLE 0x400 /* INTx模拟禁用 */
 
 /*IO地址和MEM地址的地址mask*/
-#define PCI_BASE_ADDR_MEM_MASK (~0x0FUL) // 屏蔽低四位
-#define PCI_BASE_ADDR_IO_MASK (~0x03UL)  // 屏蔽低两位
+#define PCI_BAR_MEM_ATTR_MASK 0x0FUL
+#define PCI_BAR_IO_ATTR_MASK 0x03UL
+#define PCI_BAR_MEM_ADDR_MASK (~0x0FUL) // 屏蔽低四位
+#define PCI_BAR_IO_ADDR_MASK (~0x03UL)  // 屏蔽低两位
 
 /* PCI设备ID */
 struct pci_device_id
@@ -108,9 +113,12 @@ unsigned int pci_device_get_io_addr(pci_device_t *device);
 unsigned int pci_device_get_mem_addr(pci_device_t *device);
 unsigned int pci_device_get_mem_len(pci_device_t *device);
 unsigned int pci_device_get_irq_line(pci_device_t *device);
+unsigned int pci_device_get_irq_pin(pci_device_t *device);
+unsigned int pci_device_get_intc(pci_device_t* device);
 void pci_enable_bus_mastering(pci_device_t *device);
 pci_device_t *pci_get_device(unsigned int vendor_id, unsigned int device_id);
 pci_device_t *pci_get_device_by_class_code(unsigned int class, unsigned int sub_class);
+pci_device_t *pci_get_next_device(devid_t* pdevid);
 
 pci_device_t *pci_locate_device(unsigned short vendor, unsigned short device);
 pci_device_t *pci_locate_class(unsigned short class, unsigned short _subclass);
@@ -124,7 +132,6 @@ pci_device_t *pci_get_device_by_bus(unsigned int bus,
                                     unsigned int dev,
                                     unsigned int function);
 void pci_init(void);
-pci_device_t* pci_get_next_device(devid_t* pdevid);
 
 #define pci_for_using_device(device_ptr) \
     for(devid_t __devid = 0; (device_ptr = pci_get_next_device(&__devid)) != NULL; )

@@ -12,7 +12,7 @@ QEMU := qemu-system-riscv64
 QEMUOPTS := -machine virt -kernel $(KERNEL) -m $(MEM) -nographic -smp $(SMP) -bios default -drive file=$(FS),if=none,format=raw,id=x0 \
         	-device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 -no-reboot -device virtio-net-device,netdev=net -netdev user,id=net \
         	-rtc base=utc \
-        	-drive file=$(DISK),if=none,format=raw,id=x1 -device virtio-blk-device,drive=x1,bus=virtio-mmio-bus.1
+        	-drive file=$(DISK),if=none,format=raw,id=x1 -device virtio-blk-device,drive=x1,bus=virtio-mmio-bus.1 -d trace:virtio*
 RISCV_CFLAGS = -mcmodel=medany -march=rv64imafd -mabi=lp64
 RISCV_CFLAGS += -DARCH_RISCV 
 RISCV_CFLAGS += -DBIOS_SBI
@@ -20,13 +20,12 @@ RISCV_CFLAGS += -DBIOS_SBI
 else ifeq ($(ARCH), loongarch)
 KERNEL := kernel-la
 DISK := disk-la.img
-# Newlib does not support LoongArch yet
 TOOLPREFIX := loongarch64-unknown-linux-gnu-
 QEMU := qemu-system-loongarch64
 QEMUOPTS := -kernel $(KERNEL) -m $(MEM) -nographic -smp $(SMP) -drive file=$(FS),if=none,format=raw,id=x0  \
             -device virtio-blk-pci,drive=x0,bus=pcie.0 -no-reboot  -device virtio-net-pci,netdev=net0 \
             -netdev user,id=net0,hostfwd=tcp::5555-:5555,hostfwd=udp::5555-:5555  \
-            -rtc base=utc
+            -rtc base=utc -d guest_errors,int,trace:virtio*
             # -drive file=$(DISK),if=none,format=raw,id=x1 -device virtio-blk-pci,drive=x1,bus=pcie.0
 LOONGARCH_CFLAGS = -march=loongarch64 -mabi=lp64d
 LOONGARCH_CFLAGS += -DARCH_LOONGARCH

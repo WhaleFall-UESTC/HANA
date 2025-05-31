@@ -263,6 +263,7 @@ int virtio_blk_init(volatile virtio_regs *regs, uint32 intid)
     blkdev_init(&vdev->blkdev, intid, blk_size * VIRTIO_BLK_SECTOR_SIZE,
                 VIRTIO_BLK_SECTOR_SIZE, intid, VIRTIO_BLK_DEV_NAME, &virtio_blk_ops);
     debug("virtio-blk: %s, size=%lu, intid=%d", vdev->blkdev.name, vdev->blkdev.size, vdev->intid);
+    // debug("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
     blkdev_register(&vdev->blkdev);
 
     return 0;

@@ -13,11 +13,11 @@ void test() {
     // test_kalloc();
 
     // test_uart();
-    // test_virtio();
+    test_virtio();
     // test_walkaddr();
     // test_virtio();
 
-    test_fs();
+    // test_fs();
 
     PASS("test finish!!!");
     // intr_on();

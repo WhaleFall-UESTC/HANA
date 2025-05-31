@@ -32,6 +32,6 @@ typedef volatile struct __attribute__((packed)) {
  */
 struct virtq_info *virtq_add_to_device(volatile virtio_pci_header *header, uint32 queue_sel);
 void virtio_check_capabilities(virtio_pci_header *header, struct virtio_cap *caps, uint32 n);
-int virtio_blk_init(volatile virtio_pci_header *header, pci_device_t* pci_dev, uint32 intid)
+int virtio_blk_init(volatile virtio_pci_header *header, pci_device_t *pci_dev);
 
 #endif // __VIRTIO_PCI_H__

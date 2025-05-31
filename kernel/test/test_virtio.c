@@ -1,13 +1,17 @@
 #include <init.h>
 #include <io/blk.h>
+#ifdef ARCH_RISCV
 #include <drivers/virtio-mmio.h>
+#else
+#include <drivers/virtio-pci.h>
+#endif
 #include <common.h>
 #include <debug.h>
 #include <klib.h>
 #include <arch.h>
 #include <mm/mm.h>
 
-#define VIRTIO_BLK_DEV_NAME "virtio-blk1"
+#define VIRTIO_BLK_DEV_NAME "virtio-blk16"
 #define TEST_CYCLES 10
 #define BLOCK_SIZE 4096
 #define BLOCKS_PER_TEST 10
@@ -30,7 +34,12 @@ uint32 krand(void)
 void init_random()
 {
     uint32 seed;
+#ifdef ARCH_RISCV
     __asm__ __volatile__("csrr %0, cycle" : "=r"(seed));
+#else
+    uint32 tmp = 0;
+    __asm__ __volatile__("rdtimel.w %0, %1" : "=r"(seed) : "r"(tmp));
+#endif
     srand(seed);
 }
 
