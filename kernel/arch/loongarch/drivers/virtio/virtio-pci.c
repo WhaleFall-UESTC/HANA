@@ -115,6 +115,7 @@ static int virtio_dev_init(pci_device_t* pci_dev)
 	}
 
     virtio_pci_header* header = (virtio_pci_header*)WD_ADDR(pci_device_get_io_addr(pci_dev));
+	pci_enable_bus_mastering(pci_dev);
 
 	/* First step of initialization: reset */
 	WRITE8(header->DeviceStatus, 0);

@@ -208,20 +208,20 @@ static int pci_free_device(pci_device_t *device)
 	return -1;
 }
 
-// /*从配置空间中读取寄存器*/
-// void* pci_device_read(pci_device_t *device, unsigned int reg)
-// {
-// 	void* result;
-// 	pci_read_config(PCI_CONFIG_BASE,device->bus, device->dev, device->function, reg,(uint32*)result);
-// 	return result;
-// }
+/*从配置空间中读取寄存器*/
+unsigned int pci_device_read(pci_device_t *device, unsigned int reg)
+{
+	unsigned int result;
+	pci_read_config(PCI_CONFIG_BASE,device->bus, device->dev, device->function, reg, &result);
+	return result;
+}
 
-// /*将值写入 pci 设备配置空间寄存器*/
-// void pci_device_write(pci_device_t *device, unsigned int reg, unsigned int value)
-// {
+/*将值写入 pci 设备配置空间寄存器*/
+void pci_device_write(pci_device_t *device, unsigned int reg, unsigned int value)
+{
 
-// 	pci_write_config(PCI_CONFIG_BASE,device->bus, device->dev, device->function, reg, value);
-// }
+	pci_write_config(PCI_CONFIG_BASE, device->bus, device->dev, device->function, reg, value);
+}
 
 /*初始化pci设备信息*/
 static void pci_device_init(
@@ -407,23 +407,6 @@ static void pci_scan_buses()
 	info("pci_scan_buses done");
 }
 
-pci_device_t* pci_get_device(unsigned int vendor_id, unsigned int device_id)
-{
-	int i;
-	pci_device_t* device;
-
-	for (i = 0; i < PCI_MAX_DEVICE_NR; i++) {
-		device = &pci_device_table[i];
-
-		if (device->flags == PCI_DEVICE_USING &&
-			device->vendor_id == vendor_id && 
-			device->device_id == device_id) {
-			return device;
-		}
-	}
-	return NULL;
-}
-
 pci_device_t* pci_get_device_by_class_code(unsigned int class, unsigned int sub_class)
 {
 	int i;
@@ -442,8 +425,8 @@ pci_device_t* pci_get_device_by_class_code(unsigned int class, unsigned int sub_
 	return NULL;
 }
 
-/*通过主线号，设备号，功能号寻找设备信息*/
-pci_device_t* pci_get_device_by_bus(unsigned int bus, unsigned int dev,unsigned int function){
+/* 通过主线号，设备号，功能号寻找设备信息 */
+pci_device_t* pci_get_device_by_bus(unsigned int bus, unsigned int dev, unsigned int function){
 	if (bus>PCI_MAX_BUS|| dev>PCI_MAX_DEV || function>PCI_MAX_FUN)
 	{
 		return NULL;
@@ -499,23 +482,20 @@ pci_device_t *pci_locate_class(unsigned short class, unsigned short _subclass)
 	return NULL;
 }
 
-//pci_device_t* pci_device_find(char bus,char dev,char)
-
 /*这段代码的作用是启用PCI设备的总线主控功能*/
 void pci_enable_bus_mastering(pci_device_t *device)
 {
 	unsigned int val;
-	pci_read_config(PCI_BARS_ADDRESS0,device->bus, device->dev, device->function,PCI_STATUS_COMMAND,(uint32*)&val);
-	// #if DEBUG_LOCAL == 1
+	pci_read_config(PCI_CONFIG_BASE, device->bus, device->dev, device->function, PCI_STATUS_COMMAND, (uint32*)&val);
+#if DEBUG
 	debug("pci_enable_bus_mastering: before command: %x", val);    
-	//#endif
-	val |= 4;
-	pci_write_config(PCI_BARS_ADDRESS0,device->bus, device->dev, device->function, PCI_STATUS_COMMAND, val);
-
-	pci_read_config(PCI_BARS_ADDRESS0,device->bus, device->dev, device->function, PCI_STATUS_COMMAND,(uint32*)&val);
-	//#if DEBUG_LOCAL == 1
-	debug("pci_enable_bus_mastering: after command: %x", val);    
-	//#endif
+#endif
+	val |= PCI_COMMAND_MASTER;
+	pci_write_config(PCI_CONFIG_BASE, device->bus, device->dev, device->function, PCI_STATUS_COMMAND, val);
+#if DEBUG
+	pci_read_config(PCI_CONFIG_BASE, device->bus, device->dev, device->function, PCI_STATUS_COMMAND, (uint32*)&val);
+	debug("pci_enable_bus_mastering: after command: %x", val);
+#endif
 }
 
 pci_device_t* pci_get_next_device(devid_t* pdevid) {

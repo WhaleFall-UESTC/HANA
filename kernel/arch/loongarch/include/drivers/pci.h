@@ -16,7 +16,7 @@
 #define PCI_MAX_FUN 8         /*PCI设备总共有8个功能号*/
 #define PCI_MAX_DEVICE_NR 256 /*系统最大支持检测多少个设备*/
 
-/*PCI配置空间数据的偏移*/
+/* PCI配置空间数据的偏移 */
 #define PCI_DEVICE_VENDER 0x00                             /* 设备厂商ID和设备ID的寄存器偏移量*/
 #define PCI_STATUS_COMMAND 0x04                            /*状态和命令寄存器偏移量*/
 #define PCI_CLASS_CODE_REVISION_ID 0x08                    /*类型、子类型、次类型和修订号寄存器偏移量*/
@@ -116,7 +116,6 @@ unsigned int pci_device_get_irq_line(pci_device_t *device);
 unsigned int pci_device_get_irq_pin(pci_device_t *device);
 unsigned int pci_device_get_intc(pci_device_t* device);
 void pci_enable_bus_mastering(pci_device_t *device);
-pci_device_t *pci_get_device(unsigned int vendor_id, unsigned int device_id);
 pci_device_t *pci_get_device_by_class_code(unsigned int class, unsigned int sub_class);
 pci_device_t *pci_get_next_device(devid_t* pdevid);
 
@@ -126,7 +125,7 @@ pci_device_t *pci_locate_class(unsigned short class, unsigned short _subclass);
 void pci_device_bar_dump(pci_device_bar_t *bar);
 void pci_device_dump(pci_device_t *device);
 
-void *pci_device_read(pci_device_t *device, unsigned int reg);
+unsigned int pci_device_read(pci_device_t *device, unsigned int reg);
 void pci_device_write(pci_device_t *device, unsigned int reg, unsigned int value);
 pci_device_t *pci_get_device_by_bus(unsigned int bus,
                                     unsigned int dev,

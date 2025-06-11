@@ -11,6 +11,7 @@
 #include <proc/sched.h>
 #include <init.h>
 #include <io/blk.h>
+#include <io/chr.h>
 #include <fs/fs.h>
 #include <drivers/uart.h>
 
@@ -59,6 +60,9 @@ main()
     
     // ecall();
 
+    char_subsys_init();
+    uart_device_init();
+
 #ifdef ARCH_LOONGARCH
 #include <drivers/pci.h>
     pci_init();
@@ -70,6 +74,7 @@ main()
     // vfilesys_init();
     // out("Initialize vfs");
 
+    out("Enter tests");
     test_proc_init((uint64) test);
 
 #ifdef ARCH_LOONGARCH

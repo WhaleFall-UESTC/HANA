@@ -7,7 +7,8 @@
 #include <debug.h>
 
 void test_uart() {
-    char buf[] = "1234567890qwertyuiop[]\\asdfghjkl;'zxcvbnm,./";
+    uart_putc(getchar());
+    char buf[] = "1234567890qwertyuiop[]\\asdfghjkl;'zxcvbnm,./\n";
     int len = sizeof(buf);
     for (int i = 0; i < len; i++)
         put_char(buf[i]);

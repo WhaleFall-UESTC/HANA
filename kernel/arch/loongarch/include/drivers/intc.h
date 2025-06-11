@@ -27,7 +27,11 @@
         extioi_disable_irq(DEFAULT_HART, irq); \
     } while(0)
 #define __irq_get() extioi_claim(DEFAULT_HART)
-#define __irq_put(irq) extioi_complete(DEFAULT_HART, irq)
+#define __irq_put(irq) \
+    do { \
+        extioi_complete(DEFAULT_HART, irq); \
+        ls7a_intc_complete(irq); \
+    } while(0)
 
 void ls7a_intc_init(void);
 void ls7a_intc_complete(uint64 irq);

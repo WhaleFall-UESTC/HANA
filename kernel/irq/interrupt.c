@@ -33,23 +33,22 @@ void irq_free(unsigned int irq) {
 void irq_response(void) {
     int irq, ret;
 
-    irq = __irq_get();
-
-    log("got irq %d", irq);
-
-    if(irq >= MAX_NR_IRQ || irq_handlers[irq] == NULL) {
-        error("Irq %d too large or unregistered", irq);
-        goto out;
+    if((irq = __irq_get()) != 0) {
+    
+        if(irq >= MAX_NR_IRQ || irq_handlers[irq] == NULL) {
+            error("Irq %d too large or unregistered", irq);
+            goto out;
+        }
+    
+        ret = irq_handlers[irq](irq, irq_privates[irq]);
+    
+        if(ret == IRQ_ERR) {
+            panic("Irq handle error");
+        }
+    
+    out:
+        __irq_put(irq);
     }
-
-    ret = irq_handlers[irq](irq, irq_privates[irq]);
-
-    if(ret == IRQ_ERR) {
-        panic("Irq handle error");
-    }
-
-out:
-    __irq_put(irq);
 }
 
 void irq_init(void) {
