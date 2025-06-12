@@ -3,22 +3,24 @@
 #include <arch.h>
 #include <debug.h>
 #include <mm/memlayout.h>
+#include <mm/mm.h>
 
 static void pci_scan_buses(void);
 static unsigned int pic_get_device_connected(void);
 static pci_device_t* pci_alloc_device(void);
 
-pci_device_t pci_device_table[PCI_MAX_DEVICE_NR]; /*存储设备信息的结构体数组*/
+pci_device_t pci_device_table[PCI_MAX_DEVICE_NR];
+
 uint64 pci_iospace_free_base = PCI_IOSPACE_STA;
 uint64 pci_memspace_free_base = PCI_MEM_BASE;
 
-/*
- *base_cfg_addr:设备类型对应的基地址
- *bus：总线号
- *device：设备号
- *function：功能号
- *reg_id：命令的偏移
- *read_data：存放读入内容的内存地址
+/**
+ * base_cfg_addr: 设备类型对应的基地址
+ * bus: 总线号
+ * device: 设备号
+ * function: 功能号
+ * reg_id: 命令的偏移
+ * read_data: 存放读入内容的内存地址
 */
 static inline void pci_read_config(unsigned long base_cfg_addr, unsigned int bus, unsigned int device, unsigned int function, unsigned int reg_id, unsigned int * read_data)
 {
@@ -40,7 +42,7 @@ static uint32 pci_device_bar_init(pci_device_bar_t *bar, unsigned int addr_reg_v
 	}
 	/* bar寄存器中bit0位用来标记地址类型，如果是1则为io空间，若为0则为mem空间 */
 	if (addr_reg_val & 1) {
-		/*
+		/**
 		 * I/O 元基地址寄存器:
 		 * Bit1:保留
 		 * Bit31-2:RO,基地址单元
@@ -54,7 +56,7 @@ static uint32 pci_device_bar_init(pci_device_bar_t *bar, unsigned int addr_reg_v
 
 		pci_iospace_free_base += bar->length;
 	} else {
-		/*
+		/**
 		 * MEM 基地址存储器:
 		 * Bit2-1:RO,MEM 基地址寄存器-译码器宽度单元,00-32 位,10-64 位
 		 * Bit3:RO,预提取属性
@@ -71,7 +73,7 @@ static uint32 pci_device_bar_init(pci_device_bar_t *bar, unsigned int addr_reg_v
 	return retval;
 }
 
-/*获取io地址*/
+/* 获取io地址 */
 unsigned int pci_device_get_io_addr(pci_device_t *device)
 {
 	int i;
@@ -84,7 +86,7 @@ unsigned int pci_device_get_io_addr(pci_device_t *device)
 	return 0;
 }
 
-/*获取mem地址*/
+/* 获取mem地址 */
 unsigned int pci_device_get_mem_addr(pci_device_t *device)
 {
 	int i;
@@ -97,7 +99,7 @@ unsigned int pci_device_get_mem_addr(pci_device_t *device)
 	return 0;
 }
 
-/*获取mem地址的长度*/
+/* 获取mem地址的长度 */
 unsigned int pci_device_get_mem_len(pci_device_t *device)
 {
 	int i;
@@ -109,7 +111,7 @@ unsigned int pci_device_get_mem_len(pci_device_t *device)
 	return 0;
 }
 
-/*获取中断号*/
+/* 获取中断号 */
 unsigned int pci_device_get_irq_line(pci_device_t *device)
 {
 	uint32 val;
@@ -117,7 +119,18 @@ unsigned int pci_device_get_irq_line(pci_device_t *device)
 	return device->irq_line = (val & 0xFF);
 }
 
-/*获取中断引脚*/
+/* 设置中断号 */
+void pci_device_set_irq_line(pci_device_t *device, unsigned int irq)
+{
+	uint32 val;
+	pci_read_config(PCI_CONFIG_BASE, device->bus, device->dev, device->function, PCI_MAX_LNT_MIN_GNT_IRQ_PIN_IRQ_LINE, &val);
+	val &= ~0xFFU;
+	val |= irq & 0xFF;
+	pci_write_config(PCI_CONFIG_BASE, device->bus, device->dev, device->function, PCI_MAX_LNT_MIN_GNT_IRQ_PIN_IRQ_LINE, val);
+	device->irq_line = irq;
+}
+
+/* 获取中断引脚 */
 unsigned int pci_device_get_irq_pin(pci_device_t *device)
 {
 	uint32 val;
@@ -170,11 +183,16 @@ static unsigned int pic_get_device_connected()
 		if (device->flags != PCI_DEVICE_USING) {
 			break;
 		}
+		uint32 irqid = pci_device_get_irq_line(device);
+		uint32 irqpin = pci_device_get_irq_pin(device);
+
+		log("device %d dev %d irqline : %d, irqpin: %d", i, device->dev, irqid, irqpin);
+		log("intr %d", pci_device_get_intc(device));
 	}
 	return i;
 }
 
-/*打印pci设备的地址信息*/
+/* 打印pci设备的地址信息 */
 void pci_device_bar_dump(pci_device_bar_t *bar)
 {
 	debug("pci_device_bar_dump: type: %s", bar->type == PCI_BAR_TYPE_IO ? "io base address" : "mem base address");
@@ -182,7 +200,88 @@ void pci_device_bar_dump(pci_device_bar_t *bar)
 	debug("pci_device_bar_dump: len: %lx", bar->length);
 }
 
-/*创建一个pci设备信息结构体*/
+/* MSI-X能力检测函数 */
+static int pci_detect_msix(pci_device_t *device)
+{
+	// 如果已经检测过或没有能力列表，直接返回
+	if (device->msix_cap_offset || !device->capability_list) 
+		return 0;
+	
+	uint8 offset = device->capability_list & 0xFF;
+	
+	// 遍历能力列表
+	while (offset) {
+		uint32 cap_reg0, cap_reg1, cap_reg2;
+		pci_read_config(PCI_CONFIG_BASE, device->bus, device->dev, 
+						device->function, offset, &cap_reg0);
+		
+		// 检查是否为MSI-X能力 (ID=0x11)
+		if ((cap_reg0 & 0xFF) == PCI_CAPABILITY_ID_MSI_X) {
+			device->msix_cap_offset = offset;
+
+			// 读取MSI-X控制寄存器
+			uint32 ctrl_reg = (cap_reg0 & PCI_MSIX_CAP_MSG_CTRL_MASK) >> PCI_MSIX_CAP_MSG_CTRL_SHIFT;
+			// 读取表大小（实际表项数 = table_size + 1）
+			device->msix_table_size = (ctrl_reg & PCI_MSIX_CAP_MC_TBSIZE_MASK) + 1;
+			
+			// 解析表信息 (Table Offset和BAR索引)
+			pci_read_config(PCI_CONFIG_BASE, device->bus, device->dev,
+							device->function, offset + PCI_MSIX_CAP_BASE1, &cap_reg1);
+			
+			device->msix_table_bir = cap_reg1 & PCI_MSIX_CAP_BIR_MASK;
+			device->msix_table_offset = cap_reg1 & PCI_MSIX_CAP_TABLE_OFS_MASK;
+			
+			pci_read_config(PCI_CONFIG_BASE, device->bus, device->dev,
+							device->function, offset + PCI_MSIX_CAP_BASE2, &cap_reg2);
+
+			device->msix_pba_bir = cap_reg2 & PCI_MSIX_CAP_PENDING_BIT_BIR_MASK;
+			device->msix_pba_offset = cap_reg2 & PCI_MSIX_CAP_PENDING_BIR_OFS_MASK;
+
+			debug("Found MSI-X capability at %x, Table Size: %d", 
+				  offset, device->msix_table_size);
+			return 1;
+		}
+		offset = (cap_reg0 >> 8) & 0xFF; // 移动到下一个能力项
+	}
+	return 0;
+}
+
+/* 映射MSI-X表到内存 */
+static int pci_map_msix_table(pci_device_t *device)
+{
+    // 确保设备支持MSI-X且有可用的表
+    if (!device->msix_cap_offset || device->msix_table_size == 0)
+        return 0;
+    
+    // 获取对应的BAR
+    int bar_idx = device->msix_table_bir;
+    if (bar_idx >= PCI_MAX_BAR) {
+        error("Invalid BAR index for MSI-X table");
+        return -1;
+    }
+    
+    pci_device_bar_t *bar = &device->bar[bar_idx];
+    if (bar->type != PCI_BAR_TYPE_MEM) {
+        error("MSI-X table not in memory BAR");
+        return -1;
+    }
+
+    // 计算表大小并映射
+    size_t table_size = device->msix_table_size * sizeof(msix_table_entry_t);
+
+	if(table_size > bar->length) {
+		error("Bar size too small to fill MSI-X table");
+		return -1;
+	}
+
+    device->msix_table = (msix_table_entry_t*)phys_to_virt(bar->base_addr + device->msix_table_offset);
+    
+    debug("Mapped MSI-X table at %p, size: %d entries", 
+          device->msix_table, device->msix_table_size);
+    return 0;
+}
+
+/* 创建一个pci设备信息结构体 */
 static pci_device_t* pci_alloc_device()
 {
 	int i;
@@ -225,16 +324,16 @@ void pci_device_write(pci_device_t *device, unsigned int reg, unsigned int value
 
 /*初始化pci设备信息*/
 static void pci_device_init(
-							pci_device_t *device,
-							unsigned char bus,
-							unsigned char dev,
-							unsigned char function,
-							unsigned short vendor_id,
-							unsigned short device_id,
-							unsigned int class_code,
-							unsigned char revision_id,
-							unsigned char multi_function
-						   ) {
+	pci_device_t *device,
+	unsigned char bus,
+	unsigned char dev,
+	unsigned char function,
+	unsigned short vendor_id,
+	unsigned short device_id,
+	unsigned int class_code,
+	unsigned char revision_id,
+	unsigned char multi_function
+) {
 	/*设置驱动设备的信息*/
 	device->bus = bus;
 	device->dev = dev;
@@ -271,8 +370,18 @@ void pci_device_dump(pci_device_t *device)
 	debug("pci_device_dump: irq pin:  %d", device->irq_pin);
 	debug("pci_device_dump: min Gnt: %d", device->min_gnt);
 	debug("pci_device_dump: max Lat:  %d", device->max_lat);
-	int i;
-	for (i = 0; i < PCI_MAX_BAR; i++) {
+
+	if (device->msix_cap_offset) {
+        debug("pci_device_dump: MSI-X Capability:");
+        debug("  Capability Offset: 0x%x", device->msix_cap_offset);
+        debug("  Table BAR: %d", device->msix_table_bir);
+        debug("  Table Offset: 0x%x", device->msix_table_offset);
+        debug("  Table Size: %d entries", device->msix_table_size);
+        debug("  Table Addr: %p", device->msix_table);
+        debug("  Enabled: %s", device->msix_enabled ? "Yes" : "No");
+    }
+
+	for (int i = 0; i < PCI_MAX_BAR; i++) {
 		/*if not a invalid bar*/
 		if (device->bar[i].type != PCI_BAR_TYPE_INVALID) {
 			debug("pci_device_dump: bar %d:", i);
@@ -284,34 +393,31 @@ void pci_device_dump(pci_device_t *device)
 
 static void pci_scan_device(unsigned char bus, unsigned char device, unsigned char function)
 {
-	/*读取总线设备的设备id*/
+	/* 读取总线设备的设备id */
 	uint32 val;
-	// info("read config a");
 	pci_read_config(PCI_CONFIG_BASE,bus, device, function, PCI_DEVICE_VENDER,(uint32*)&val);
 	uint16 vendor_id = val & 0xffff;
 	uint16 device_id = val >> 16;
-	/*总线设备不存在，直接返回*/
+	/* 总线设备不存在，直接返回 */
 	if (vendor_id == 0xffff) {
 		return;
 	}
-	/*分配一个空闲的pci设备信息结构体*/
+	/* 分配一个空闲的pci设备信息结构体 */
 	pci_device_t *pci_dev = pci_alloc_device();
 	if(pci_dev == NULL){
 		return;
 	}
 
-	/*读取设备类型*/
-	// info("read config b");
+	/* 读取设备类型 */
 	pci_read_config(PCI_CONFIG_BASE, bus, device, function, PCI_BIST_HEADER_TYPE_LATENCY_TIMER_CACHE_LINE,(uint32*)&val);
 	unsigned char header_type = ((val >> 16));
-	/*读取 command 寄存器*/
+	/* 读取 command 寄存器 */
 	pci_read_config(PCI_CONFIG_BASE, bus, device, function, PCI_STATUS_COMMAND, (uint32*)&val);
-	/*将寄存器中的内容存入结构体 */
+	/* 将寄存器中的内容存入结构体 */
 	pci_dev->command = val & 0xffff;
 	pci_dev->status = (val >> 16) & 0xffff;
 
-	// unsigned int command = val & 0xffff;
-	/*pci_read_config class code and revision id*/
+	/* pci_read_config class code and revision id */
 	pci_read_config(PCI_CONFIG_BASE,bus, device, function, PCI_CLASS_CODE_REVISION_ID,(uint32*)&val);
 	unsigned int classcode = val >> 8;
 	unsigned char revision_id = val & 0xff;
@@ -388,9 +494,89 @@ static void pci_scan_device(unsigned char bus, unsigned char device, unsigned ch
 	/*debug("pci_scan_device: pci device at bus: %d, device: %d function: %d", bus, device, function);
 	  pci_device_dump(pci_dev);*/
 
+	if (pci_detect_msix(pci_dev)) {
+        pci_map_msix_table(pci_dev);
+    }
 }
 
-/*扫描*/
+int pci_msix_add_vector(pci_device_t *device, uint32 vector, uint64 msg_addr, uint32 msg_data) {
+	// 确保设备支持MSI-X
+    if (!device->msix_cap_offset || !device->msix_table) {
+        error("Device does not support MSI-X or table not mapped");
+        return -1;
+    }
+
+	msix_table_entry_t *table = device->msix_table;
+
+	if(!table[vector].vector_ctrl) {
+		error("MSI-X vector already be used");
+		return -1;
+	}
+
+    table[vector].msg_addr_low = msg_addr & PCI_MSIX_ADDR_LOW_MASK;
+    table[vector].msg_addr_high = msg_addr & PCI_MSIX_ADDR_HIGH_MASK;
+    table[vector].msg_data = msg_data;
+    table[vector].vector_ctrl = 0; // 取消屏蔽
+
+	return 0;
+}
+
+int pci_enable_msix(pci_device_t *device)
+{
+    // 确保设备支持MSI-X
+    if (!device->msix_cap_offset || !device->msix_table) {
+        error("Device does not support MSI-X or table not mapped");
+        return -1;
+    }
+
+    uint32 cap_reg0;
+    pci_read_config(PCI_CONFIG_BASE, device->bus, device->dev, 
+                    device->function, device->msix_cap_offset, &cap_reg0);
+    cap_reg0 |= PCI_MSIX_CAP_ENABLE_MASK; // 设置启用位
+    pci_write_config(PCI_CONFIG_BASE, device->bus, device->dev, 
+                     device->function, device->msix_cap_offset, cap_reg0);
+    
+    // 禁用传统中断
+    device->command |= PCI_COMMAND_INTX_DISABLE;
+    pci_write_config(PCI_CONFIG_BASE, device->bus, device->dev,
+                     device->function, PCI_STATUS_COMMAND, device->command);
+    
+    device->msix_enabled = 1;
+    debug("Enabled MSI-X");
+    return 0;
+}
+
+int pci_disable_msix(pci_device_t *device)
+{
+    if (!device->msix_enabled)
+        return 0;
+        
+    // 禁用MSI-X
+    uint32 cap_reg0;
+    pci_read_config(PCI_CONFIG_BASE, device->bus, device->dev, 
+                    device->function, device->msix_cap_offset, &cap_reg0);
+    cap_reg0 &= ~PCI_MSIX_CAP_ENABLE_MASK;
+    pci_write_config(PCI_CONFIG_BASE, device->bus, device->dev, 
+                     device->function, device->msix_cap_offset, cap_reg0);
+    
+    // 启用传统中断
+    device->command &= ~PCI_COMMAND_INTX_DISABLE;
+    pci_write_config(PCI_CONFIG_BASE, device->bus, device->dev,
+                     device->function, PCI_STATUS_COMMAND, device->command);
+    
+    // 可选：屏蔽所有MSI-X中断
+    if (device->msix_table) {
+        for (int i = 0; i < device->msix_table_size; i++) {
+            device->msix_table[i].vector_ctrl = 1; // 设置Mask位
+        }
+        mb();
+    }
+    
+    device->msix_enabled = 0;
+    debug("Disabled MSI-X");
+    return 0;
+}
+
 static void pci_scan_buses()
 {
 	unsigned int bus;

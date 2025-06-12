@@ -174,3 +174,13 @@ map_stack(pagetable_t pgtbl, uint64 stack_va)
     // log("map stack va: %lx, pa %lx", stack_va, KERNEL_VA2PA(stack));
     mappages(pgtbl, stack_va, KERNEL_VA2PA(stack), KSTACK_SIZE, PTE_PLV0 | PTE_MAT_CC | PTE_P | PTE_NX | PTE_W | PTE_RPLV | PTE_D);
 }
+
+uint64
+virt_to_phys(uint64 va) {
+    return va & ~DMW_MASK;
+}
+
+uint64
+phys_to_virt(uint64 pa) {
+    return pa | DMW_MASK;
+}

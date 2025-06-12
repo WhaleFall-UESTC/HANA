@@ -90,6 +90,8 @@ static inline unsigned virtq_size(unsigned int qsz)
     return QALIGN(sizeof(struct virtqueue_desc) * qsz + sizeof(uint16) * (2 + qsz)) + QALIGN(sizeof(struct virtqueue_used_elem) * qsz);
 }
 
+#define VIRTIO_BLK_DEFAULT_QUEUENUM 0
+
 struct virtqueue
 {
     // The actual descriptors (16 bytes each)

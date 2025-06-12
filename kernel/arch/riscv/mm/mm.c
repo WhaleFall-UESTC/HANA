@@ -207,3 +207,12 @@ map_stack(pagetable_t pgtbl, uint64 stack_va)
     mappages(pgtbl, stack_va, (uint64)stack, KSTACK_SIZE, PTE_R | PTE_W);
 }
 
+uint64
+virt_to_phys(uint64 va) {
+    return va;
+}
+
+uint64
+phys_to_virt(uint64 pa) {
+    return pa;
+}

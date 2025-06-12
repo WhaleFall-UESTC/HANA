@@ -38,6 +38,9 @@ void ls7a_enable_irq(int irq)
 	 */
 	// ADDRVAL(64, LS7A_INTEDGE) = (0x1UL << irq);
 
+	/* 配置中断路由 */
+    // ADDRVAL(8, LS7A_ROUTE_ENTRY0 + irq) = irq; // 路由到相同中断号
+
     /* 配置HT中断向量路由 */
     ADDRVAL(8, LS7A_HTMSI_VECTOR0 + irq) = irq; // 路由到相同中断号
 }

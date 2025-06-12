@@ -64,21 +64,56 @@ struct pci_device_id
 /*PCI地址bar结构体，保存Bass Address （0~5）的信息*/
 typedef struct pci_device_bar
 {
-    uint8 type;      /*地址bar的类型（IO地址/MEM地址）*/
-    uint64 base_addr; /*地址的值*/
-    uint64 length;    /*地址的长度*/
+    uint8 type;      /* 地址 bar 的类型（IO地址/MEM地址）*/
+    uint64 base_addr; /* bar 的物理地址 */
+    uint64 length;    /* 地址的长度 */
 } pci_device_bar_t;
 
 #define PCI_DEVICE_INVALID 0 /*被定义为 0，表示无效的PCI设备*/
 #define PCI_DEVICE_USING 1   /*被定义为 1，表示正在使用的PCI设备*/
 
-/*PCI BAR的类型*/
+/* PCI BAR的类型 */
 #define PCI_BAR_TYPE_INVALID 0
 #define PCI_BAR_TYPE_MEM 1
 #define PCI_BAR_TYPE_IO 2
 
+typedef struct msix_table_entry {
+    uint32 msg_addr_low;     /* 消息地址低32位 */
+    uint32 msg_addr_high;    /* 消息地址高32位 */
+    uint32 msg_data;         /* 消息数据 */
+    uint32 vector_ctrl;      /* 向量控制寄存器 */
+} msix_table_entry_t;
+
+#define PCI_CAPABILITY_ID_MSI_X 0x11
+
+#define PCI_MSIX_CAP_BASE0 0x0
+#define PCI_MSIX_CAP_CAPID_MASK 0xFFU
+#define PCI_MSIX_CAP_NXT_PTR_MASK 0xFF00U
+#define PCI_MSIX_CAP_MSG_CTRL_MASK 0xFFFF0000U
+#define PCI_MSIX_CAP_MSG_CTRL_SHIFT 16
+
+#define PCI_MSIX_CAP_ENABLE_MASK 0x80000000U
+
+#define PCI_MSIX_CAP_MC_TBSIZE_MASK 0x7FFU
+#define PCI_MSIX_CAP_MC_FUNCMASK_MASK 0x4000U
+#define PCI_MSIX_CAP_MC_FUNCMASK_SHIFT 14
+
+#define PCI_MSIX_CAP_BASE1 0x4
+#define PCI_MSIX_CAP_BIR_MASK 0x7
+#define PCI_MSIX_CAP_TABLE_OFS_MASK 0xFFFFFFF8
+
+#define PCI_MSIX_CAP_BASE2 0x8
+#define PCI_MSIX_CAP_PENDING_BIT_BIR_MASK 0x7
+#define PCI_MSIX_CAP_PENDING_BIR_OFS_MASK 0xFFFFFFF8
+
+#define PCI_MSIX_ADDR_LOW_MASK 0xFFFFFFFCUL
+#define PCI_MSIX_ADDR_HIGH_MASK 0xFFFFFFFF00000000UL
+
+#define PCI_MSIX_MSG_ADDR 0x2ff00000UL
+#define PCI_MSIX_VEC_BASE 0x20
+
 /*
-PCI设备结构体，用于保存我们所需要的pci信息，并不是和硬件的一样
+    PCI设备结构体，用于保存我们所需要的pci信息，并不是和硬件的一样
 */
 typedef struct pci_device
 {
@@ -107,6 +142,16 @@ typedef struct pci_device
     unsigned char min_gnt;
     unsigned char max_lat;
     pci_device_bar_t bar[PCI_MAX_BAR]; /*有6个地址信息*/
+
+    /* MSI-X 支持 */
+    unsigned char msix_cap_offset;      /* MSI-X 能力寄存器的偏移 */
+    unsigned char msix_enabled;         /* 是否启用 MSI-X */
+    uint8 msix_table_bir;               /* 存放 MSI-X 表的 BAR 索引 */
+    uint32 msix_table_offset;           /* MSI-X 表在 BAR 中的偏移 */
+    uint16 msix_table_size;             /* MSI-X 表项数量（实际是 msix_table_size + 1） */
+    uint8 msix_pba_bir;                 /* 存放 Pending Bit Array 的 BAR 索引 */
+    uint32 msix_pba_offset;             /* Pending Bit Array 在 BAR 中的偏移 */
+    msix_table_entry_t *msix_table;     /* MSI-X 表指针 */
 } pci_device_t;
 
 unsigned int pci_device_get_io_addr(pci_device_t *device);
@@ -114,6 +159,7 @@ unsigned int pci_device_get_mem_addr(pci_device_t *device);
 unsigned int pci_device_get_mem_len(pci_device_t *device);
 unsigned int pci_device_get_irq_line(pci_device_t *device);
 unsigned int pci_device_get_irq_pin(pci_device_t *device);
+void pci_device_set_irq_line(pci_device_t *device, unsigned int irq);
 unsigned int pci_device_get_intc(pci_device_t* device);
 void pci_enable_bus_mastering(pci_device_t *device);
 pci_device_t *pci_get_device_by_class_code(unsigned int class, unsigned int sub_class);
@@ -130,6 +176,11 @@ void pci_device_write(pci_device_t *device, unsigned int reg, unsigned int value
 pci_device_t *pci_get_device_by_bus(unsigned int bus,
                                     unsigned int dev,
                                     unsigned int function);
+
+int pci_msix_add_vector(pci_device_t *device, uint32 vector, uint64 msg_addr, uint32 msg_data);
+int pci_enable_msix(pci_device_t *device);
+int pci_disable_msix(pci_device_t *device);
+
 void pci_init(void);
 
 #define pci_for_using_device(device_ptr) \

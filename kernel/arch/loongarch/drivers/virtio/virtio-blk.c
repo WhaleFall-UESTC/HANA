@@ -225,12 +225,61 @@ struct blkdev_ops virtio_blk_ops = {
     .irq_handle = virtio_blk_isr,
 };
 
+static uint32 virtio_blk_init_irq_intx(pci_device_t *pci_dev) {
+    uint32 irqid, irqpin;
+
+    uint32 intid = pci_device_get_intc(pci_dev);
+    pci_device_set_irq_line(pci_dev, intid);
+
+    irqid = pci_device_get_irq_line(pci_dev);
+    irqpin = pci_device_get_irq_pin(pci_dev);
+
+    debug("irqline : %d, irqpin: %d", irqid, irqpin);
+
+    return intid;
+}
+
+static uint32 virtio_blk_init_irq_msix(volatile virtio_pci_header *header, pci_device_t *pci_dev) {
+    debug("blk init msix");
+
+    int ret = pci_enable_msix(pci_dev);
+    if(ret < 0) {
+        error("virtio blk get msi-x irq failed");
+        return 0;
+    }
+
+    ret = pci_msix_add_vector(pci_dev, 1, PCI_MSIX_MSG_ADDR, PCI_MSIX_VEC_BASE);
+    if(ret < 0) {
+        error("virtio blk set msi-x vector 1 failed");
+        return 0;
+    }
+
+    WRITE16(header->QueueVector, 1);
+    if(READ16(header->QueueVector) == VIRTIO_MSI_NO_VECTOR) {
+        error("virtio header QueueVector not accepted");
+        return 0;
+    }
+
+    ret = pci_msix_add_vector(pci_dev, 0, PCI_MSIX_MSG_ADDR, PCI_MSIX_VEC_BASE + 1);
+    if(ret < 0) {
+        error("virtio blk set msi-x vector 0 failed");
+        return 0;
+    }
+
+    WRITE16(header->ConfigurationVector, 0);
+    if(READ16(header->ConfigurationVector) == VIRTIO_MSI_NO_VECTOR) {
+        error("virtio header ConfigurationVector not accepted");
+        return 0;
+    }
+
+    return PCI_MSIX_VEC_BASE;
+}
+
 int virtio_blk_init(volatile virtio_pci_header *header, pci_device_t *pci_dev)
 {
     struct virtio_blk *vdev;
     struct virtq_info *virtq_info;
     uint64 blk_size, _blk_size;
-    uint32 irqid, irqpin;
     uint32 intid;
 
     vdev = kalloc(sizeof(struct virtio_blk));
@@ -247,15 +296,14 @@ int virtio_blk_init(volatile virtio_pci_header *header, pci_device_t *pci_dev)
     // }
 
     // Perform device-specific setup
-    virtq_info = virtq_add_to_device(header, 0);
+    virtq_info = virtq_add_to_device(header, VIRTIO_BLK_DEFAULT_QUEUENUM);
     assert(virtq_info != NULL);
-
-    irqid = pci_device_get_irq_line(pci_dev);
-    irqpin = pci_device_get_irq_pin(pci_dev);
-
-    log("irqline : %d, irqpin: %d", irqid, irqpin);
-
-    intid = pci_device_get_intc(pci_dev);
+    
+#ifndef MSI_X
+    intid = virtio_blk_init_irq_intx(pci_dev);
+#else
+    intid = virtio_blk_init_irq_msix(header, pci_dev);
+#endif
 
     vdev->header = header;
     vdev->pci_dev = pci_dev;

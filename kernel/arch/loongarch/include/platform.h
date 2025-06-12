@@ -9,6 +9,7 @@
 #define LS7A1000_HTMSI_EN       0x40
 #define LS7A1000_INTEDGE        0x60
 #define LS7A1000_INTCLR         0x80
+#define LS7A1000_ROUTE_ENTRY0   0x100
 #define LS7A1000_HTMSI_VECTOR0  0x200
 #define LS7A1000_INTISR         0x3a0
 #define LS7A1000_INT_POLARITY   0x3e0

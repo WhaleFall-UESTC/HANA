@@ -11,6 +11,8 @@
 #define VIRTIO_PCI_DEVICEID_BASE 0x1000
 #define VIRTIO_PCI_DEVICEID_RANGE 0x3f
 
+#define MSI_X
+
 typedef volatile struct __attribute__((packed)) {
     uint32 DeviceFeature;
     uint32 GuestFeature;
@@ -21,7 +23,8 @@ typedef volatile struct __attribute__((packed)) {
     uint8 DeviceStatus;
     uint8 ISRStatus;
 #ifdef MSI_X
-    uint16 ConfigurationVector
+#define VIRTIO_MSI_NO_VECTOR 0xffff
+    uint16 ConfigurationVector;
     uint16 QueueVector;
 #endif
     uint32 Config[];

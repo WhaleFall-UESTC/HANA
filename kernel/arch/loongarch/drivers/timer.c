@@ -21,7 +21,7 @@ void timer_enable() {
 }
 
 void timer_isr() {
-    log("recieve timer interrupt");
+    // log("recieve timer interrupt");
     w_csr_ticlr(CSR_TICLR_CLR);
     yield();
 }
