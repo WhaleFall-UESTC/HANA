@@ -24,6 +24,7 @@ struct virtqueue *virtq_create()
 
 	virtq->avail.idx = 0;
 	virtq->used.idx = 0;
+	virtq->used.flags = 0;
 
 	for (i = 0; i < VIRTIO_DEFAULT_QUEUE_SIZE; i++)
 	{

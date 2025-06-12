@@ -238,13 +238,13 @@ int virtio_blk_init(volatile virtio_pci_header *header, pci_device_t *pci_dev)
     // Read and write feature bits
     virtio_check_capabilities(header, blk_caps, nr_elem(blk_caps));
 
-    WRITE8(header->DeviceStatus, READ8(header->DeviceStatus) | VIRTIO_STATUS_FEATURES_OK);
-    mb();
-    if (!(header->DeviceStatus & VIRTIO_STATUS_FEATURES_OK))
-    {
-        error("virtio-blk did not accept our features");
-        return -1;
-    }
+    // WRITE8(header->DeviceStatus, READ8(header->DeviceStatus) | VIRTIO_STATUS_FEATURES_OK);
+    // mb();
+    // if (!(READ8(header->DeviceStatus) & VIRTIO_STATUS_FEATURES_OK))
+    // {
+    //     error("virtio-blk did not accept our features");
+    //     return -1;
+    // }
 
     // Perform device-specific setup
     virtq_info = virtq_add_to_device(header, 0);

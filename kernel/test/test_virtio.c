@@ -11,7 +11,11 @@
 #include <arch.h>
 #include <mm/mm.h>
 
+#ifdef ARCH_RISCV
+#define VIRTIO_BLK_DEV_NAME "virtio-blk1"
+#else
 #define VIRTIO_BLK_DEV_NAME "virtio-blk16"
+#endif
 #define TEST_CYCLES 10
 #define BLOCK_SIZE 4096
 #define BLOCKS_PER_TEST 10
