@@ -17,8 +17,8 @@ ls7a_intc_complete(uint64 irq)
 	/**
 	 * 电平触发不需要写边沿触发中断清除寄存器
 	 */
-	if(ADDRVAL(64, LS7A_INTEDGE) & (0x1UL << irq))
-		ADDRVAL(64, LS7A_INTCLR) = irq;
+	// if(ADDRVAL(64, LS7A_INTEDGE) & (0x1UL << irq))
+	// 	ADDRVAL(64, LS7A_INTCLR) = irq;
 }
 
 void ls7a_enable_irq(int irq)

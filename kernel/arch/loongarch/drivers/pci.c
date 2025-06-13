@@ -183,11 +183,6 @@ static unsigned int pic_get_device_connected()
 		if (device->flags != PCI_DEVICE_USING) {
 			break;
 		}
-		uint32 irqid = pci_device_get_irq_line(device);
-		uint32 irqpin = pci_device_get_irq_pin(device);
-
-		log("device %d dev %d irqline : %d, irqpin: %d", i, device->dev, irqid, irqpin);
-		log("intr %d", pci_device_get_intc(device));
 	}
 	return i;
 }

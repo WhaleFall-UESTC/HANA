@@ -65,5 +65,5 @@ extioi_claim(int hart)
 void
 extioi_complete(int hart, int irq)
 {
-    ioscr_reset_bit(EXT_IOIsr(hart), irq);
+    ioscr_set_bit(EXT_IOIsr(hart), irq);
 }

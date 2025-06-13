@@ -114,7 +114,7 @@ void blkdev_general_endio(struct blkreq *request)
     assert(request != NULL);
     if(request->endio != NULL)
         request->endio(request);
-    wakeup(blkreq_wait_channel(request));
+    blkreq_wakeup(request);
 }
 
 int blkdev_wait_all(struct blkdev *dev)
@@ -128,7 +128,7 @@ int blkdev_wait_all(struct blkdev *dev)
         assert(request != NULL);
         if(request->status == BLKREQ_STATUS_INIT)
         {
-            sleep(blkreq_wait_channel(request));
+            blkreq_sleep(request);
         }
 
         if(request->status == BLKREQ_STATUS_OK)

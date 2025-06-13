@@ -10,6 +10,8 @@
 #define MSI_IRQ_BASE 0x20
 #define MSI_IRQ_VECS 0xe0
 
+#define IS_MSI_IRQ(irq) ((irq) >= MSI_IRQ_BASE && (irq) < MSI_IRQ_BASE + MSI_IRQ_VECS)
+
 #define __irq_init(hart) \
     do { \
         extioi_init(hart); \
@@ -19,18 +21,18 @@
 #define __irq_enable_default(irq) \
     do { \
         extioi_enable_irq(DEFAULT_HART, irq); \
-        ls7a_enable_irq(irq); \
+        if(!IS_MSI_IRQ(irq)) ls7a_enable_irq(irq); \
     } while(0)
 #define __irq_disable_default(irq) \
     do { \
-        ls7a_disable_irq(irq); \
+        if(!IS_MSI_IRQ(irq)) ls7a_disable_irq(irq); \
         extioi_disable_irq(DEFAULT_HART, irq); \
     } while(0)
 #define __irq_get() extioi_claim(DEFAULT_HART)
 #define __irq_put(irq) \
     do { \
         extioi_complete(DEFAULT_HART, irq); \
-        ls7a_intc_complete(irq); \
+        if(!IS_MSI_IRQ(irq)) ls7a_intc_complete(irq); \
     } while(0)
 
 void ls7a_intc_init(void);
