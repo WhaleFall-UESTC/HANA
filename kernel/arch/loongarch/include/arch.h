@@ -671,6 +671,18 @@ intr_off()
     w_csr_crmd(r_csr_crmd() & ~CSR_CRMD_IE);
 }
 
+static inline void
+timer_intr_off() 
+{
+    w_csr_ecfg(~(1UL << 11) & r_csr_ecfg());
+}
+
+static inline void
+timer_intr_on() 
+{
+    w_csr_ecfg((1UL << 11) | r_csr_ecfg());
+}
+
 static inline int
 intr_get() 
 {

@@ -29,6 +29,7 @@ scheduler()
     c->proc = NULL;
 
     for (;;) {
+        timer_intr_off();
         intr_on();
         for (p = proc_list; p; p = p->next) {
             // lock process
@@ -36,6 +37,7 @@ scheduler()
                 // switch to this process
                 p->state = RUNNING;
                 c->proc = p;
+                timer_intr_on();
                 // log("switch to process %s", p->name);
                 swtch(&c->context, &p->context);
 
