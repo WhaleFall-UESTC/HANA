@@ -97,7 +97,11 @@ int devfs_init(struct mountpoint *mp)
     char_subsys_init();
     uart_device_init();
 
+#ifdef ARCH_LOONGARCH
+    chrdev = chrdev_get_by_name("uart2");
+#else
     chrdev = chrdev_get_by_name("uart10");
+#endif
     assert(chrdev != NULL);
 
     tty_init(&stdin.tty, chrdev, "stdin", 0);
@@ -119,7 +123,11 @@ int devfs_init(struct mountpoint *mp)
     block_subsys_init();
     virtio_device_init();
 
+#ifdef ARCH_LOONGARCH
+    blkdev = blkdev_get_by_name("virtio-blk32");
+#else
     blkdev = blkdev_get_by_name("virtio-blk1");
+#endif
     assert(blkdev != NULL);
 
     device = kcalloc(1, sizeof(*device));

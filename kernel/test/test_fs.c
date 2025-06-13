@@ -47,6 +47,8 @@ void test_fs()
 
     log("FS test start!");
 
+    // debug("%s", intr_get() ? "intr on" : "intr off");
+
     if((ret = call_sys_pipe2(pipefd, 0)) != 0)
     {
         error("get pipe failed: %d", ret);
@@ -111,6 +113,8 @@ void test_fs()
         error("write failed: %ld", n);
         return;
     }
+
+    // debug("%s", intr_get() ? "intr on" : "intr off");
 
     // 挂载文件系统
     if ((ret = call_sys_mount(EXT4_BLK_DEV, "/", "ext4", 0, NULL)) != 0)

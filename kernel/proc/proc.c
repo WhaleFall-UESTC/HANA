@@ -60,11 +60,9 @@ alloc_proc()
     p->cwd = strdup("/");
     Assert(p->cwd, "out of memory");
 
-    #ifdef ARCH_RISCV
     p->fdt = (struct files_struct*) kalloc(sizeof(struct files_struct));
     Assert(p->fdt, "out of memory");
     fdt_init(p->fdt, "fdt_lock");
-    #endif
 
     return p;
 }

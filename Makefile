@@ -12,7 +12,8 @@ QEMU := qemu-system-riscv64
 QEMUOPTS := -machine virt -kernel $(KERNEL) -m $(MEM) -nographic -smp $(SMP) -bios default -drive file=$(FS),if=none,format=raw,id=x0 \
         	-device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 -no-reboot -device virtio-net-device,netdev=net -netdev user,id=net \
         	-rtc base=utc \
-        	-drive file=$(DISK),if=none,format=raw,id=x1 -device virtio-blk-device,drive=x1,bus=virtio-mmio-bus.1 -d trace:virtio*
+        	-drive file=$(DISK),if=none,format=raw,id=x1 -device virtio-blk-device,drive=x1,bus=virtio-mmio-bus.1 \
+			# -d trace:virtio*
 RISCV_CFLAGS = -mcmodel=medany -march=rv64imafd -mabi=lp64
 RISCV_CFLAGS += -DARCH_RISCV 
 RISCV_CFLAGS += -DBIOS_SBI
@@ -24,7 +25,8 @@ TOOLPREFIX := loongarch64-unknown-linux-gnu-
 QEMU := qemu-system-loongarch64
 QEMUOPTS := -kernel $(KERNEL) -m $(MEM) -nographic -smp $(SMP) -drive file=$(FS),if=none,format=raw,id=x0  \
             -device virtio-blk-pci,drive=x0 -no-reboot \
-            -rtc base=utc -d guest_errors,trace:virtio*,trace:pic*,trace:apic*,trace:ioapic*,trace:pci*,trace:loongarch_msi* \
+            -rtc base=utc \
+			# -d guest_errors,trace:virtio*,trace:pic*,trace:apic*,trace:ioapic*,trace:pci*,trace:loongarch_msi* \
 			# -d trace:loongarch_pch_pic_irq_handler,trace:loongarch_extioi* \
 			# -device virtio-net-pci,netdev=net0 \
             # -netdev user,id=net0,hostfwd=tcp::5555-:5555,hostfwd=udp::5555-:5555  \

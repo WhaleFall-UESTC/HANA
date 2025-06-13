@@ -29,7 +29,9 @@ scheduler()
     c->proc = NULL;
 
     for (;;) {
+#ifdef ARCH_LOONGARCH
         timer_intr_off();
+#endif
         intr_on();
         for (p = proc_list; p; p = p->next) {
             // lock process
@@ -37,7 +39,9 @@ scheduler()
                 // switch to this process
                 p->state = RUNNING;
                 c->proc = p;
+#ifdef ARCH_LOONGARCH
                 timer_intr_on();
+#endif
                 // log("switch to process %s", p->name);
                 swtch(&c->context, &p->context);
 

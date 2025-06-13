@@ -101,7 +101,10 @@ void blkdev_submit_req(struct blkdev *dev, struct blkreq *request) {
     list_insert(&dev->rq_list, &request->rq_head);
     spinlock_release(&dev->rq_list_lock);
 
+    // debug("doing request submit");
     dev->ops->submit(dev, request);
+    // debug("request 0x%p submitted", request);
+    // debug("%s", intr_get() ? "intr on" : "intr off");
 }
 
 void blkdev_submit_req_wait(struct blkdev *dev, struct blkreq *request) {
@@ -114,6 +117,7 @@ void blkdev_general_endio(struct blkreq *request)
     assert(request != NULL);
     if(request->endio != NULL)
         request->endio(request);
+    // debug("request 0x%p finished and is ready to wakeup", request);
     blkreq_wakeup(request);
 }
 

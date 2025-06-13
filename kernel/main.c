@@ -60,19 +60,19 @@ main()
     
     // ecall();
 
-    char_subsys_init();
-    uart_device_init();
+    // char_subsys_init();
+    // uart_device_init();
 
 #ifdef ARCH_LOONGARCH
 #include <drivers/pci.h>
     pci_init();
 #endif
 
-    block_subsys_init();
-    virtio_device_init();
+    // block_subsys_init();
+    // virtio_device_init();
 
-    // vfilesys_init();
-    // out("Initialize vfs");
+    vfilesys_init();
+    out("Initialize vfs");
 
     out("Enter tests");
     test_proc_init((uint64) test);
