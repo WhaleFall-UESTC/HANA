@@ -75,12 +75,11 @@ struct virtqueue_used
  * See 2.4.2 Legacy Interfaces: A Note on Virtqueue Layout
  */
 
-#define VIRTIO_DEFAULT_QUEUE_SIZE 128
+#define VIRTIO_DEFAULT_QUEUE_SIZE 256
 #define VIRTIO_DEFAULT_ALIGN PGSIZE
-#define VIRTIO_DEFAULT_QUEUE_STRUCT_SIZE 8192
 #define VIRTIO_DEFAULT_QUEUE_PADDING                                \
     (                                                               \
-        VIRTIO_DEFAULT_ALIGN -                                      \
+        VIRTIO_DEFAULT_ALIGN*2 -                                      \
         sizeof(struct virtqueue_desc) * VIRTIO_DEFAULT_QUEUE_SIZE - \
         sizeof(struct virtqueue_avail))
 

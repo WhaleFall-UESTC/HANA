@@ -25,7 +25,8 @@ struct virtq_info* virtq_add_to_device(volatile virtio_pci_header *header, uint3
 	mb();
 
 	// Step 2: Check if the queue is already in use
-	if (READ32(header->QueueSize) == 0)
+	uint32 queue_size = READ32(header->QueueSize);
+	if (queue_size == 0)
 	{
 		error("Queue %u is already in use", queue_sel);
 		return NULL;
@@ -35,7 +36,7 @@ struct virtq_info* virtq_add_to_device(volatile virtio_pci_header *header, uint3
 
 	virtq_info->free_desc = virtq_info->seen_used = 0;
 	virtq_info->virtq = virtq_create();
-	virtq_info->pfn = phys_page_number(((uint64)virtq_info->virtq) & (~DMW_MASK));
+	virtq_info->pfn = virt_to_phys((uint64)virtq_info->virtq) / 4096;
 	memset(virtq_info->desc_virt, 0, sizeof(virtq_info->desc_virt));
 
 	// Step 4: Write the physical page number of the first page of the queue
@@ -114,8 +115,15 @@ static int virtio_dev_init(pci_device_t* pci_dev)
 		return -1;
 	}
 
-    virtio_pci_header* header = (virtio_pci_header*)WD_ADDR(pci_device_get_io_addr(pci_dev));
+    virtio_pci_header* header = (virtio_pci_header*)phys_to_virt(pci_device_get_io_addr(pci_dev));
 	pci_enable_bus_mastering(pci_dev);
+
+#ifdef VIRTIO_PCI_ENABLE_MSI_X
+    if(pci_enable_msix(pci_dev) < 0) {
+        error("virtio enable msi-x irq failed");
+        return -1;
+    }
+#endif
 
 	/* First step of initialization: reset */
 	WRITE8(header->DeviceStatus, 0);

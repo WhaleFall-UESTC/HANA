@@ -4,7 +4,7 @@
 #include <common.h>
 
 #define PCI_CONFIG_BASE 0x20000000UL /* PCI配置空间数据端口 */
-#define PCI_IO_BASE 0x18004000UL
+#define PCI_IO_BASE 0x18000000UL
 #define PCI_IOSPACE_STA 0x4000UL
 #define PCI_IOSPACE_END 0xFFFFUL
 #define PCI_MEM_BASE 0x40000000UL

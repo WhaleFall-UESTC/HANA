@@ -422,7 +422,7 @@ static void pci_scan_device(unsigned char bus, unsigned char device, unsigned ch
 	unsigned int classcode = val >> 8;
 	unsigned char revision_id = val & 0xff;
 
-	/*初始化pci设备*/
+	/* 初始化pci设备 */
 	pci_device_init(pci_dev, bus, device, function, vendor_id, device_id, classcode, revision_id, (header_type & 0x80));
 
 	/* 初始化设备的bar */
@@ -462,7 +462,8 @@ static void pci_scan_device(unsigned char bus, unsigned char device, unsigned ch
 	}
 
 	/* restore the original value after completing the BAR info read */
-	pci_write_config(PCI_CONFIG_BASE, bus, device, function, PCI_STATUS_COMMAND, pci_dev->command | PCI_COMMAND_IO | PCI_COMMAND_MEMORY);
+	pci_dev->command |= PCI_COMMAND_IO | PCI_COMMAND_MEMORY;
+	pci_write_config(PCI_CONFIG_BASE, bus, device, function, PCI_STATUS_COMMAND, pci_dev->command);
 
 	/* 获取 card bus CIS 指针 */
 	pci_read_config(PCI_CONFIG_BASE, bus, device, function, PCI_CARD_BUS_POINTER, &val);

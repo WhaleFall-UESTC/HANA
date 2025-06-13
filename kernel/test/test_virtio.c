@@ -13,6 +13,8 @@
 
 #ifdef ARCH_RISCV
 #define VIRTIO_BLK_DEV_NAME "virtio-blk1"
+#elif defined(VIRTIO_PCI_ENABLE_MSI_X)
+#define VIRTIO_BLK_DEV_NAME "virtio-blk32"
 #else
 #define VIRTIO_BLK_DEV_NAME "virtio-blk16"
 #endif

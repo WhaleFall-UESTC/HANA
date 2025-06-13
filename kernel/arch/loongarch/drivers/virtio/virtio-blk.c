@@ -13,6 +13,8 @@
 
 #define VIRTIO_BLK_DEV_NAME "virtio-blk"
 
+static int alloc_cnt, free_cnt;
+
 struct virtio_cap blk_caps[] = {
     {"VIRTIO_BLK_F_SIZE_MAX", 1, false,
      "Maximum size of any single segment is in size_max."},
@@ -107,18 +109,25 @@ static irqret_t virtio_blk_isr(struct blkdev *blkdev)
         return IRQ_ERR;
     }
 
+#ifdef VIRTIO_PCI_ENABLE_MSI_X
+    // debug("virtio blk receive msi-x isr");
+#else
     if (!(READ8(dev->header->ISRStatus) & 1))
     {
         log("virtio-blk: IRQ not for this device");
         return IRQ_SKIP;
     }
+#endif
 
     for (i = virtq_info->seen_used; i != (virtq_info->virtq->used.idx % VIRTIO_DEFAULT_QUEUE_SIZE);
          i = wrap(i + 1, VIRTIO_DEFAULT_QUEUE_SIZE))
     {
         virtio_blk_handle_used(dev, i);
+        free_cnt ++;
     }
     virtq_info->seen_used = virtq_info->virtq->used.idx % VIRTIO_DEFAULT_QUEUE_SIZE;
+
+    assert(free_cnt <= alloc_cnt);
 
     return IRQ_HANDLED;
 }
@@ -132,6 +141,8 @@ static void virtio_blk_send(struct virtio_blk *blk, struct virtio_blk_req *hdr)
     virtq->avail.idx += 1;
     mb();
     WRITE32(blk->header->QueueNotify, 0);
+
+    alloc_cnt ++;
 }
 
 static void virtio_blk_status(struct blkdev *dev)
@@ -239,34 +250,27 @@ static uint32 virtio_blk_init_irq_intx(pci_device_t *pci_dev) {
     return intid;
 }
 
+#ifdef VIRTIO_PCI_ENABLE_MSI_X
 static uint32 virtio_blk_init_irq_msix(volatile virtio_pci_header *header, pci_device_t *pci_dev) {
-    debug("blk init msix");
-
-    int ret = pci_enable_msix(pci_dev);
-    if(ret < 0) {
-        error("virtio blk get msi-x irq failed");
-        return 0;
-    }
-
-    ret = pci_msix_add_vector(pci_dev, 1, PCI_MSIX_MSG_ADDR, PCI_MSIX_VEC_BASE);
-    if(ret < 0) {
-        error("virtio blk set msi-x vector 1 failed");
-        return 0;
-    }
-
-    WRITE16(header->QueueVector, 1);
-    if(READ16(header->QueueVector) == VIRTIO_MSI_NO_VECTOR) {
-        error("virtio header QueueVector not accepted");
-        return 0;
-    }
-
-    ret = pci_msix_add_vector(pci_dev, 0, PCI_MSIX_MSG_ADDR, PCI_MSIX_VEC_BASE + 1);
+    int ret = pci_msix_add_vector(pci_dev, 0, PCI_MSIX_MSG_ADDR, PCI_MSIX_VEC_BASE);
     if(ret < 0) {
         error("virtio blk set msi-x vector 0 failed");
         return 0;
     }
 
-    WRITE16(header->ConfigurationVector, 0);
+    WRITE16(header->QueueVector, 0);
+    if(READ16(header->QueueVector) == VIRTIO_MSI_NO_VECTOR) {
+        error("virtio header QueueVector not accepted");
+        return 0;
+    }
+
+    ret = pci_msix_add_vector(pci_dev, 1, PCI_MSIX_MSG_ADDR, PCI_MSIX_VEC_BASE + 1);
+    if(ret < 0) {
+        error("virtio blk set msi-x vector 1 failed");
+        return 0;
+    }
+
+    WRITE16(header->ConfigurationVector, 1);
     if(READ16(header->ConfigurationVector) == VIRTIO_MSI_NO_VECTOR) {
         error("virtio header ConfigurationVector not accepted");
         return 0;
@@ -274,6 +278,7 @@ static uint32 virtio_blk_init_irq_msix(volatile virtio_pci_header *header, pci_d
 
     return PCI_MSIX_VEC_BASE;
 }
+#endif
 
 int virtio_blk_init(volatile virtio_pci_header *header, pci_device_t *pci_dev)
 {
@@ -284,26 +289,18 @@ int virtio_blk_init(volatile virtio_pci_header *header, pci_device_t *pci_dev)
 
     vdev = kalloc(sizeof(struct virtio_blk));
 
-    // Read and write feature bits
-    virtio_check_capabilities(header, blk_caps, nr_elem(blk_caps));
-
-    // WRITE8(header->DeviceStatus, READ8(header->DeviceStatus) | VIRTIO_STATUS_FEATURES_OK);
-    // mb();
-    // if (!(READ8(header->DeviceStatus) & VIRTIO_STATUS_FEATURES_OK))
-    // {
-    //     error("virtio-blk did not accept our features");
-    //     return -1;
-    // }
-
     // Perform device-specific setup
     virtq_info = virtq_add_to_device(header, VIRTIO_BLK_DEFAULT_QUEUENUM);
     assert(virtq_info != NULL);
     
-#ifndef MSI_X
+#ifndef VIRTIO_PCI_ENABLE_MSI_X
     intid = virtio_blk_init_irq_intx(pci_dev);
 #else
     intid = virtio_blk_init_irq_msix(header, pci_dev);
 #endif
+
+    // Read and write feature bits
+    virtio_check_capabilities(header, blk_caps, nr_elem(blk_caps));
 
     vdev->header = header;
     vdev->pci_dev = pci_dev;

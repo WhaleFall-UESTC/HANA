@@ -52,6 +52,9 @@ uint32 virtq_alloc_desc(struct virtq_info *virtq_info, void *addr)
 
 void virtq_free_desc(struct virtq_info *virtq_info, uint32 desc)
 {
+	if(virtq_info->desc_virt[desc] == NULL)
+		error("Trying to free a free desc");
+
 	virtq_info->virtq->desc[desc].next = virtq_info->free_desc;
 	virtq_info->free_desc = desc;
 	virtq_info->desc_virt[desc] = NULL;
