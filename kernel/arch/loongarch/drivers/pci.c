@@ -24,12 +24,12 @@ uint64 pci_memspace_free_base = PCI_MEM_BASE;
 */
 static inline void pci_read_config(unsigned long base_cfg_addr, unsigned int bus, unsigned int device, unsigned int function, unsigned int reg_id, unsigned int * read_data)
 {
-	*read_data = ADDRVAL(32, WD_ADDR(base_cfg_addr| (bus << 16) | (device << 11)| (function<<8)) + reg_id);
+	*read_data = ADDRVAL(32, phys_to_virt(base_cfg_addr | (bus << 20) | (device << 15) | (function << 12) | (reg_id & 0xFFC)));
 }
 
 static inline void pci_write_config(unsigned long base_cfg_addr, unsigned int bus, unsigned int device, unsigned int function, unsigned int reg_id, unsigned int write_data)
 {
-	ADDRVAL(32, WD_ADDR(base_cfg_addr| (bus << 16) | (device << 11)| (function<<8)) + reg_id) = write_data;
+	ADDRVAL(32, phys_to_virt(base_cfg_addr | (bus << 20) | (device << 15) | (function << 12) | (reg_id & 0xFFC))) = write_data;
 }
 
 /* 初始化pci设备的bar地址 */
@@ -139,34 +139,34 @@ unsigned int pci_device_get_irq_pin(pci_device_t *device)
 }
 
 struct slot {
-	uint64 slot_id;
+	uint8 dev_id;
 	uint32 pin;
 	uint32 intid;
 };
 
 static struct slot slot_info[] = {
-	{0x00, 0x01, 0x10},
-	{0x00, 0x02, 0x11},
-	{0x00, 0x03, 0x12},
-	{0x00, 0x04, 0x13},
-	{0x800, 0x01, 0x11},
-	{0x800, 0x02, 0x12},
-	{0x800, 0x03, 0x13},
-	{0x800, 0x04, 0x10},
-	{0x1000, 0x01, 0x12},
-	{0x1000, 0x02, 0x13},
-	{0x1000, 0x03, 0x10},
-	{0x1000, 0x04, 0x11},
-	{0x1800, 0x01, 0x13},
-	{0x1800, 0x02, 0x10},
-	{0x1800, 0x03, 0x11},
-	{0x1800, 0x04, 0x12},
+	{0, 0x01, 0x10},
+	{0, 0x02, 0x11},
+	{0, 0x03, 0x12},
+	{0, 0x04, 0x13},
+	{1, 0x01, 0x11},
+	{1, 0x02, 0x12},
+	{1, 0x03, 0x13},
+	{1, 0x04, 0x10},
+	{2, 0x01, 0x12},
+	{2, 0x02, 0x13},
+	{2, 0x03, 0x10},
+	{2, 0x04, 0x11},
+	{3, 0x01, 0x13},
+	{3, 0x02, 0x10},
+	{3, 0x03, 0x11},
+	{3, 0x04, 0x12},
 };
 
 unsigned int pci_device_get_intc(pci_device_t* device) {
+	uint32 pin = pci_device_get_irq_pin(device);
 	for(int i = 0; i < nr_elem(slot_info); i ++) {
-		if(((device->dev << 11) & 0x1800) == slot_info[i].slot_id) {
-			uint32 pin = pci_device_get_irq_pin(device);
+		if(device->dev == slot_info[i].dev_id) {
 			if(pin == slot_info[i].pin)
 				return slot_info[i].intid;
 		}
@@ -390,7 +390,7 @@ static void pci_scan_device(unsigned char bus, unsigned char device, unsigned ch
 {
 	/* 读取总线设备的设备id */
 	uint32 val;
-	pci_read_config(PCI_CONFIG_BASE,bus, device, function, PCI_DEVICE_VENDER,(uint32*)&val);
+	pci_read_config(PCI_CONFIG_BASE, bus, device, function, PCI_DEVICE_VENDER, (uint32*)&val);
 	uint16 vendor_id = val & 0xffff;
 	uint16 device_id = val >> 16;
 	/* 总线设备不存在，直接返回 */
@@ -404,7 +404,7 @@ static void pci_scan_device(unsigned char bus, unsigned char device, unsigned ch
 	}
 
 	/* 读取设备类型 */
-	pci_read_config(PCI_CONFIG_BASE, bus, device, function, PCI_BIST_HEADER_TYPE_LATENCY_TIMER_CACHE_LINE,(uint32*)&val);
+	pci_read_config(PCI_CONFIG_BASE, bus, device, function, PCI_BIST_HEADER_TYPE_LATENCY_TIMER_CACHE_LINE, (uint32*)&val);
 	unsigned char header_type = ((val >> 16));
 	/* 读取 command 寄存器 */
 	pci_read_config(PCI_CONFIG_BASE, bus, device, function, PCI_STATUS_COMMAND, (uint32*)&val);
@@ -413,7 +413,7 @@ static void pci_scan_device(unsigned char bus, unsigned char device, unsigned ch
 	pci_dev->status = (val >> 16) & 0xffff;
 
 	/* pci_read_config class code and revision id */
-	pci_read_config(PCI_CONFIG_BASE,bus, device, function, PCI_CLASS_CODE_REVISION_ID,(uint32*)&val);
+	pci_read_config(PCI_CONFIG_BASE, bus, device, function, PCI_CLASS_CODE_REVISION_ID, (uint32*)&val);
 	unsigned int classcode = val >> 8;
 	unsigned char revision_id = val & 0xff;
 
@@ -577,10 +577,10 @@ static void pci_scan_buses()
 {
 	unsigned int bus;
 	unsigned char device, function;
-	/*扫描每一条总线上的设备*/
-	for (bus = 0; bus < PCI_MAX_BUS; bus++) {//遍历总线
-		for (device = 0; device < PCI_MAX_DEV; device++) {//遍历总线上的每一个设备
-			for (function = 0; function < PCI_MAX_FUN; function++) {//遍历每个功能号
+	/* 扫描每一条总线上的设备 */
+	for (bus = 0; bus < PCI_MAX_BUS; bus ++) { //遍历总线
+		for (device = 0; device < PCI_MAX_DEV; device ++) { //遍历总线上的每一个设备
+			for (function = 0; function < PCI_MAX_FUN; function ++) { //遍历每个功能号
 				// info("bus: %d, device: %d, function: %d",bus ,device ,function);
 				pci_scan_device(bus, device, function);
 			}
@@ -669,15 +669,15 @@ void pci_enable_bus_mastering(pci_device_t *device)
 {
 	unsigned int val;
 	pci_read_config(PCI_CONFIG_BASE, device->bus, device->dev, device->function, PCI_STATUS_COMMAND, (uint32*)&val);
-#if DEBUG
-	debug("pci_enable_bus_mastering: before command: %x", val);    
-#endif
+// #if DEBUG
+// 	debug("pci_enable_bus_mastering: before command: %x", val);    
+// #endif
 	val |= PCI_COMMAND_MASTER;
 	pci_write_config(PCI_CONFIG_BASE, device->bus, device->dev, device->function, PCI_STATUS_COMMAND, val);
-#if DEBUG
-	pci_read_config(PCI_CONFIG_BASE, device->bus, device->dev, device->function, PCI_STATUS_COMMAND, (uint32*)&val);
-	debug("pci_enable_bus_mastering: after command: %x", val);
-#endif
+// #if DEBUG
+// 	pci_read_config(PCI_CONFIG_BASE, device->bus, device->dev, device->function, PCI_STATUS_COMMAND, (uint32*)&val);
+// 	debug("pci_enable_bus_mastering: after command: %x", val);
+// #endif
 }
 
 pci_device_t* pci_get_next_device(devid_t* pdevid) {

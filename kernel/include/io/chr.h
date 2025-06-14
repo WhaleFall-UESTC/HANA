@@ -59,6 +59,11 @@ struct chrdev *chrdev_get_by_name(const char *name);
 struct chrdev *chrdev_get_by_id(devid_t id);
 
 /**
+ * get default or first chrdev struct of char device
+ */
+struct chrdev *chrdev_get_default_dev();
+
+/**
  * general setup for char device irq response
  */
 irqret_t chrdev_general_isr(uint32 intid, void * private);

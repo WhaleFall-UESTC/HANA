@@ -93,6 +93,20 @@ struct blkdev *blkdev_get_by_id(devid_t id) {
     return NULL;
 }
 
+struct blkdev *blkdev_get_default_dev() {
+    struct blkdev *blkdev;
+
+    spinlock_acquire(&blkdev_list_lock);
+    list_for_each_entry(blkdev, &blkdev_list, blk_entry)
+    {
+        spinlock_release(&blkdev_list_lock);
+        return blkdev;
+    }
+    spinlock_release(&blkdev_list_lock);
+
+    return NULL;
+}
+
 void blkdev_submit_req(struct blkdev *dev, struct blkreq *request) {
     assert(dev != NULL);
     assert(request != NULL);

@@ -173,6 +173,11 @@ struct blkdev *blkdev_get_by_name(const char *name);
 struct blkdev *blkdev_get_by_id(devid_t id);
 
 /**
+ * get default or first blkdev struct of block device
+ */
+struct blkdev *blkdev_get_default_dev();
+
+/**
  * submit a request to block device
  */
 void blkdev_submit_req(struct blkdev *dev, struct blkreq *request);

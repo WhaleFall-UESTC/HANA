@@ -85,6 +85,21 @@ struct chrdev *chrdev_get_by_id(devid_t id)
     return NULL;
 }
 
+struct chrdev *chrdev_get_default_dev()
+{
+    struct chrdev *chrdev;
+
+    spinlock_acquire(&chrdev_list_lock);
+    list_for_each_entry(chrdev, &chrdev_list, chr_entry)
+    {
+        spinlock_release(&chrdev_list_lock);
+        return chrdev;
+    }
+    spinlock_release(&chrdev_list_lock);
+
+    return NULL;
+}
+
 irqret_t chrdev_general_isr(uint32 intid, void *private)
 {
     struct chrdev *chrdev = (struct chrdev *)private;

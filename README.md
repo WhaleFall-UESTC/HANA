@@ -1,8 +1,7 @@
-# WhaleOS
-WhaleOS 是个暂时的名字，在将仓库移到 gitlab 之前会改
+# HANA OS
 <br><br>
-关于 loongarch 分支的一个和说明：
-现在的 loongarch 还在开发中，临时的 loongarch 内核的 Makefile 位于 /kernel/arch/loongarch 下。需要调试的话还请先 cd 至此目录下
+关于架构的说明：
+龙芯和 riscv 已经合并在主分支，切换 Makefile 中的 ARCH 即可编译不同的架构
 <br><br>
 ## Get Start
 ### riscv-gnu-toolchains

@@ -11,13 +11,6 @@
 #include <arch.h>
 #include <mm/mm.h>
 
-#ifdef ARCH_RISCV
-#define VIRTIO_BLK_DEV_NAME "virtio-blk1"
-#elif defined(VIRTIO_PCI_ENABLE_MSI_X)
-#define VIRTIO_BLK_DEV_NAME "virtio-blk32"
-#else
-#define VIRTIO_BLK_DEV_NAME "virtio-blk16"
-#endif
 #define TEST_CYCLES 10
 #define BLOCK_SIZE 4096
 #define BLOCKS_PER_TEST 10
@@ -67,11 +60,13 @@ void test_virtio()
         goto cleanup;
     }
 
-    if (!(blkdev = blkdev_get_by_name(VIRTIO_BLK_DEV_NAME)))
+    if (!(blkdev = blkdev_get_default_dev()))
     {
         error("Device not found");
         goto cleanup;
     }
+
+    log("using blkdev: %s", blkdev->name);
 
     nr_sectors = blkdev->size / BLOCK_SIZE;
 

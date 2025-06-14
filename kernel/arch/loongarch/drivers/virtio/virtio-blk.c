@@ -237,15 +237,8 @@ struct blkdev_ops virtio_blk_ops = {
 };
 
 static uint32 virtio_blk_init_irq_intx(pci_device_t *pci_dev) {
-    uint32 irqid, irqpin;
-
     uint32 intid = pci_device_get_intc(pci_dev);
     pci_device_set_irq_line(pci_dev, intid);
-
-    irqid = pci_device_get_irq_line(pci_dev);
-    irqpin = pci_device_get_irq_pin(pci_dev);
-
-    debug("irqline : %d, irqpin: %d", irqid, irqpin);
 
     return intid;
 }

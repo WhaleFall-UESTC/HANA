@@ -293,6 +293,9 @@ void test_fs()
     }
     call_sys_close(fd);
     PASS("fstat success");
+
+    log("FS test done");
+    
 // 清理流程
 cleanup_link:
     log("cleanup link");
