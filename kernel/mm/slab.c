@@ -13,6 +13,7 @@ init_slab(void* addr)
 {
     struct slab* ret = (struct slab*) addr;
     set_slab_next(ret, 0);
+    set_slab_prev(ret, 0);
     set_object_entry(&ret->sentinel, NR_OBJS, 0, 0);
     set_object_entry(ret->objs, NR_OBJS, OBJECT_SENTINEL, OBJECT_SENTINEL);
     memset(&ret->objs[1], 0, (NR_OBJS - 2) * sizeof(struct object_entry));
@@ -22,11 +23,16 @@ init_slab(void* addr)
 void 
 slab_init()
 {
+    partial = buddy_alloc(PGSIZE);
+    init_slab(partial);
+
     assert(sizeof(struct slab) == PGSIZE);
-    for (int i = 0; i < MIN_PARTIAL; i++) {
+
+    for (int i = 1; i < MIN_PARTIAL; i++) {
         struct slab* alloc = buddy_alloc(PGSIZE);
         init_slab(alloc);
         set_slab_next(alloc, partial);
+        set_slab_prev(partial, alloc);
         partial = alloc;
     }
     current = buddy_alloc(PGSIZE);
@@ -92,7 +98,9 @@ slab_alloc(uint64 sz)
         current = partial;
         partial = tmp;
         set_slab_next(partial, ptr);
+        set_slab_prev(ptr, partial);
         set_slab_next(current, 0);
+        set_slab_prev(current, 0);
         // return alloc result
         return alloc_objs(current, nr_objs);
     }
@@ -102,7 +110,9 @@ slab_alloc(uint64 sz)
         if (ptr->sentinel.size >= nr_objs) {
             struct slab* ptr_next = get_slab_next(ptr);
             set_slab_next(current, ptr_next);
+            set_slab_prev(ptr_next, current);
             set_slab_next(ptr_pre, current);
+            set_slab_prev(current, ptr_pre);
             current = ptr;
             set_slab_next(current, 0);
             return alloc_objs(current, nr_objs);
@@ -114,6 +124,7 @@ slab_alloc(uint64 sz)
     // if none of slab is available, ask for buddy system
     // add current to the partial list
     set_slab_next(current, partial);
+    set_slab_prev(partial, current);
     partial = current;
     partial_len++;
     // int cnt = 0;
@@ -165,38 +176,41 @@ slab_free(void* addr, uint8 nr_free)
     struct slab* slab = SLAB(addr);
     slab->sentinel.size += nr_free;
     Assert(slab->sentinel.size <= NR_OBJS, "nr_free: %d\t size: %d", nr_free, slab->sentinel.size);
-    // if after free these object, the slab is free, and partial has enough slab
-    // ret it to buddy system
+    // if after free these object, the slab is all free, and partial has enough slab
+    // return it to buddy system
     if (slab->sentinel.size == NR_OBJS && partial_len > MIN_PARTIAL) {
         // delete this slab from list
         if (slab == current) {
             current = partial;
             partial = get_slab_next(partial);
+            set_slab_prev(partial, 0);
             set_slab_next(current, 0);
+            set_slab_prev(current, 0);
         } else if (slab == partial) {
             struct slab* partial_next = get_slab_next(partial);
             partial = partial_next;
-
+            set_slab_prev(partial, 0);
         } else {
-            // struct slab* ptr_prev = get_slab_prev(slab);
-            // struct slab* ptr_next = get_slab_next(slab);
-            // set_slab_next(ptr_prev, ptr_next);
-            struct slab* ptr_pre = partial;
-            bool found = false;
-            int cnt = 1;
-            for (struct slab* ptr = get_slab_next(partial); ptr; ptr_pre = ptr, ptr = get_slab_next(ptr)) {
-                if (ptr == slab) {
-                    struct slab* ptr_next = get_slab_next(ptr);
-                    set_slab_next(ptr_pre, ptr_next);
-                    found = true;
-                    break;
-                }
-                cnt++;
-            }
-            if (found == false) {
-                Assert(cnt == partial_len, "cnt: %d, partial_len: %d", cnt, partial_len);
-                panic("Do not have slab %p", slab);
-            }
+            struct slab* ptr_prev = get_slab_prev(slab);
+            struct slab* ptr_next = get_slab_next(slab);
+            set_slab_next(ptr_prev, ptr_next);
+            set_slab_prev(ptr_next, ptr_prev);
+            // struct slab* ptr_pre = partial;
+            // bool found = false;
+            // int cnt = 1;
+            // for (struct slab* ptr = get_slab_next(partial); ptr; ptr_pre = ptr, ptr = get_slab_next(ptr)) {
+            //     if (ptr == slab) {
+            //         struct slab* ptr_next = get_slab_next(ptr);
+            //         set_slab_next(ptr_pre, ptr_next);
+            //         found = true;
+            //         break;
+            //     }
+            //     cnt++;
+            // }
+            // if (found == false) {
+            //     Assert(cnt == partial_len, "cnt: %d, partial_len: %d", cnt, partial_len);
+            //     panic("Do not have slab %p", slab);
+            // }
         } 
         buddy_free((void*) slab, 0);
         partial_len--;
@@ -206,6 +220,8 @@ slab_free(void* addr, uint8 nr_free)
         // Assert(cnt == partial_len, "cnt: %d, partal_len: %d", cnt, partial_len);
         return;
     }
+
+
     int idx = OBJECT_IDX(addr);
     Assert(nr_free == slab->objs[idx].size, "nr_free=%d, idx=%d, sz=%d, addr=%p", nr_free, idx, slab->objs[idx].size, addr);
     assert(slab->objs[idx].prev == A && slab->objs[idx].next == L);
