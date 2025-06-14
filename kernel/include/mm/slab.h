@@ -29,10 +29,14 @@ struct object {
 };
 
 struct slab {
-    uint32 next;
-    uint16 reserve;
+    uint16 next_low;
+    uint8  next_high;
+    uint16 prev_low;
+    uint8  prev_high;
+
     struct object_entry sentinel;
     struct object_entry objs[NR_OBJS];
+    
     struct object objects[NR_OBJS];
 };
 
@@ -41,17 +45,47 @@ struct slab {
 static inline struct slab*
 get_slab_next(struct slab* s) 
 {
-    uint64 slab_addr = (uint64) s;
-    slab_addr &= 0xffffffff00000000L;
-    slab_addr |= s->next;
-    return (struct slab*) slab_addr;
+    uint32 next_low = (((s->next_high << 16) | s->next_low) << 12);
+    return (struct slab *) ((((uint64) s) & 0xffffffff00000000) | next_low);
 }
 
-static inline void 
-set_slab_next(struct slab* prev, struct slab* next)
+static inline struct slab*
+get_slab_prev(struct slab* s) 
 {
-    prev->next = (uint32)((uint64)next & 0xffffffffL);
+    uint32 prev_low = (((s->prev_high << 16) | s->prev_low) << 12);
+    return (struct slab *) ((((uint64) s) & 0xffffffff00000000) | prev_low);
 }
+
+static inline void
+set_slab_next(struct slab* s, struct slab* next) 
+{
+    uint64 next_addr = (uint64) next;
+    s->next_low = (uint16) ((next_addr >> 12) & 0xffff);
+    s->next_high = (uint8) ((next_addr >> (12 + 16)) & 0xf);
+}
+
+static inline void
+set_slab_prev(struct slab* s, struct slab* prev) 
+{
+    uint64 prev_addr = (uint64) prev;
+    s->prev_low = (uint16) ((prev_addr >> 12) & 0xffff);
+    s->prev_high = (uint8) ((prev_addr >> (12 + 16)) & 0xf);
+}
+
+// static inline struct slab*
+// get_slab_next(struct slab* s) 
+// {
+//     uint64 slab_addr = (uint64) s;
+//     slab_addr &= 0xffffffff00000000L;
+//     slab_addr |= s->next;
+//     return (struct slab*) slab_addr;
+// }
+
+// static inline void 
+// set_slab_next(struct slab* prev, struct slab* next)
+// {
+//     prev->next = (uint32)((uint64)next & 0xffffffffL);
+// }
 
 static inline uint8
 nr_free_objs(struct slab* s)

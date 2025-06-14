@@ -12,7 +12,7 @@ static inline void
 init_slab(void* addr)
 {
     struct slab* ret = (struct slab*) addr;
-    ret->next = 0;
+    set_slab_next(ret, 0);
     set_object_entry(&ret->sentinel, NR_OBJS, 0, 0);
     set_object_entry(ret->objs, NR_OBJS, OBJECT_SENTINEL, OBJECT_SENTINEL);
     memset(&ret->objs[1], 0, (NR_OBJS - 2) * sizeof(struct object_entry));
@@ -92,19 +92,19 @@ slab_alloc(uint64 sz)
         current = partial;
         partial = tmp;
         set_slab_next(partial, ptr);
-        current->next = 0;
+        set_slab_next(current, 0);
         // return alloc result
         return alloc_objs(current, nr_objs);
     }
 
     // find available slab in partial
-    while (ptr) {
+    while ((uint64)ptr & 0xffffffff) {
         if (ptr->sentinel.size >= nr_objs) {
             struct slab* ptr_next = get_slab_next(ptr);
             set_slab_next(current, ptr_next);
             set_slab_next(ptr_pre, current);
             current = ptr;
-            current->next = 0;
+            set_slab_next(current, 0);
             return alloc_objs(current, nr_objs);
         }
         ptr_pre = ptr;
@@ -164,7 +164,7 @@ slab_free(void* addr, uint8 nr_free)
 {
     struct slab* slab = SLAB(addr);
     slab->sentinel.size += nr_free;
-    assert(slab->sentinel.size <= NR_OBJS);
+    Assert(slab->sentinel.size <= NR_OBJS, "nr_free: %d\t size: %d", nr_free, slab->sentinel.size);
     // if after free these object, the slab is free, and partial has enough slab
     // ret it to buddy system
     if (slab->sentinel.size == NR_OBJS && partial_len > MIN_PARTIAL) {
@@ -172,12 +172,15 @@ slab_free(void* addr, uint8 nr_free)
         if (slab == current) {
             current = partial;
             partial = get_slab_next(partial);
-            current->next = 0;
+            set_slab_next(current, 0);
         } else if (slab == partial) {
             struct slab* partial_next = get_slab_next(partial);
             partial = partial_next;
 
         } else {
+            // struct slab* ptr_prev = get_slab_prev(slab);
+            // struct slab* ptr_next = get_slab_next(slab);
+            // set_slab_next(ptr_prev, ptr_next);
             struct slab* ptr_pre = partial;
             bool found = false;
             int cnt = 1;
