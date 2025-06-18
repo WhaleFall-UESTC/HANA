@@ -15,30 +15,30 @@
 #define O_DIRECT	00040000
 #define O_LARGEFILE	00100000
 #define O_DIRECTORY	00200000
-#define O_NOFOLLOW	00400000	/* don't follow links */
+#define O_NOFOLLOW	00400000	        /* don't follow links */
 #define O_NOATIME	01000000
-#define O_CLOEXEC	02000000	/* set close_on_exec */
+#define O_CLOEXEC	02000000	        /* set close_on_exec */
 
 #define FD_CLOEXEC 1
 
-#define AT_FDCWD		-100    /* Special value used to indicate
+#define AT_FDCWD		-100            /* Special value used to indicate
                                            openat should use the current
                                            working directory. */
-#define AT_SYMLINK_NOFOLLOW	0x100   /* Do not follow symbolic links.  */
-#define AT_EACCESS		0x200	/* Test access permitted for
+#define AT_SYMLINK_NOFOLLOW	0x100       /* Do not follow symbolic links.  */
+#define AT_EACCESS		0x200           /* Test access permitted for
                                            effective IDs, not real IDs.  */
-#define AT_REMOVEDIR		0x200   /* Remove directory instead of
+#define AT_REMOVEDIR		0x200       /* Remove directory instead of
                                            unlinking file.  */
-#define AT_SYMLINK_FOLLOW	0x400   /* Follow symbolic links.  */
-#define AT_NO_AUTOMOUNT		0x800	/* Suppress terminal automount traversal */
-#define AT_EMPTY_PATH		0x1000	/* Allow empty relative pathname */
+#define AT_SYMLINK_FOLLOW	0x400       /* Follow symbolic links.  */
+#define AT_NO_AUTOMOUNT		0x800       /* Suppress terminal automount traversal */
+#define AT_EMPTY_PATH		0x1000	    /* Allow empty relative pathname */
 
-#define AT_STATX_SYNC_TYPE	0x6000	/* Type of synchronisation required from statx() */
-#define AT_STATX_SYNC_AS_STAT	0x0000	/* - Do whatever stat() does */
-#define AT_STATX_FORCE_SYNC	0x2000	/* - Force the attributes to be sync'd with the server */
-#define AT_STATX_DONT_SYNC	0x4000	/* - Don't sync attributes with the server */
+#define AT_STATX_SYNC_TYPE	0x6000      /* Type of synchronisation required from statx() */
+#define AT_STATX_SYNC_AS_STAT	0x0000  /* - Do whatever stat() does */
+#define AT_STATX_FORCE_SYNC	0x2000	    /* - Force the attributes to be sync'd with the server */
+#define AT_STATX_DONT_SYNC	0x4000	    /* - Don't sync attributes with the server */
 
-#define AT_RECURSIVE		0x8000	/* Apply to the entire subtree */
+#define AT_RECURSIVE		0x8000	    /* Apply to the entire subtree */
 
 #define F_DUPFD 0
 #define F_GETFD 1
