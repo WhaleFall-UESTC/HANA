@@ -36,7 +36,7 @@ void virtq_create(struct virtq_info *virtq_info)
 	queue_mem_size = virtq_size(queue_size);
 	
 	void* virtq_base = kalloc(queue_mem_size);
-	Assert(((uint64)virtq_base & (VIRTIO_DEFAULT_ALIGN - 1)) == 0, "mem alloced not align");
+	Assert(((uint64)virtq_base & (VIRTIO_DEFAULT_ALIGN - 1)) == 0, "mem alloced not aligned");
 	assert(virtq != NULL);
 	assert(virtq_base != NULL);
 	memset(virtq_base, 0, queue_mem_size);
@@ -44,10 +44,10 @@ void virtq_create(struct virtq_info *virtq_info)
 	debug("virtq_create: virtq=0x%lx", (uint64)virtq_base);
 
 	virtq->desc = virtq_base;
-	virtq->avail = (volatile struct virtqueue_avail *)((uint64)virtq_base + sizeof(struct virtqueue_desc) * queue_size);
-	virtq->used = (volatile struct virtqueue_used *)ALIGN((uint64)virtq->avail + sizeof(struct virtqueue_avail), VIRTIO_DEFAULT_ALIGN);
+	virtq->avail = (volatile struct virtqueue_avail *)((uint64)virtq_base + virtq_desc_size(queue_size));
+	virtq->used = (volatile struct virtqueue_used *)ALIGN((uint64)virtq->avail + virtq_avail_size(queue_size), VIRTIO_DEFAULT_ALIGN);
 
-	Assert((uint64)virtq->avail + sizeof(struct virtqueue_avail) +  virtq_pad(queue_size) == (uint64)virtq->used, "virtq pad err");
+	Assert((uint64)virtq->avail + virtq_avail_size(queue_size) + virtq_pad(queue_size) == (uint64)virtq->used, "virtq pad err");
 
 	virtq->avail->idx = 0;
 	virtq->used->idx = 0;

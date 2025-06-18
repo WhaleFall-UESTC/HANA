@@ -62,6 +62,9 @@ struct virtqueue_avail
     uint16 flags;
     uint16 idx;
     uint16 ring[0]; // Queuesize of nr elements
+#ifdef VIRTIO_F_EVENT_IDX
+    uint16 used_event;
+#endif
 } __attribute__((packed));
 
 struct virtqueue_used_elem
@@ -76,6 +79,9 @@ struct virtqueue_used
     uint16 flags;
     uint16 idx;
     struct virtqueue_used_elem ring[0]; // Queuesize of nr elements
+#ifdef VIRTIO_F_EVENT_IDX
+    uint16 avail_event;
+#endif
 } __attribute__((packed));
 
 /**
@@ -87,15 +93,27 @@ struct virtqueue_used
 #define VIRTIO_DEFAULT_QUEUE_SIZE 256
 #define VIRTIO_DEFAULT_ALIGN 4096
 
+static inline unsigned int virtq_desc_size(unsigned int qsz) {
+    return sizeof(struct virtqueue_desc) * qsz;
+}
+
+static inline unsigned int virtq_avail_size(unsigned int qsz) {
+    return sizeof(struct virtqueue_avail) + sizeof(uint16) * qsz;
+}
+
+static inline unsigned int virtq_used_size(unsigned int qsz) {
+    return sizeof(struct virtqueue_used) + sizeof(struct virtqueue_used_elem) * qsz;
+}
+
 static inline unsigned int virtq_pad(unsigned int qsz) {
-    unsigned int szbefore = sizeof(struct virtqueue_desc) * qsz + sizeof(struct virtqueue_avail);
+    unsigned int szbefore = virtq_desc_size(qsz) + virtq_avail_size(qsz);
     return ALIGN(szbefore, VIRTIO_DEFAULT_ALIGN) - szbefore;
 }
 
 static inline unsigned int virtq_size(unsigned int qsz)
 {
-    return ALIGN(sizeof(struct virtqueue_desc) * qsz + sizeof(uint16) * (2 + qsz), VIRTIO_DEFAULT_ALIGN)
-         + ALIGN(sizeof(struct virtqueue_used_elem) * qsz, VIRTIO_DEFAULT_ALIGN);
+    return ALIGN(virtq_desc_size(qsz) + virtq_avail_size(qsz), VIRTIO_DEFAULT_ALIGN)
+         + ALIGN(virtq_used_size(qsz), VIRTIO_DEFAULT_ALIGN);
 }
 
 /**
