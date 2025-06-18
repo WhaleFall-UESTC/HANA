@@ -1,5 +1,6 @@
 #include <common.h>
 #include <mm/memlayout.h>
+#include <mm/mm.h>
 #include <debug.h>
 #include <irq/interrupt.h>
 #include <arch.h>
@@ -161,7 +162,7 @@ dive_to_user()
     p->trapframe->kernel_trap = (uint64) user_trap;
     
     uint64 trapframe = TRAPFRAME + (uint64)p->trapframe - PGROUNDDOWN(p->trapframe);
-    uint64 satp = MAKE_SATP(p->pagetable);
+    uint64 satp = MAKE_SATP(UPGTBL(p->pagetable));
 
     uint64 fn = TRAMPOLINE + (userret - trampoline);
     ((void (*)(uint64,uint64))fn)(trapframe, satp);

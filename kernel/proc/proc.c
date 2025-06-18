@@ -10,6 +10,7 @@
 #include <mm/mm.h>
 #include <mm/memlayout.h>
 #include <fs/file.h>
+#include <syscall.h>
 
 extern struct proc* proc_list;
 
@@ -41,6 +42,9 @@ alloc_proc()
     p->pid = alloc_pid();
     p->stack = KSTACK(p->pid);
 
+    p->tgid = 0;
+    p->tls = 0;
+    
     map_stack(kernel_pagetable, p->stack);
 
     p->state = INIT;
@@ -74,13 +78,12 @@ proc_init()
     struct proc* p = alloc_proc();
 
     // user vm space init
-    p->pagetable = uvminit((uint64)p->trapframe, init_code, sizeof(init_code));
+    pagetable_t user_pagetable = uvminit((uint64)p->trapframe, init_code, sizeof(init_code));
+    p->pagetable = upgtbl_init(user_pagetable);
     p->sz = 2*PGSIZE;
 
     trapframe_set_era(p, 0);
     trapframe_set_stack(p, 3*PGSIZE);
-    // p->trapframe->epc = 0;
-    // p->trapframe->sp = 3*PGSIZE;
 
     strcpy(p->name, "init");
     
@@ -88,9 +91,6 @@ proc_init()
 
     proc_list = p;
     init_proc = p;
-
-    // should be deleted
-    // cpus[0].proc = p;
 }
 
 void 
@@ -176,6 +176,62 @@ kill(int pid)
 
     // not found
     return -1;
+}
+
+
+/************************ Syscalls for process *************************/
+
+SYSCALL_DEFINE5(clone, int, unsigned long, flags, void*, stack, int*, ptid, void*, tls, int*, ctid) {
+    
+    struct proc* proc  = myproc();
+    struct proc* child = alloc_proc();
+    assert(child);
+
+    // set tls
+    child->tls = (uint64) tls;
+    child->trapframe->tp = (uint64) tls;
+
+    // prepare userspace vm
+    if (flags & CLONE_VM) {
+        // share space with parent
+        child->pagetable = upgtbl_clone(proc->pagetable);
+        // TODO: mmap
+    } else {
+        // initialize child pagetable
+        // pagetable_t cpgtbl = alloc_pagetable();
+        // Copy memory from parent (COW)
+        // uvmcopy(cpgtbl, UPGTBL(proc->pagetable), proc->sz);
+    }
+
+    if (flags & CLONE_FS) {
+
+    }
+
+    if (flags & CLONE_FILES) {
+
+    }
+
+    if (flags & CLONE_THREAD) {
+        child->tgid = proc->tgid;
+    }
+
+    if (flags & CLONE_PARENT_SETTID){
+
+    }
+
+    if (flags & CLONE_CHILD_SETTID) {
+
+    }
+
+    if (flags & CLONE_CHILD_CLEARTID) {
+
+    }
+
+    if (flags & CLONE_SIGCHLD) {
+
+    }
+
+    return 0;
 }
 
 // #ifdef ARCH_RISCV

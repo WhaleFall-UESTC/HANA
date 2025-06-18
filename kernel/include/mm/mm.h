@@ -4,8 +4,6 @@
 #include <klib.h>
 #include <arch.h>
 
-extern pagetable_t kernel_pagetable;
-
 void        kmem_init(uint64 va_start, uint64 va_end);
 void        kinit();
 void*       kalloc(uint64 sz);
@@ -25,14 +23,7 @@ void        map_stack(pagetable_t pgtbl, uint64 stack_va);
 uint64      virt_to_phys(uint64 va);
 uint64      phys_to_virt(uint64 pa);
 
-static inline uint64 phys_page_number(uint64 pa) {
-    return pa >> PGSHIFT;
-}
 
-static inline pagetable_t alloc_pagetable() {
-    pagetable_t pgtbl = (pagetable_t) kalloc(PGSIZE);
-    memset(pgtbl, 0, PGSIZE);
-    return pgtbl;
-}
+#include <mm/pagetable.h>
 
 #endif // __MM_H__
