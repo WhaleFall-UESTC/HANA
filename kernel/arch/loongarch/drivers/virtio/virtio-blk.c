@@ -57,14 +57,14 @@ struct virtio_blk
 static void virtio_blk_handle_used(struct virtio_blk *dev, uint32 usedidx)
 {
     struct virtq_info *virtq_info = dev->virtq_info;
-    volatile struct virtqueue *virtq = virtq_info->virtq;
+    volatile struct virtqueue *virtq = &virtq_info->virtq;
     uint32 desc1, desc2, desc3;
     struct virtio_blk_req *req;
 
     // debug("virtio_blk_handle_used: usedidx=%u, usedid=%u",
-    //       usedidx, virtq->used.ring[usedidx].id);
+    //       usedidx, virtq->used->ring[usedidx].id);
 
-    desc1 = virtq->used.ring[usedidx].id;
+    desc1 = virtq->used->ring[usedidx].id;
     if (!(virtq->desc[desc1].flags & VIRTQ_DESC_F_NEXT))
         goto bad_desc;
     desc2 = virtq->desc[desc1].next;
@@ -126,13 +126,13 @@ static irqret_t virtio_blk_isr(struct blkdev *blkdev)
     }
 #endif
 
-    for (i = virtq_info->seen_used; i != (virtq_info->virtq->used.idx % VIRTIO_DEFAULT_QUEUE_SIZE);
-         i = wrap(i + 1, VIRTIO_DEFAULT_QUEUE_SIZE))
+    for (i = virtq_info->seen_used; i != (virtq_info->virtq.used->idx % virtq_info->queue_size);
+         i = wrap(i + 1, virtq_info->queue_size))
     {
         virtio_blk_handle_used(dev, i);
         free_cnt ++;
     }
-    virtq_info->seen_used = virtq_info->virtq->used.idx % VIRTIO_DEFAULT_QUEUE_SIZE;
+    virtq_info->seen_used = virtq_info->virtq.used->idx % virtq_info->queue_size;
 
     assert(free_cnt <= alloc_cnt);
 
@@ -141,11 +141,11 @@ static irqret_t virtio_blk_isr(struct blkdev *blkdev)
 
 static void virtio_blk_send(struct virtio_blk *blk, struct virtio_blk_req *hdr)
 {
-    volatile struct virtqueue *virtq = blk->virtq_info->virtq;
-    virtq->avail.ring[virtq->avail.idx % VIRTIO_DEFAULT_QUEUE_SIZE] =
+    volatile struct virtqueue *virtq = &blk->virtq_info->virtq;
+    virtq->avail->ring[virtq->avail->idx % blk->virtq_info->queue_size] =
         hdr->descriptor;
     mb();
-    virtq->avail.idx += 1;
+    virtq->avail->idx += 1;
     mb();
     WRITE32(blk->header->QueueNotify, 0);
 
@@ -155,7 +155,7 @@ static void virtio_blk_send(struct virtio_blk *blk, struct virtio_blk_req *hdr)
 static void virtio_blk_status(struct blkdev *dev)
 {
     struct virtio_blk *blkdev = get_vblkdev(dev);
-    volatile struct virtqueue *virtq = blkdev->virtq_info->virtq;
+    volatile struct virtqueue *virtq = &blkdev->virtq_info->virtq;
     log("virtio_blk_dev at 0x%lx",
         virt_to_phys((uint64)blkdev->header));
     log("    Status=0x%x", READ8(blkdev->header->DeviceStatus));
@@ -164,8 +164,8 @@ static void virtio_blk_status(struct blkdev *dev)
     log("    InterruptStatus=0x%x",
         READ8(blkdev->header->ISRStatus));
     log("  Queue 0:");
-    log("    avail.idx = %u", virtq->avail.idx);
-    log("    used.idx = %u", virtq->used.idx);
+    log("    avail->idx = %u", virtq->avail->idx);
+    log("    used->idx = %u", virtq->used->idx);
     WRITE32(blkdev->header->QueueSelect, 0);
     mb();
     virtq_show(blkdev->virtq_info);
@@ -189,7 +189,7 @@ static void virtio_blk_submit(struct blkdev *dev, struct blkreq *req)
     struct virtio_blk *blk = get_vblkdev(dev);
     struct virtio_blk_req *hdr = get_vblkreq(req);
     struct virtq_info *virtq_info = blk->virtq_info;
-    volatile struct virtqueue *virtq = blk->virtq_info->virtq;
+    volatile struct virtqueue *virtq = &blk->virtq_info->virtq;
     uint32 d1, d2, d3, datamode = 0;
 
     if (req->size & (VIRTIO_BLK_SECTOR_SIZE - 1))
@@ -290,7 +290,7 @@ int virtio_blk_init(volatile virtio_pci_header *header, pci_device_t *pci_dev)
     vdev = kalloc(sizeof(struct virtio_blk));
 
     // Perform device-specific setup
-    virtq_info = virtq_add_to_device(header, VIRTIO_BLK_DEFAULT_QUEUENUM);
+    virtq_info = virtq_add_to_device(header, virtq_alloc_num());
     assert(virtq_info != NULL);
     
 #ifndef VIRTIO_PCI_ENABLE_MSI_X

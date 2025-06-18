@@ -40,9 +40,10 @@ struct virtq_info* virtq_add_to_device(volatile virtio_pci_header *header, uint3
 	// Step 3: Allocate and zero the queue pages
 
 	virtq_info->free_desc = virtq_info->seen_used = 0;
-	virtq_info->virtq = virtq_create();
-	virtq_info->pfn = virt_to_phys((uint64)virtq_info->virtq) / 4096;
-	memset(virtq_info->desc_virt, 0, sizeof(virtq_info->desc_virt));
+	virtq_info->queue_num = queue_sel;
+	virtq_info->queue_size = queue_size;
+	virtq_create(virtq_info);
+	virtq_info->pfn = virt_to_phys((uint64)virtq_info->virtq.base) / 4096;
 
 	// Step 4: Write the physical page number of the first page of the queue
 	WRITE32(header->QueueAddress, virtq_info->pfn);

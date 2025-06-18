@@ -53,14 +53,14 @@ struct virtio_blk
 static void virtio_blk_handle_used(struct virtio_blk *dev, uint32 usedidx)
 {
     struct virtq_info* virtq_info = dev->virtq_info;
-    volatile struct virtqueue *virtq = virtq_info->virtq;
+    volatile struct virtqueue *virtq = &virtq_info->virtq;
     uint32 desc1, desc2, desc3;
     struct virtio_blk_req *req;
 
     // debug("virtio_blk_handle_used: usedidx=%u, usedid=%u",
-    //       usedidx, virtq->used.ring[usedidx].id);
+    //       usedidx, virtq->used->ring[usedidx].id);
 
-    desc1 = virtq->used.ring[usedidx].id;
+    desc1 = virtq->used->ring[usedidx].id;
     if (!(virtq->desc[desc1].flags & VIRTQ_DESC_F_NEXT))
         goto bad_desc;
     desc2 = virtq->desc[desc1].next;
@@ -112,12 +112,12 @@ static irqret_t virtio_blk_isr(struct blkdev *blkdev)
         return IRQ_ERR;
     }
     
-    for (i = virtq_info->seen_used; i != (virtq_info->virtq->used.idx % VIRTIO_DEFAULT_QUEUE_SIZE);
-    i = wrap(i + 1, VIRTIO_DEFAULT_QUEUE_SIZE))
+    for (i = virtq_info->seen_used; i != (virtq_info->virtq.used->idx % virtq_info->queue_size);
+    i = wrap(i + 1, virtq_info->queue_size))
     {
         virtio_blk_handle_used(dev, i);
     }
-    virtq_info->seen_used = virtq_info->virtq->used.idx % VIRTIO_DEFAULT_QUEUE_SIZE;
+    virtq_info->seen_used = virtq_info->virtq.used->idx % virtq_info->queue_size;
     
     WRITE32(dev->regs->InterruptACK, READ32(dev->regs->InterruptStatus));
 
@@ -126,11 +126,11 @@ static irqret_t virtio_blk_isr(struct blkdev *blkdev)
 
 static void virtio_blk_send(struct virtio_blk *blk, struct virtio_blk_req *hdr)
 {
-    volatile struct virtqueue *virtq = blk->virtq_info->virtq;
-    virtq->avail.ring[virtq->avail.idx % VIRTIO_DEFAULT_QUEUE_SIZE] =
+    volatile struct virtqueue *virtq = &blk->virtq_info->virtq;
+    virtq->avail->ring[virtq->avail->idx % blk->virtq_info->queue_size] =
         hdr->descriptor;
     mb();
-    virtq->avail.idx += 1;
+    virtq->avail->idx += 1;
     mb();
     WRITE32(blk->regs->QueueNotify, 0);
 }
@@ -138,7 +138,7 @@ static void virtio_blk_send(struct virtio_blk *blk, struct virtio_blk_req *hdr)
 static void virtio_blk_status(struct blkdev *dev)
 {
     struct virtio_blk *blkdev = get_vblkdev(dev);
-    volatile struct virtqueue *virtq = blkdev->virtq_info->virtq;
+    volatile struct virtqueue *virtq = &blkdev->virtq_info->virtq;
     log("virtio_blk_dev at 0x%lx",
            virt_to_phys((uint64)blkdev->regs));
     log("    Status=0x%x", READ32(blkdev->regs->Status));
@@ -148,8 +148,8 @@ static void virtio_blk_status(struct blkdev *dev)
            READ32(blkdev->regs->InterruptStatus));
     log("    MagicValue=0x%x", READ32(blkdev->regs->MagicValue));
     log("  Queue 0:");
-    log("    avail.idx = %u", virtq->avail.idx);
-    log("    used.idx = %u", virtq->used.idx);
+    log("    avail->idx = %u", virtq->avail->idx);
+    log("    used.idx = %u", virtq->used->idx);
     WRITE32(blkdev->regs->QueueSel, 0);
     mb();
     virtq_show(blkdev->virtq_info);
@@ -173,7 +173,7 @@ static void virtio_blk_submit(struct blkdev *dev, struct blkreq *req)
     struct virtio_blk *blk = get_vblkdev(dev);
     struct virtio_blk_req *hdr = get_vblkreq(req);
     struct virtq_info* virtq_info = blk->virtq_info;
-    volatile struct virtqueue *virtq = blk->virtq_info->virtq;
+    volatile struct virtqueue *virtq = &blk->virtq_info->virtq;
     uint32 d1, d2, d3, datamode = 0;
 
     if(req->size & (VIRTIO_BLK_SECTOR_SIZE - 1))
@@ -238,15 +238,8 @@ int virtio_blk_init(volatile virtio_regs *regs, uint32 intid)
     // Read and write feature bits
     virtio_check_capabilities(regs, blk_caps, nr_elem(blk_caps));
 
-    WRITE32(regs->Status, READ32(regs->Status) | VIRTIO_STATUS_FEATURES_OK);
-	mb();
-	if (!(regs->Status & VIRTIO_STATUS_FEATURES_OK)) {
-		error("virtio-blk did not accept our features");
-		return -1;
-	}
-
     // Perform device-specific setup
-    virtq_info = virtq_add_to_device(regs, 0);
+    virtq_info = virtq_add_to_device(regs, virtq_alloc_num(), VIRTIO_DEFAULT_QUEUE_SIZE);
     assert(virtq_info != NULL);
 
     vdev->regs = regs;

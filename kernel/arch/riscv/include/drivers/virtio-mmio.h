@@ -54,7 +54,7 @@ typedef volatile struct __attribute__((aligned(4)))
 /*
  * virtqueue routines
  */
-struct virtq_info *virtq_add_to_device(volatile virtio_regs *regs, uint32 queue_sel);
+struct virtq_info* virtq_add_to_device(volatile virtio_regs *regs, uint32 queue_sel, uint32 queue_size);
 
 void virtio_check_capabilities(virtio_regs *regs, struct virtio_cap *caps, uint32 n);
 

@@ -85,35 +85,42 @@ struct virtqueue_used
  */
 
 #define VIRTIO_DEFAULT_QUEUE_SIZE 256
-#define VIRTIO_DEFAULT_ALIGN PGSIZE
-#define VIRTIO_DEFAULT_QUEUE_PADDING                                \
-    (                                                               \
-        VIRTIO_DEFAULT_ALIGN*2 -                                      \
-        sizeof(struct virtqueue_desc) * VIRTIO_DEFAULT_QUEUE_SIZE - \
-        sizeof(struct virtqueue_avail))
+#define VIRTIO_DEFAULT_ALIGN 4096
 
-#define QALIGN(x) (((x) + (VIRTIO_DEFAULT_ALIGN - 1)) & (~(VIRTIO_DEFAULT_ALIGN - 1)))
-static inline unsigned virtq_size(unsigned int qsz)
-{
-    return QALIGN(sizeof(struct virtqueue_desc) * qsz + sizeof(uint16) * (2 + qsz)) + QALIGN(sizeof(struct virtqueue_used_elem) * qsz);
+static inline unsigned int virtq_pad(unsigned int qsz) {
+    unsigned int szbefore = sizeof(struct virtqueue_desc) * qsz + sizeof(struct virtqueue_avail);
+    return ALIGN(szbefore, VIRTIO_DEFAULT_ALIGN) - szbefore;
 }
 
-#define VIRTIO_BLK_DEFAULT_QUEUENUM 0
+static inline unsigned int virtq_size(unsigned int qsz)
+{
+    return ALIGN(sizeof(struct virtqueue_desc) * qsz + sizeof(uint16) * (2 + qsz), VIRTIO_DEFAULT_ALIGN)
+         + ALIGN(sizeof(struct virtqueue_used_elem) * qsz, VIRTIO_DEFAULT_ALIGN);
+}
 
+/**
+ * Virtqueue of virtio
+ * layout:
+ *      struct virtqueue_desc   NR: queue size
+ *      struct virtqueue_avail  NR: 1
+ *      pad                     SIZE: virtq_pad(queue size)
+ *      struct virtqueue_used   NR:1
+ * Queue size align up to mutiple of 4096
+ */
 struct virtqueue
 {
     // The actual descriptors (16 bytes each)
-    struct virtqueue_desc desc[VIRTIO_DEFAULT_QUEUE_SIZE];
+    union {
+        void* base;
+        volatile struct virtqueue_desc* desc;
+    };
 
     // A ring of available descriptor heads with free-running index.
-    struct virtqueue_avail avail;
-
-    // Padding to the next Queue Align boundary.
-    uint8 pad[VIRTIO_DEFAULT_QUEUE_PADDING];
+    volatile struct virtqueue_avail* avail;
 
     // A ring of used descriptor heads with free-running index.
-    struct virtqueue_used used;
-} __attribute__((packed));
+    volatile struct virtqueue_used* used;
+};
 
 struct virtq_info
 {
@@ -123,8 +130,11 @@ struct virtq_info
     uint32 seen_used;
     uint32 free_desc;
 
-    volatile struct virtqueue *virtq;
-    void *desc_virt[VIRTIO_DEFAULT_QUEUE_SIZE];
+    struct virtqueue virtq;
+    void **desc_virt;
+
+    uint32 queue_num;
+    uint32 queue_size;
 };
 
 struct virtio_blk_config
@@ -171,11 +181,9 @@ struct virtio_blk_req
     uint64 sector;
     uint8 status;
     /* end standard fields, begin helpers */
-    // uint8 _pad[3];
     uint32 descriptor;
     struct blkreq blkreq;
 } __attribute__((aligned(4)));
-// };
 
 #define VIRTIO_BLK_SECTOR_SIZE 512
 
@@ -183,7 +191,8 @@ struct virtio_blk_req
 #define VIRTIO_BLK_S_IOERR 1
 #define VIRTIO_BLK_S_UNSUPP 2
 
-struct virtqueue *virtq_create();
+uint32 virtq_alloc_num();
+void virtq_create(struct virtq_info *virtq_info);
 uint32 virtq_alloc_desc(struct virtq_info *virtq_info, void *addr);
 void virtq_free_desc(struct virtq_info *virtq_info, uint32 desc);
 void virtq_show(struct virtq_info *virtq_info);

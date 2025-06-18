@@ -19,7 +19,7 @@
 #include <platform.h>
 #include <klib.h>
 
-struct virtq_info* virtq_add_to_device(volatile virtio_regs *regs, uint32 queue_sel)
+struct virtq_info* virtq_add_to_device(volatile virtio_regs *regs, uint32 queue_sel, uint32 queue_size)
 {
 	uint32 max_queue_size;
 	KALLOC(struct virtq_info, virtq_info);
@@ -46,20 +46,21 @@ struct virtq_info* virtq_add_to_device(volatile virtio_regs *regs, uint32 queue_
 
 	// Step 4: Allocate and zero the queue pages
 
-	if(VIRTIO_DEFAULT_QUEUE_SIZE > max_queue_size) {
+	if(queue_size > max_queue_size) {
 		panic("Default queue size too big, must be lower than %d", max_queue_size);
 	}
 
 	virtq_info->free_desc = virtq_info->seen_used = 0;
-	virtq_info->virtq = virtq_create();
-	virtq_info->pfn = phys_page_number(virt_to_phys((uint64)virtq_info->virtq));
-	memset(virtq_info->desc_virt, 0, sizeof(virtq_info->desc_virt));
+	virtq_info->queue_num = queue_sel;
+	virtq_info->queue_size = queue_size;
+	virtq_create(virtq_info);
+	virtq_info->pfn = phys_page_number(virt_to_phys((uint64)virtq_info->virtq.base));
 
 	// Step 5: Notify the device about the queue size
-	WRITE32(regs->QueueNum, VIRTIO_DEFAULT_QUEUE_SIZE);
+	WRITE32(regs->QueueNum, queue_size);
 
 	// Step 6: Notify the device about the used alignment
-	WRITE32(regs->QueueAlign, PGSIZE);
+	WRITE32(regs->QueueAlign, VIRTIO_DEFAULT_ALIGN);
 	mb();
 	
 	// Step 7: Write the physical number of the first page of the queue
