@@ -1,4 +1,9 @@
 /**
+ * This code is from Stephen's OS (MIT License)
+ * Original source: https://github.com/brenns10/sos/blob/master/lib/list.c
+ * Copyright (c) 2018-2022 Stephen Brennan
+ * For full license text, see LICENSE-MIT-sos file in this repository
+ * 
  * list.c: a dead simple, C89 linked list library
  *
  * See list.h

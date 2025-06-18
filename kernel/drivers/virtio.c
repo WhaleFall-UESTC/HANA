@@ -1,3 +1,10 @@
+/**
+ * This code is partly copied from Stephen's OS (MIT License)
+ * Original source: https://github.com/brenns10/sos/blob/master/kernel/virtio.c
+ * Copyright (c) 2018-2022 Stephen Brennan
+ * For full license text, see LICENSE-MIT-sos file in this repository
+ */
+
 #include <common.h>
 #include <debug.h>
 #include <mm/mm.h>

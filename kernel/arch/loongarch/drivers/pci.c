@@ -1,3 +1,9 @@
+/**
+ * This code is partly copied from oskernel2024-loader (GPL2.0)
+ * Original source: https://gitlab.eduxiji.net/T202411664992499/oskernel2024-loader/-/blob/main/drivers/pci/pci.c
+ * For full license text, see LICENSE-GPL2 file in this repository
+ */
+
 #include <common.h>
 #include <drivers/pci.h>
 #include <arch.h>
@@ -138,38 +144,47 @@ unsigned int pci_device_get_irq_pin(pci_device_t *device)
 	return device->irq_pin = (val & 0xFF00) >> 8;
 }
 
-struct slot {
-	uint8 dev_id;
+struct slot_pin_info {
 	uint32 pin;
 	uint32 intid;
 };
 
-static struct slot slot_info[] = {
-	{0, 0x01, 0x10},
-	{0, 0x02, 0x11},
-	{0, 0x03, 0x12},
-	{0, 0x04, 0x13},
-	{1, 0x01, 0x11},
-	{1, 0x02, 0x12},
-	{1, 0x03, 0x13},
-	{1, 0x04, 0x10},
-	{2, 0x01, 0x12},
-	{2, 0x02, 0x13},
-	{2, 0x03, 0x10},
-	{2, 0x04, 0x11},
-	{3, 0x01, 0x13},
-	{3, 0x02, 0x10},
-	{3, 0x03, 0x11},
-	{3, 0x04, 0x12},
+/**
+ * 对于每个 PCI slot，中断引脚和 cpu 中断号的映射关系
+ */
+static struct slot_pin_info slot_info[][4] = {
+	{
+		{0x01, 0x10},
+		{0x02, 0x11},
+		{0x03, 0x12},
+		{0x04, 0x13},
+	},
+	{
+		{0x01, 0x11},
+		{0x02, 0x12},
+		{0x03, 0x13},
+		{0x04, 0x10},
+	},
+	{
+		{0x01, 0x12},
+		{0x02, 0x13},
+		{0x03, 0x10},
+		{0x04, 0x11},
+	},
+	{
+		{0x01, 0x13},
+		{0x02, 0x10},
+		{0x03, 0x11},
+		{0x04, 0x12},
+	}
 };
 
 unsigned int pci_device_get_intc(pci_device_t* device) {
 	uint32 pin = pci_device_get_irq_pin(device);
-	for(int i = 0; i < nr_elem(slot_info); i ++) {
-		if(device->dev == slot_info[i].dev_id) {
-			if(pin == slot_info[i].pin)
-				return slot_info[i].intid;
-		}
+	struct slot_pin_info* slot = slot_info[device->dev & 0x03];
+	for(int i = 0; i < 4; i ++) {
+		if(slot[i].pin == pin)
+			return slot[i].intid;
 	}
 	return 0;
 }

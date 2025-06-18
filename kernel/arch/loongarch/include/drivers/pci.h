@@ -1,3 +1,9 @@
+/**
+ * This code is partly copied from oskernel2024-loader (GPL2.0)
+ * Original source: https://gitlab.eduxiji.net/T202411664992499/oskernel2024-loader/-/blob/main/arch/loongarch/include/asm/pci.h
+ * For full license text, see LICENSE-GPL2 file in this repository
+ */
+
 #ifndef __PCI_H__
 #define __PCI_H__
 
