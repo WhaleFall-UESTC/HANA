@@ -36,6 +36,7 @@ struct zone {
 struct page {
     uint order : 4;
     uint flag : 4;
+    uint8 cnt;
 };
 
 #pragma pack(pop)

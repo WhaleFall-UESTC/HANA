@@ -176,29 +176,6 @@ uvminit(uint64 trapframe, char* init_code, int sz)
 }
 
 
-// for fork() copy child process userspace
-void
-uvmcopy(pagetable_t cpgtbl, pagetable_t ppgtbl, uint64 sz)
-{
-    // copy .text & .data & stack & heap
-    for (uint64 addr = 0; addr < sz;) {
-        pte_t *ppte = walk(ppgtbl, addr, WALK_NOALLOC);
-        assert(ppte);
-        do {
-            pte_t *cpte = walk(cpgtbl, addr, WALK_ALLOC);
-            assert(cpte);
-            uint64 cpa = PTE2PA(*cpte);
-            uint64 ppa = PTE2PA(*ppte);
-            if (ppa)
-                memmove((void*)cpa, (void*)ppa, PGSIZE);
-            *cpte |= PTE_FLAGS(*ppte);
-
-            addr += PGSIZE;
-            ppte++;
-        } while (addr < sz && !IS_PGALIGNED(ppte));
-    }
-}
-
 void 
 map_stack(pagetable_t pgtbl, uint64 stack_va) 
 {

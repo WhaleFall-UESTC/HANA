@@ -18,6 +18,8 @@
 #define IS_PGALIGNED(a) (!((uint64)(a) & PGOFFMASK))
 #define PGOFFSET(a)    (((uint64)(a)) & PGOFFMASK)
 
+#define CHECK_PTE(pte_addr, flags) (((pte_addr) != NULL) && ((*(pte_addr) & (flags)) != 0))
+
 #define GET_LOW32(a) ((uint64)(a) & 0xffffffffL)
 #define GET_HIGH32(a) GET_LOW32(a >> 32)
 #define ROUNDUP(sz, align_size)  (((uint64)(sz)+align_size-1) & ~(align_size-1))

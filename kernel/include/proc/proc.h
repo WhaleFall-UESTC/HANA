@@ -30,6 +30,9 @@ struct proc {
     struct proc* parent;
 
     struct proc* next;
+
+    int cleartid;
+    int sigchld;
     
     char name[16];
 };
@@ -73,6 +76,12 @@ void            wakeup(void* chan);
 void            exit(int status);
 int             kill(int pid);
 
+
+#define EXIT_IF(cond, msg, ...) \
+    if (cond) { \
+        Log(ANSI_FG_RED, msg, ## __VA_ARGS__); \
+        exit(-1); \
+    }
 
 
 /***************** Syscalls flags ******************/

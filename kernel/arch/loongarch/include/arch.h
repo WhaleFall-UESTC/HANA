@@ -23,6 +23,9 @@ typedef pte_t *pagetable_t;
 #define PTE_NR  (1UL << 61)
 #define PTE_NX  (1UL << 62)
 #define PTE_RPLV (1UL << 63)
+#define PTE_COW (1UL << 9)
+
+#define PTE_U PTE_PLV3
 
 #define PAMASK  (0xFFFFFFFFFUL << PGSHIFT)
 #define PTE2PA(pte) (((uint64)(pte)) & PAMASK)

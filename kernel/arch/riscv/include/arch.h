@@ -9,12 +9,12 @@
 #define PTE_G (1L << 5)
 #define PTE_A (1L << 6)
 #define PTE_D (1L << 7)
+#define PTE_AVL (7L << 9)
+#define PTE_COW (1L << 9)
 
 #define PA2PTE(pa) ((((uint64)pa) >> 12) << 10)
-#define PTE2PA(pte) (((pte) >> 10) << 12)
-#define PTE_FLAGS(pte) ((pte) & 0x3ff)
-
-#define CHECK_PTE(pte_addr, flags) (((pte_addr) != NULL) && ((*(pte_addr) & (flags)) != 0))
+#define PTE2PA(pte) ((((uint64)(pte)) >> 10) << 12)
+#define PTE_FLAGS(pte) (((uint64)(pte)) & 0x3ff)
 
 #define PX(i, va) (((va) >> (9 * i + 12)) & 0x1ff)
 
