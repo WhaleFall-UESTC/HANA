@@ -6,6 +6,7 @@
 #include <debug.h>
 #include <locking/spinlock.h>
 #include <irq/interrupt.h>
+#include <io/device.h>
 
 #define KERNEL_SECTOR_SIZE 512
 #define KERNEL_SECTOR_SHIFT 9
@@ -69,20 +70,15 @@ struct blkreq
 
 struct blkdev_ops;
 
-#define BLKDEV_NAME_MAX_LEN 64
-
 struct blkdev
 {
-    devid_t devid;
-    uint32 intr;
+    struct device dev; // base device struct
     unsigned long size; // blkdev capacity in bytes
     uint64 sector_size;
-    char name[BLKDEV_NAME_MAX_LEN];
     const struct blkdev_ops *ops;
     struct list_head blk_entry; // list entry for block devices
     struct list_head rq_list;  // list head for requests
     spinlock_t rq_list_lock;
-    spinlock_t blk_lock;
 };
 
 struct blkdev_ops

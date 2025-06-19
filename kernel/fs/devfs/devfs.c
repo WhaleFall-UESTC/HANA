@@ -1,5 +1,6 @@
 #include <io/blk.h>
 #include <io/chr.h>
+#include <io/device.h>
 #include <fs/io.h>
 #include <fs/fs.h>
 #include <fs/fcntl.h>
@@ -25,7 +26,7 @@ static struct devfs_device *devfs_get_by_name(const char *name)
     spinlock_acquire(&devfs_list_lk);
     list_for_each_entry(device, &devfs_list, dev_entry)
     {
-        if (strncmp(name, device->name, BLKDEV_NAME_MAX_LEN) == 0)
+        if (strncmp(name, device->name, DEV_NAME_MAX_LEN) == 0)
         {
             spinlock_release(&devfs_list_lk);
             return device;
@@ -94,7 +95,9 @@ int devfs_init(struct mountpoint *mp)
     spinlock_init(&devfs_list_lk, "devfs list lock");
     INIT_LIST_HEAD(devfs_list);
 
-    char_subsys_init();
+    
+    device_subsys_init();
+
     uart_device_init();
 
     chrdev = chrdev_get_default_dev();
@@ -116,7 +119,6 @@ int devfs_init(struct mountpoint *mp)
     stderr.name = stderr.tty.name;
     devfs_add_device(&stderr);
 
-    block_subsys_init();
     virtio_device_init();
 
     blkdev = blkdev_get_default_dev();
@@ -328,7 +330,7 @@ static int devfs_getattr(path_t path, struct stat *stat)
 
         if (device->file_type == FT_BLKDEV)
         {
-            stat->st_dev = device->disk.blkdev->devid;
+            stat->st_dev = device->disk.blkdev->dev.devid;
             stat->st_ino = device->ino;
             stat->st_mode = S_IFBLK;
             stat->st_nlink = 1;
@@ -347,7 +349,7 @@ static int devfs_getattr(path_t path, struct stat *stat)
         }
         else if (device->file_type == FT_CHRDEV)
         {
-            stat->st_dev = device->tty.chrdev->devid;
+            stat->st_dev = device->tty.chrdev->dev.devid;
             stat->st_ino = device->ino;
             stat->st_mode = S_IFCHR;
             stat->st_nlink = 1;

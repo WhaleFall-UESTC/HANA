@@ -11,7 +11,7 @@
 #define VIRTIO_PCI_DEVICEID_BASE 0x1000
 #define VIRTIO_PCI_DEVICEID_RANGE 0x3f
 
-// #define VIRTIO_PCI_ENABLE_MSI_X
+#define VIRTIO_PCI_ENABLE_MSI_X
 
 typedef volatile struct __attribute__((packed)) {
     uint32 DeviceFeature;

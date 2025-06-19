@@ -240,7 +240,7 @@ int blockdev_lock(struct ext4_blockdev *bdev)
 {
 	struct blkdev *blkdev = get_blkdev_from_blkext4(bdev);
 
-	spinlock_acquire(&blkdev->blk_lock);
+	spinlock_acquire(&blkdev->dev.dev_lock);
 	// debug("blockdev_lock");
 	return EOK;
 }
@@ -249,7 +249,7 @@ int blockdev_unlock(struct ext4_blockdev *bdev)
 {
 	struct blkdev *blkdev = get_blkdev_from_blkext4(bdev);
 
-	spinlock_release(&blkdev->blk_lock);
+	spinlock_release(&blkdev->dev.dev_lock);
 	// debug("blockdev_unlock");
 	return EOK;
 }

@@ -14,10 +14,22 @@
 #include <irq/interrupt.h>
 #include <proc/proc.h>
 #include <io/blk.h>
+#include <io/device.h>
 #include <klib.h>
 #include <arch.h>
 
 #define VIRTIO_BLK_DEV_NAME "virtio-blk"
+
+static uint32 virtio_blk_devid = DEVID_VIRTIO_BLK_BASE;
+
+static uint32 virtio_blk_get_devid(void)
+{
+    if(virtio_blk_devid > DEVID_VIRTIO_BLK_BASE + DEVID_VIRTIO_BLK_RANGE)
+    {
+        panic("virtio-blk: no more device id available");
+    }
+    return virtio_blk_devid++;
+}
 
 struct virtio_cap blk_caps[] = {
     {"VIRTIO_BLK_F_SIZE_MAX", 1, false,
@@ -260,9 +272,9 @@ int virtio_blk_init(volatile virtio_regs *regs, uint32 intid)
     WRITE32(regs->Status, READ32(regs->Status) | VIRTIO_STATUS_DRIVER_OK);
     mb();
 
-    blkdev_init(&vdev->blkdev, intid, blk_size * VIRTIO_BLK_SECTOR_SIZE,
+    blkdev_init(&vdev->blkdev, virtio_blk_get_devid(), blk_size * VIRTIO_BLK_SECTOR_SIZE,
                 VIRTIO_BLK_SECTOR_SIZE, intid, VIRTIO_BLK_DEV_NAME, &virtio_blk_ops);
-    debug("virtio-blk: %s, size=%lu, intid=%d", vdev->blkdev.name, vdev->blkdev.size, vdev->intid);
+    debug("virtio-blk: %s, size=%lu, intid=%d", vdev->blkdev.dev.name, vdev->blkdev.size, vdev->intid);
     // debug("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
     blkdev_register(&vdev->blkdev);
 

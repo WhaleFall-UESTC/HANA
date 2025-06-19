@@ -14,13 +14,23 @@
 #include <locking/spinlock.h>
 #include <irq/interrupt.h>
 #include <io/blk.h>
+#include <io/device.h>
 #include <klib.h>
 #include <arch.h>
 #include <mm/memlayout.h>
 
 #define VIRTIO_BLK_DEV_NAME "virtio-blk"
 
-static int alloc_cnt, free_cnt;
+static uint32 virtio_blk_devid = DEVID_VIRTIO_BLK_BASE;
+
+static uint32 virtio_blk_get_devid(void)
+{
+    if(virtio_blk_devid > DEVID_VIRTIO_BLK_BASE + DEVID_VIRTIO_BLK_RANGE)
+    {
+        panic("virtio-blk: no more device id available");
+    }
+    return virtio_blk_devid++;
+}
 
 struct virtio_cap blk_caps[] = {
     {"VIRTIO_BLK_F_SIZE_MAX", 1, false,
@@ -130,11 +140,8 @@ static irqret_t virtio_blk_isr(struct blkdev *blkdev)
          i = wrap(i + 1, virtq_info->queue_size))
     {
         virtio_blk_handle_used(dev, i);
-        free_cnt ++;
     }
     virtq_info->seen_used = virtq_info->virtq.used->idx % virtq_info->queue_size;
-
-    assert(free_cnt <= alloc_cnt);
 
     return IRQ_HANDLED;
 }
@@ -148,8 +155,6 @@ static void virtio_blk_send(struct virtio_blk *blk, struct virtio_blk_req *hdr)
     virtq->avail->idx += 1;
     mb();
     WRITE32(blk->header->QueueNotify, 0);
-
-    alloc_cnt ++;
 }
 
 static void virtio_blk_status(struct blkdev *dev)
@@ -322,11 +327,11 @@ int virtio_blk_init(volatile virtio_pci_header *header, pci_device_t *pci_dev)
     WRITE8(header->DeviceStatus, READ8(header->DeviceStatus) | VIRTIO_STATUS_DRIVER_OK);
     mb();
 
-    blkdev_init(&vdev->blkdev, intid, blk_size * VIRTIO_BLK_SECTOR_SIZE,
+    blkdev_init(&vdev->blkdev, virtio_blk_get_devid(), blk_size * VIRTIO_BLK_SECTOR_SIZE,
                 VIRTIO_BLK_SECTOR_SIZE, intid, VIRTIO_BLK_DEV_NAME, &virtio_blk_ops);
     // debug("virtio-blk: %s, size=%lu, intid=%d", vdev->blkdev.name, vdev->blkdev.size, vdev->intid);
     // debug("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-    debug("virtio-blk: %s, size=%lu", vdev->blkdev.name, vdev->blkdev.size);
+    debug("virtio-blk: %s, size=%lu", vdev->blkdev.dev.name, vdev->blkdev.size);
     debug("intid=%d", vdev->intid);
     blkdev_register(&vdev->blkdev);
 

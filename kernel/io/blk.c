@@ -26,23 +26,24 @@ struct blkdev *blkdev_alloc(devid_t devid, unsigned long size, uint64 sector_siz
 
 void blkdev_init(struct blkdev *dev, devid_t devid, unsigned long size, uint64 sector_size, int intr, const char *name, const struct blkdev_ops *ops)
 {
+    static char buffer[DEV_NAME_MAX_LEN];
+
     assert(dev != NULL);
     assert(name != NULL);
     assert(ops != NULL);
 
-    dev->devid = devid;
-    dev->intr = intr;
+    snprintf(buffer, DEV_NAME_MAX_LEN, "%s%x", name, devid);
+    device_init(&dev->dev, devid, intr, buffer);
+
     dev->size = size;
     dev->sector_size = sector_size;
     dev->ops = ops;
+    dev->dev.type = DEVICE_TYPE_BLOCK;
 
-    snprintf(dev->name, BLKDEV_NAME_MAX_LEN, "%s%d-rql", name, intr);
-    spinlock_init(&dev->rq_list_lock, dev->name);
-
-    snprintf(dev->name, BLKDEV_NAME_MAX_LEN, "%s%d", name, intr);
+    device_name_append_suffix(buffer, SPINLOCK_NAME_MAX_LEN, "-blkrqlock");
+    spinlock_init(&dev->rq_list_lock, buffer);
     INIT_LIST_HEAD(dev->blk_entry);
     INIT_LIST_HEAD(dev->rq_list);
-    spinlock_init(&dev->blk_lock, dev->name);
 }
 
 void blkdev_register(struct blkdev *blkdev)
@@ -53,9 +54,7 @@ void blkdev_register(struct blkdev *blkdev)
     list_insert(&blkdev_list, &blkdev->blk_entry);
     spinlock_release(&blkdev_list_lock);
 
-    irq_register(blkdev->intr, blkdev_general_isr, (void *)blkdev);
-
-    debug("blkdev %s registered", blkdev->name);
+    device_register(&blkdev->dev, blkdev_general_isr);
 }
 
 struct blkdev *blkdev_get_by_name(const char *name)
@@ -65,7 +64,7 @@ struct blkdev *blkdev_get_by_name(const char *name)
     spinlock_acquire(&blkdev_list_lock);
     list_for_each_entry(blkdev, &blkdev_list, blk_entry)
     {
-        if (strncmp(blkdev->name, name, BLKDEV_NAME_MAX_LEN) == 0)
+        if (strncmp(blkdev->dev.name, name, DEV_NAME_MAX_LEN) == 0)
         {
             spinlock_release(&blkdev_list_lock);
             return blkdev;
@@ -82,7 +81,7 @@ struct blkdev *blkdev_get_by_id(devid_t id) {
     spinlock_acquire(&blkdev_list_lock);
     list_for_each_entry(blkdev, &blkdev_list, blk_entry)
     {
-        if (blkdev->devid == id)
+        if (blkdev->dev.devid == id)
         {
             spinlock_release(&blkdev_list_lock);
             return blkdev;
@@ -152,12 +151,12 @@ int blkdev_wait_all(struct blkdev *dev)
         if(request->status == BLKREQ_STATUS_OK)
         {
             // debug("Request completed successfully, sector=%ld, size=%ld, in device %s",
-            //     request->sector_sta, request->size, dev->name);
+            //     request->sector_sta, request->size, dev->dev.name);
         }
         else
         {
             error("Request failed, sector=%ld, size=%ld, in device %s",
-                  request->sector_sta, request->size, dev->name);
+                  request->sector_sta, request->size, dev->dev.name);
             ret ++;
         }
     }
@@ -174,7 +173,7 @@ void blkdev_free_all(struct blkdev *dev) {
         if(request->status != BLKREQ_STATUS_OK)
         {
             error("Request not completed, sector=%ld, size=%ld, in device %s",
-                  request->sector_sta, request->size, dev->name);
+                  request->sector_sta, request->size, dev->dev.name);
             continue;
         }
         dev->ops->free(dev, request);
@@ -192,12 +191,12 @@ irqret_t blkdev_general_isr(uint32 intid, void *private) {
     if (blkdev->ops->irq_handle != NULL)
         ret = blkdev->ops->irq_handle(blkdev);
     else {
-        log("blkdev %s: no irq handler", blkdev->name);
+        log("blkdev %s: no irq handler", blkdev->dev.name);
         goto out;
     }
 
     if (ret == IRQ_ERR) {
-        error("blkdev %s: IRQ_ERR", blkdev->name);
+        error("blkdev %s: IRQ_ERR", blkdev->dev.name);
         goto out;
     }
 out:
