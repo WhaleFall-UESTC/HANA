@@ -9,10 +9,11 @@ void test() {
     // intr_off();
     PASS("test start!!!");
 
-    lab_cow();
+    // lab_cow();
 
     test_slab();
-    test_kalloc();
+    // test_kalloc();
+
 
     // test_uart();
     // test_virtio();

@@ -24,16 +24,17 @@ struct chrdev *chrdev_alloc(devid_t devid, int intr, const char *name, const str
 
 void chrdev_init(struct chrdev *dev, devid_t devid, int intr, const char *name, const struct chrdev_ops *ops)
 {
+    static char buffer[DEV_NAME_MAX_LEN];
+
     assert(dev != NULL);
     assert(name != NULL);
     assert(ops != NULL);
 
-    dev->devid = devid;
-    dev->intr = intr;
-    dev->ops = ops;
+    snprintf(buffer, DEV_NAME_MAX_LEN, "%s%x", name, devid);
+    device_init(&dev->dev, devid, intr, buffer);
 
-    snprintf(dev->name, CHRDEV_NAME_MAX_LEN, "%s%d", name, intr);
-    spinlock_init(&dev->chr_lock, dev->name);
+    dev->ops = ops;
+    dev->dev.type = DEVICE_TYPE_CHAR;
 }
 
 void chrdev_register(struct chrdev *chrdev)
@@ -44,9 +45,7 @@ void chrdev_register(struct chrdev *chrdev)
     list_insert(&chrdev_list, &chrdev->chr_entry);
     spinlock_release(&chrdev_list_lock);
 
-    irq_register(chrdev->intr, chrdev_general_isr, (void *)chrdev);
-
-    debug("chrdev %s registered", chrdev->name);
+    device_register(&chrdev->dev, chrdev_general_isr);
 }
 
 struct chrdev *chrdev_get_by_name(const char *name)
@@ -56,7 +55,7 @@ struct chrdev *chrdev_get_by_name(const char *name)
     spinlock_acquire(&chrdev_list_lock);
     list_for_each_entry(chrdev, &chrdev_list, chr_entry)
     {
-        if (strncmp(chrdev->name, name, CHRDEV_NAME_MAX_LEN) == 0)
+        if (strncmp(chrdev->dev.name, name, DEV_NAME_MAX_LEN) == 0)
         {
             spinlock_release(&chrdev_list_lock);
             return chrdev;
@@ -74,7 +73,7 @@ struct chrdev *chrdev_get_by_id(devid_t id)
     spinlock_acquire(&chrdev_list_lock);
     list_for_each_entry(chrdev, &chrdev_list, chr_entry)
     {
-        if (chrdev->devid == id)
+        if (chrdev->dev.devid == id)
         {
             spinlock_release(&chrdev_list_lock);
             return chrdev;
@@ -111,13 +110,13 @@ irqret_t chrdev_general_isr(uint32 intid, void *private)
         ret = chrdev->ops->irq_handle(chrdev);
     else
     {
-        log("chrdev %s: no irq handler", chrdev->name);
+        log("chrdev %s: no irq handler", chrdev->dev.name);
         goto out;
     }
 
     if (ret == IRQ_ERR)
     {
-        error("chrdev %s: IRQ_ERR", chrdev->name);
+        error("chrdev %s: IRQ_ERR", chrdev->dev.name);
         goto out;
     }
 out:

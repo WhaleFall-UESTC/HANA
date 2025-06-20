@@ -32,4 +32,33 @@ typedef int (*compar_fn_t)(const void*, const void*);
  */
 void qsort(void *base, size_t nmemb, size_t size, compar_fn_t compar);
 
+/* Calculation helper functions */
+#define MINFUNC_DEFINE(type) \
+    static inline type min_##type(const type a, const type b) { \
+        return a < b ? a : b; \
+    }
+
+#define MAXFUNC_DEFINE(type) \
+    static inline type max_##type(const type a, const type b) { \
+        return a > b ? a : b; \
+    }
+
+MINFUNC_DEFINE(uint8);
+MINFUNC_DEFINE(uint16);
+MINFUNC_DEFINE(uint32);
+MINFUNC_DEFINE(uint64);
+MINFUNC_DEFINE(int8);
+MINFUNC_DEFINE(int16);
+MINFUNC_DEFINE(int32);
+MINFUNC_DEFINE(int64);
+
+MAXFUNC_DEFINE(uint8);
+MAXFUNC_DEFINE(uint16);
+MAXFUNC_DEFINE(uint32);
+MAXFUNC_DEFINE(uint64);
+MAXFUNC_DEFINE(int8);
+MAXFUNC_DEFINE(int16);
+MAXFUNC_DEFINE(int32);
+MAXFUNC_DEFINE(int64);
+
 #endif // __KLIB_H__

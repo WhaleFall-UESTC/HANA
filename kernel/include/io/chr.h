@@ -2,19 +2,16 @@
 #define __CHR_H__
 
 #include <common.h>
+#include <io/device.h>
 #include <tools/list.h>
 #include <locking/spinlock.h>
 #include <irq/interrupt.h>
-
-#define CHRDEV_NAME_MAX_LEN 64
 
 struct chrdev_ops;
 
 struct chrdev
 {
-    devid_t devid;
-    uint32 intr;
-    char name[CHRDEV_NAME_MAX_LEN];
+    struct device dev; // base device struct
     const struct chrdev_ops *ops;
     struct list_head chr_entry; // list entry for char devices
     spinlock_t chr_lock;
@@ -67,7 +64,5 @@ struct chrdev *chrdev_get_default_dev();
  * general setup for char device irq response
  */
 irqret_t chrdev_general_isr(uint32 intid, void * private);
-
-#define UART_CHRDEV_DEVID 0
 
 #endif // __CHR_H__

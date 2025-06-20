@@ -66,7 +66,7 @@ void test_virtio()
         goto cleanup;
     }
 
-    log("using blkdev: %s", blkdev->name);
+    log("using blkdev: %s", blkdev->dev.name);
 
     nr_sectors = blkdev->size / BLOCK_SIZE;
 

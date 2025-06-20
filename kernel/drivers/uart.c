@@ -31,7 +31,7 @@ static const struct chrdev_ops uart_chrops = {
 void uart_device_init(void) {
 	struct chrdev* dev;
 
-	dev = chrdev_alloc(UART_CHRDEV_DEVID, UART0_IRQ, "uart", &uart_chrops);
+	dev = chrdev_alloc(DEVID_UART, UART0_IRQ, "uart", &uart_chrops);
 
 	if(dev == NULL) {
 		error("chrdev alloc failed.");
