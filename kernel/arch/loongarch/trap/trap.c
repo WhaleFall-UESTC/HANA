@@ -28,6 +28,11 @@ void info_exception() {
     Log(ANSI_FG_RED, "BADV: %lx", r_csr_badv());
 }
 
+void kernel_trap_error() {
+    info_exception();
+    panic("KERNEL TRAP ERROR");
+}
+
 __attribute__((aligned(PGSIZE))) void panic_exception() {
     info_exception();
     panic("Exception");
@@ -53,6 +58,8 @@ trap_init()
     // register handler
     register_trap_handler(INTERRUPT, TI, timer_isr);
     register_trap_handler(INTERRUPT, HWI0, irq_response);
+
+    register_trap_handler(EXCEPTION, PME, store_page_fault_handler);
 }
 
 void 
@@ -101,8 +108,7 @@ kernel_trap()
     uint64 prmd = r_csr_prmd();
 
     if (trap(ecode) != 0) {
-        info_exception();
-        panic("KERNEL TRAP ERROR");
+        kernel_trap_error();
     }
 
     w_csr_era(era);

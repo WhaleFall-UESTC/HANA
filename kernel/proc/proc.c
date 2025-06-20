@@ -229,11 +229,11 @@ SYSCALL_DEFINE5(clone, int, unsigned long, flags, void*, stack, void*, ptid, voi
     }
 
     if (flags & CLONE_CHILD_CLEARTID) {
-        child->cleartid = 0;
+        child->cleartid = 1;
     }
 
     if (flags & CLONE_SIGCHLD) {
-        child->sigchld = 0;
+        child->sigchld = 1;
     }
 
     child->parent = proc;

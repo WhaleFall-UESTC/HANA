@@ -11,11 +11,14 @@
 
 #define IN_RAM(addr) (((uint64)(addr)) >= KERNELBASE && ((uint64)(addr)) < PHYSTOP)
 
-#define TRAMPOLINE  (MAXVA - PGSIZE)
+#define TEST_SPACE  (MAXVA - PGSIZE)
+#define TRAMPOLINE  (MAXVA - 2*PGSIZE)
 #define TRAPFRAME   (TRAMPOLINE - PGSIZE)
 
 #define KSTACK(n)   (TRAPFRAME - ((KSTACK_SIZE + PGSIZE) * (n)))
 
+#define KERNEL_VA2PA(va) va 
+#define KERNEL_PA2VA(pa) pa
 
 #define UART0   VIRT_UART0
 

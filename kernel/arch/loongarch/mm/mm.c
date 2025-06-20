@@ -2,6 +2,7 @@
 #include <mm/memlayout.h>
 #include <mm/mm.h>
 #include <klib.h>
+#include <proc/proc.h>
 #include <debug.h>
 #include <arch.h>
 
@@ -57,6 +58,10 @@ kvmmake()
 
     mappages(kpgtbl, TRAMPOLINE, KERNEL_VA2PA(trampoline), PGSIZE, PTE_PLV3 | PTE_MAT_CC | PTE_G | PTE_P);
 
+    uint64* test_space = (uint64*) kalloc(PGSIZE);
+    *test_space = 0x11451419198100UL;
+    mappages(kpgtbl, TEST_SPACE, KERNEL_VA2PA(test_space), PGSIZE, PTE_PLV3 | PTE_MAT_CC | PTE_G | PTE_P | PTE_COW);
+
     return kpgtbl;
 }
 
@@ -84,27 +89,28 @@ walk(pagetable_t pgtbl, uint64 va, int alloc)
 }
 
 
-void
-mappages(pagetable_t pgtbl, uint64 va, uint64 pa, uint64 sz, uint64 flags)
-{
-    uint64 start_va = PGROUNDDOWN(va);
-    uint64 end_va = PGROUNDUP(va + sz - 1);
-    int npages = (end_va - start_va) >> PGSHIFT;
-    pte_t* pte = walk(pgtbl, va, WALK_ALLOC);
-    assert(pte);
-    int nr_mapped = 0;
+// void
+// mappages(pagetable_t pgtbl, uint64 va, uint64 pa, uint64 sz, uint64 flags)
+// {
+//     uint64 start_va = PGROUNDDOWN(va);
+//     uint64 end_va = PGROUNDUP(va + sz - 1);
+//     int npages = (end_va - start_va) >> PGSHIFT;
+//     pte_t* pte = walk(pgtbl, va, WALK_ALLOC);
+//     assert(pte);
+//     int nr_mapped = 0;
 
-    while (nr_mapped++ < npages) {
-        *pte = PA2PTE(pa) | flags | PTE_V;
-        pte++;
-        pa += PGSIZE;
-        // if this is the last pte in L0 pgtbl, start from another pgtbl
-        if (IS_PGALIGNED(pte)) {
-            pte = walk(pgtbl, va + nr_mapped * PGSIZE, WALK_ALLOC);
-            assert(pte);
-        }
-    }
-}
+//     while (nr_mapped++ < npages) {
+//         *pte = PA2PTE(pa) | flags | PTE_V;
+//         pte++;
+//         page_ref_inc(pa);
+//         pa += PGSIZE;
+//         // if this is the last pte in L0 pgtbl, start from another pgtbl
+//         if (IS_PGALIGNED(pte)) {
+//             pte = walk(pgtbl, va + nr_mapped * PGSIZE, WALK_ALLOC);
+//             assert(pte);
+//         }
+//     }
+// }
 
 
 // Look up va in given pgtbl

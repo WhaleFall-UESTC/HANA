@@ -1,6 +1,8 @@
 #ifndef __TRAP_H__
 #define __TRAP_H__
 
+#include <arch.h>
+
 struct trapframe {
     /*   0 */ uint64 kernel_satp;   // kernel page table
     /*   8 */ uint64 kernel_sp;     // top of process's kernel stack
@@ -53,6 +55,7 @@ void            trap_init_hart();
 void            kernel_trap();
 void            register_trap_handler(int interrupt, int code, void* function);
 void            dive_to_user();
+void            kernel_trap_error();
 
 void            log_scause(uint64 scause);
 
@@ -63,6 +66,11 @@ void            log_scause(uint64 scause);
 
 // raise S mode environment interrupt
 #define ecall() asm volatile("ecall")
+
+static inline uint64 
+trap_get_badv() {
+  return r_stval();
+}
 
 
 enum interrupt_irq {

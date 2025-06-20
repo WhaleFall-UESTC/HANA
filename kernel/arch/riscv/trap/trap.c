@@ -28,6 +28,13 @@ uint64 scause = r_scause();
     Log(ANSI_FG_RED, "sepc: %p,\tsstatus: %p,\tstval: %p", (void*)sepc, (void*)sstatus, (void*)r_stval()); \
 } while(0)
 
+void kernel_trap_error() {
+    GET_S_REGS();
+    LOG_ERROR_TRAP();
+    panic("KERNEL TRAP ERROR");
+}
+
+
 // choose handler by scause
 // return 0 if find handler
 // return -1 if errors occur
@@ -92,6 +99,8 @@ trap_init()
     #endif
     register_trap_handler(EXCEPTION, ENVIRONMENT_CALL_FROM_U_MODE, syscall_handler);
     register_trap_handler(INTERRUPT, SUPERVISOR_EXTERNEL_INTERRUPT, irq_response);
+
+    register_trap_handler(EXCEPTION, STORE_AMO_PAGE_FAULT, store_page_fault_handler);
 }
 
 

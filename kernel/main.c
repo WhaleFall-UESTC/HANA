@@ -25,6 +25,7 @@ char init_stack[KSTACK_SIZE * NCPU] __attribute__((aligned(PGSIZE)));
 char *init_stack_top = &init_stack[KSTACK_SIZE];
 
 struct cpu cpus[NCPU];
+struct page* pages;
 
 #ifdef ARCH_LOONGARCH
 extern void timer_enable();
@@ -48,7 +49,7 @@ main()
     kvminithart();
     out("Enable paging");
 
-    test_arch();
+    // test_arch();
 
     trap_init();
     trap_init_hart();

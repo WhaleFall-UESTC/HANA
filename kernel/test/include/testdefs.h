@@ -31,4 +31,7 @@ void        test_fs();
 /* test_arch.c */
 void        test_arch();
 
+/* test_cow.c */
+void        lab_cow();
+
 #endif // __TESTDEFS_H__

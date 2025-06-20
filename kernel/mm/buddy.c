@@ -1,6 +1,7 @@
 #include <common.h>
 #include <klib.h>
 #include <debug.h>
+#include <mm/page.h>
 #include <mm/buddy.h>
 #include <mm/memlayout.h>
 

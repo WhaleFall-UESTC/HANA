@@ -1,6 +1,8 @@
 #ifndef __ARCH_H__
 #define __ARCH_H__
 
+#include <common.h>
+
 #define PALEN 48
 #define VALEN 48
 // #define MAXVA (1UL << (9 + 12 - 1)) // lower half virtual address
@@ -695,5 +697,20 @@ intr_get()
 
 // Invalidate TLB Entry
 #define invtlb() asm volatile("invtlb  0x0, $zero, $zero")
+
+static inline void
+flush_tlb() {
+    invtlb();
+}
+
+static inline void 
+flush_tlb_one(uint64 vaddr)
+{
+    __asm__ __volatile__(
+        "invtlb 1, %0, $zero"
+        :
+        : "r"(vaddr)
+        : "memory");
+}
 
 #endif // __ARCH_H__

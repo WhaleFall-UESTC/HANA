@@ -1,6 +1,7 @@
 #ifndef __TRAP_H__
 #define __TRAP_H__
 
+#include <common.h>
 #include <arch.h>
 
 struct trapframe {
@@ -50,7 +51,7 @@ struct trapframe {
 
 // 地址转换异常
 #define PIL 0x1 // load操作页无效异常
-#define PIS 0x2 // store操作页无效异常
+#define PIS 0x2 // store操作页无效异常 PTE_V = 0
 #define PIF 0x3 // 取指操作页无效异常
 #define PME 0x4 // 页修改异常
 #define PNR 0x5 // 页不可读异常
@@ -142,6 +143,11 @@ r_esubcode() {
     return esubcode;
 }
 
+static inline uint64 
+trap_get_badv() {
+    return r_csr_badv();
+}
+
 
 typedef void (*handler)(void);
 
@@ -150,5 +156,6 @@ void    trap_init();
 void    trap_init_hart();
 void    kernel_trap();
 void    dive_to_user();
+void    kernel_trap_error();
 
 #endif

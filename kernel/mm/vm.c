@@ -1,8 +1,54 @@
 #include <common.h>
 #include <arch.h>
+#include <mm/buddy.h>
+#include <mm/slab.h>
 #include <mm/mm.h>
+#include <mm/memlayout.h>
 #include <proc/proc.h>
 #include <debug.h>
+
+
+void
+kmem_init(uint64 va_start, uint64 va_end)
+{
+    uint64 s = PGROUNDUP(va_start);
+    uint64 e = PGROUNDDOWN(va_end);
+    // debug("RAM starts at %lx, end at %lx", s, e);
+    uint64 npages = ((e - s) >> PGSHIFT);
+    pages = (struct page*) s;
+    uint64 npages_size = PGROUNDUP(npages * sizeof(struct page));
+    memset((void*) s, 0, npages_size);
+    s += npages_size; // should pgroundup, but has bug here
+    // debug("Initialize npages %#lx, a single page takes %d bytes", npages, (int)sizeof(struct page));
+    buddy_init(s, e);  
+    out("Initialize buddy system");
+    slab_init();
+    out("Initialize slab");
+}
+
+
+void
+mappages(pagetable_t pgtbl, uint64 va, uint64 pa, uint64 sz, uint64 flags)
+{
+    uint64 start_va = PGROUNDDOWN(va);
+    uint64 end_va = PGROUNDUP(va + sz - 1);
+    int npages = (end_va - start_va) >> PGSHIFT;
+    pte_t* pte = walk(pgtbl, va, WALK_ALLOC);
+    assert(pte);
+    int nr_mapped = 0;
+
+    while (nr_mapped++ < npages) {
+        *pte = PA2PTE(pa) | flags | PTE_V;
+        pte++;
+        page_ref_inc(pa);
+        pa += PGSIZE;
+        // if this is the last pte in L0 pgtbl, start from another pgtbl
+        if (IS_PGALIGNED(pte)) {
+            pte = walk(pgtbl, va + nr_mapped * PGSIZE, WALK_ALLOC);
+            assert(pte);
+        }
+    }
+}
 
 
 // for fork() copy child process userspace
@@ -39,7 +85,7 @@ copyout(pagetable_t pgtbl, uint64 dstva, void* src, int len)
         pte = walk(pgtbl, va0, WALK_NOALLOC);
         EXIT_IF(!CHECK_PTE(pte, PTE_V | PTE_U), "copyout occurs pte illegal");
             
-        pa0 = PTE2PA(pa0);
+        pa0 = KERNEL_PA2VA(PTE2PA(pa0));
         if (pa0 == 0)
             return -1;
 
@@ -54,8 +100,8 @@ copyout(pagetable_t pgtbl, uint64 dstva, void* src, int len)
 
             *pte = (PA2PTE(mem) | flags);
                 
-            // page ref count
-            // kfree((void*) pa0);
+            if (page_ref_dec(pa0) == 1)  // ref count is zero now
+                kfree((void*) pa0);
 
             pa0 = (uint64) mem;
         }
@@ -71,4 +117,41 @@ copyout(pagetable_t pgtbl, uint64 dstva, void* src, int len)
     }
 
     return 0;
+}
+
+
+void
+store_page_fault_handler()
+{
+    log("store fault");
+    // struct proc* p = myproc();
+    uint64 badv = trap_get_badv();
+    uint64 va = PGROUNDDOWN(badv);
+
+    // pte_t *pte = walk(UPGTBL(p->pagetable), va, WALK_NOALLOC);
+    pte_t *pte = walk(kernel_pagetable, va, WALK_NOALLOC);
+    EXIT_IF(pte == NULL, "addr %lx pte not found", badv);
+
+    // if (!CHECK_PTE(pte, PTE_V | PTE_U | PTE_COW)) {
+    if (!CHECK_PTE(pte, PTE_V | PTE_COW)) {
+        Log(ANSI_FG_RED, "*pte: %lx\tV: %lx\tU: %lx\tCOW: %lx", *pte, (*pte | PTE_V), (*pte | PTE_U), (*pte | PTE_COW));
+        kernel_trap_error();
+    }
+
+    char* mem = kalloc(PGSIZE);
+    uint64 pa = KERNEL_PA2VA(PTE2PA(*pte));
+    memmove(mem, (void*) pa, PGSIZE);
+
+    uint64 flags = PTE_FLAGS(*pte);
+    flags = ((flags & ~PTE_COW) | PTE_W);
+    mappages(kernel_pagetable, va, (uint64) mem, PGSIZE, flags);
+    // *pte = (PA2PTE(mem) | flags);
+    // page_ref_inc((uint64) mem);
+
+    if (page_ref_dec(pa) == 1)
+        kfree((void*) pa);
+
+    #ifdef ARCH_LOONGARCH
+    flush_tlb_one(va);
+    #endif
 }

@@ -10,7 +10,6 @@
 #define BUDDY_LOW(addr, order) (((uint64) (addr)) & ~(((uint64) PGSIZE) << (order)))
 #define BUDDY_HIGH(addr, order) (((uint64) (addr)) | (PGSIZE << (order)))
 
-#define GET_PAGE(addr, pages) (&pages[((uint64)addr - (uint64)pages) >> PGSHIFT])
 #define GET_PAGE_ORDER(addr, pages) (pages[((uint64)addr - (uint64)pages) >> PGSHIFT].order)
 #define SET_PAGE_ORDER(addr, pages, new_order) pages[((uint64)addr - (uint64)pages) >> PGSHIFT].order = new_order
 
@@ -30,16 +29,6 @@ struct free_area {
 struct zone {
     struct free_area free_area[MAX_ORDER];
 };
-
-#pragma pack(push, 1)
-
-struct page {
-    uint order : 4;
-    uint flag : 4;
-    uint8 cnt;
-};
-
-#pragma pack(pop)
 
 
 /* mm/buddy.c */

@@ -4,6 +4,8 @@
 #include <klib.h>
 #include <arch.h>
 
+extern pagetable_t kernel_pagetable;
+
 void        kmem_init(uint64 va_start, uint64 va_end);
 void        kinit();
 void*       kalloc(uint64 sz);
@@ -24,7 +26,14 @@ int         copyout(pagetable_t pgtbl, uint64 dstva, void* src, int len);
 uint64      virt_to_phys(uint64 va);
 uint64      phys_to_virt(uint64 pa);
 
+void        store_page_fault_handler();
 
-#include <mm/pagetable.h>
+static inline uint64 phys_page_number(uint64 pa) {
+    return pa >> PGSHIFT;
+}
+
+#include <mm/page.h>
+
+#define IS_DATA(addr) (((addr) >= (uint64) pages) && ((addr) < PHYSTOP)) 
 
 #endif // __MM_H__
