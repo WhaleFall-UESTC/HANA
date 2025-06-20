@@ -133,8 +133,8 @@ store_page_fault_handler()
     EXIT_IF(pte == NULL, "addr %lx pte not found", badv);
 
     // if (!CHECK_PTE(pte, PTE_V | PTE_U | PTE_COW)) {
-    if (!CHECK_PTE(pte, PTE_V | PTE_COW)) {
-        Log(ANSI_FG_RED, "*pte: %lx\tV: %lx\tU: %lx\tCOW: %lx", *pte, (*pte | PTE_V), (*pte | PTE_U), (*pte | PTE_COW));
+    if ((*pte == 0) || ((*pte & PTE_V) == 0) || ((*pte & PTE_COW) == 0)) {
+        Log(ANSI_FG_RED, "*pte: %lx\tV: %lx\tU: %lx\tCOW: %lx", *pte, (*pte & PTE_V), (*pte & PTE_U), (*pte & PTE_COW));
         kernel_trap_error();
     }
 
@@ -144,9 +144,9 @@ store_page_fault_handler()
 
     uint64 flags = PTE_FLAGS(*pte);
     flags = ((flags & ~PTE_COW) | PTE_W);
-    mappages(kernel_pagetable, va, (uint64) mem, PGSIZE, flags);
-    // *pte = (PA2PTE(mem) | flags);
-    // page_ref_inc((uint64) mem);
+    // mappages(kernel_pagetable, va, KERNEL_VA2PA(mem), PGSIZE, flags);
+    *pte = (PA2PTE(mem) | flags);
+    page_ref_inc((uint64) mem);
 
     if (page_ref_dec(pa) == 1)
         kfree((void*) pa);
@@ -154,4 +154,6 @@ store_page_fault_handler()
     #ifdef ARCH_LOONGARCH
     flush_tlb_one(va);
     #endif
+
+    log("store page fault handle");
 }

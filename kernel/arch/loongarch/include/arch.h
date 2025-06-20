@@ -706,11 +706,7 @@ flush_tlb() {
 static inline void 
 flush_tlb_one(uint64 vaddr)
 {
-    __asm__ __volatile__(
-        "invtlb 1, %0, $zero"
-        :
-        : "r"(vaddr)
-        : "memory");
+    asm volatile( "invtlb 0x5, $zero, %0" : : "r"(vaddr));
 }
 
 #endif // __ARCH_H__

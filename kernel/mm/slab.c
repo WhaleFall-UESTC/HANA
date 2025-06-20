@@ -224,7 +224,7 @@ slab_free(void* addr, uint8 nr_free)
 
     int idx = OBJECT_IDX(addr);
     Assert(nr_free == slab->objs[idx].size, "nr_free=%d, idx=%d, sz=%d, addr=%p", nr_free, idx, slab->objs[idx].size, addr);
-    assert(slab->objs[idx].prev == A && slab->objs[idx].next == L);
+    Assert(slab->objs[idx].prev == A && slab->objs[idx].next == L, "slab: %p  idx: %d  objs:[prev: %d, next: %d, size: %u]", slab, idx, slab->objs[idx].prev, slab->objs[idx].next, slab->objs[idx].size);
 
     bool merge_h = idx < NR_OBJS - 1 && slab->objs[idx + nr_free].size != 0 \
                 && slab->objs[idx + nr_free].prev != A && slab->objs[idx + nr_free].next != L;
