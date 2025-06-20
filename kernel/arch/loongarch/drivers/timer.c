@@ -5,8 +5,7 @@
 #include <trap/context.h>
 #include <proc/proc.h>
 #include <proc/sched.h>
-
-#define INTERVAL 0x1000000UL
+#include <time.h>
 
 void timer_init() {
     // set timer id

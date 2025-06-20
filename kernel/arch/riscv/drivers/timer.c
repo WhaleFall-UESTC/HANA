@@ -8,6 +8,7 @@
 #include <irq/interrupt.h>
 #include <proc/proc.h>
 #include <proc/sched.h>
+#include <time.h>
 
 extern char timervec[];
 
@@ -15,10 +16,16 @@ extern char timervec[];
 #define CLINT_MTIMECMP(hartid) (CLINT + 0x4000L + 8 * (hartid))
 #define CLINT_MTIME (CLINT + 0xBFF8L)
 
-#define INTERVAL 10000000L
-
 #define MTIMECMP(hartid) *((uint64*) CLINT_MTIMECMP(hartid))
 #define MTIME *((uint64*) CLINT_MTIME)
+
+void account_time(struct proc* p) {
+    if (r_sstatus() & SSTATUS_SPP) {
+        p->stime += INTERVAL;
+    } else {
+        p->utime += INTERVAL;
+    }
+}
 
 #ifdef BIOS_SBI
 #include <sbi/sbi.h>
@@ -31,10 +38,12 @@ void timer_interrupt_handler()
 {
     log("receive timer interrupt");
     update_time();
-
+    tick_counter += 1;
     struct proc* p = myproc();
-    if (p && p->state == RUNNING)
+    if (p && p->state == RUNNING) {
+        account_time(p);
         yield();
+    }
 }
 
 void 

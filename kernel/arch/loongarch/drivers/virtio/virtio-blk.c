@@ -1,5 +1,5 @@
 /**
- * This code is partly copied from Stephen's OS (MIT License)
+ * This code is partly from Stephen's OS (MIT License)
  * Original source: https://github.com/brenns10/sos/blob/master/kernel/virtio-blk.c
  * Copyright (c) 2018-2022 Stephen Brennan
  * For full license text, see LICENSE-MIT-sos file in this repository
@@ -154,7 +154,7 @@ static void virtio_blk_send(struct virtio_blk *blk, struct virtio_blk_req *hdr)
     mb();
     virtq->avail->idx += 1;
     mb();
-    WRITE32(blk->header->QueueNotify, 0);
+    WRITE32(blk->header->QueueNotify, blk->virtq_info->queue_num);
 }
 
 static void virtio_blk_status(struct blkdev *dev)

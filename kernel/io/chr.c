@@ -3,15 +3,6 @@
 #include <debug.h>
 #include <klib.h>
 
-static struct list_head chrdev_list;
-static spinlock_t chrdev_list_lock;
-
-void char_subsys_init(void)
-{
-    INIT_LIST_HEAD(chrdev_list);
-    spinlock_init(&chrdev_list_lock, "chrdev_list_lock");
-}
-
 struct chrdev *chrdev_alloc(devid_t devid, int intr, const char *name, const struct chrdev_ops *ops)
 {
     KALLOC(struct chrdev, dev);
@@ -35,68 +26,6 @@ void chrdev_init(struct chrdev *dev, devid_t devid, int intr, const char *name, 
 
     dev->ops = ops;
     dev->dev.type = DEVICE_TYPE_CHAR;
-}
-
-void chrdev_register(struct chrdev *chrdev)
-{
-    assert(chrdev != NULL);
-
-    spinlock_acquire(&chrdev_list_lock);
-    list_insert(&chrdev_list, &chrdev->chr_entry);
-    spinlock_release(&chrdev_list_lock);
-
-    device_register(&chrdev->dev, chrdev_general_isr);
-}
-
-struct chrdev *chrdev_get_by_name(const char *name)
-{
-    struct chrdev *chrdev;
-
-    spinlock_acquire(&chrdev_list_lock);
-    list_for_each_entry(chrdev, &chrdev_list, chr_entry)
-    {
-        if (strncmp(chrdev->dev.name, name, DEV_NAME_MAX_LEN) == 0)
-        {
-            spinlock_release(&chrdev_list_lock);
-            return chrdev;
-        }
-    }
-    spinlock_release(&chrdev_list_lock);
-
-    return NULL;
-}
-
-struct chrdev *chrdev_get_by_id(devid_t id)
-{
-    struct chrdev *chrdev;
-
-    spinlock_acquire(&chrdev_list_lock);
-    list_for_each_entry(chrdev, &chrdev_list, chr_entry)
-    {
-        if (chrdev->dev.devid == id)
-        {
-            spinlock_release(&chrdev_list_lock);
-            return chrdev;
-        }
-    }
-    spinlock_release(&chrdev_list_lock);
-
-    return NULL;
-}
-
-struct chrdev *chrdev_get_default_dev()
-{
-    struct chrdev *chrdev;
-
-    spinlock_acquire(&chrdev_list_lock);
-    list_for_each_entry(chrdev, &chrdev_list, chr_entry)
-    {
-        spinlock_release(&chrdev_list_lock);
-        return chrdev;
-    }
-    spinlock_release(&chrdev_list_lock);
-
-    return NULL;
 }
 
 irqret_t chrdev_general_isr(uint32 intid, void *private)

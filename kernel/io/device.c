@@ -28,9 +28,6 @@ void device_name_append_suffix(char *name, int buflen, const char *suffix) {
 void device_subsys_init(void) {
     INIT_LIST_HEAD(device_list_head);
     spinlock_init(&devlst_lock, "device list lock");
-
-    block_subsys_init();
-    char_subsys_init();
 }
 
 void device_init(struct device* device, devid_t devid, uint32 intr, const char *name) {
@@ -59,12 +56,12 @@ void device_register(struct device *device, irq_handler_t handler) {
     debug("device %s registered", device->name);
 }
 
-struct device *device_get_by_name(const char *name) {
+struct device *device_get_by_name(const char *name, int type) {
     struct device *device;
 
     spinlock_acquire(&devlst_lock);
     list_for_each_entry(device, &device_list_head, dev_entry) {
-        if (strncmp(device->name, name, DEV_NAME_MAX_LEN) == 0) {
+        if ((device->type == type || device->type == DEVICE_TYPE_ANY) && strncmp(device->name, name, DEV_NAME_MAX_LEN) == 0) {
             spinlock_release(&devlst_lock);
             return device;
         }
@@ -74,12 +71,12 @@ struct device *device_get_by_name(const char *name) {
     return NULL;
 }
 
-struct device *device_get_by_id(devid_t id) {
+struct device *device_get_by_id(devid_t id, int type) {
     struct device *device;
 
     spinlock_acquire(&devlst_lock);
     list_for_each_entry(device, &device_list_head, dev_entry) {
-        if (device->devid == id) {
+        if ((device->type == type || device->type == DEVICE_TYPE_ANY) && device->devid == id) {
             spinlock_release(&devlst_lock);
             return device;
         }
@@ -89,3 +86,17 @@ struct device *device_get_by_id(devid_t id) {
     return NULL;
 }
 
+struct device *device_get_default(int type) {
+    struct device *device;
+
+    spinlock_acquire(&devlst_lock);
+    list_for_each_entry(device, &device_list_head, dev_entry) {
+        if (device->type == type || device->type == DEVICE_TYPE_ANY) {
+            spinlock_release(&devlst_lock);
+            return device;
+        }
+    }
+    spinlock_release(&devlst_lock);
+
+    return NULL;
+}

@@ -35,6 +35,9 @@ struct proc {
     int sigchld;
     
     char name[16];
+
+    uint64 utime;
+    uint64 stime;
 };
 
 enum proc_state{ INIT, SLEEPING, RUNNABLE, RUNNING, ZOMBIE, NR_PROC_STATE };
