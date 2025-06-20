@@ -186,6 +186,6 @@ static int virtio_dev_init(uint64 virt, uint32 intid)
 
 void virtio_device_init(void)
 {
-	for (int i = 0; i < 1; i++)
+	for (int i = 0; i < VIRTIO_MMIO_DEV_NUM; i ++)
 		virtio_dev_init(VIRT_VIRTIO + VIRT_VIRTIO_SIZE * i, i + 1);
 }

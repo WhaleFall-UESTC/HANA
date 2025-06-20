@@ -248,43 +248,6 @@ struct blkdev_ops virtio_blk_ops = {
     .irq_handle = virtio_blk_isr,
 };
 
-static uint32 virtio_blk_init_irq_intx(pci_device_t *pci_dev) {
-    uint32 intid = pci_device_get_intc(pci_dev);
-    pci_device_set_irq_line(pci_dev, intid);
-
-    return intid;
-}
-
-#ifdef VIRTIO_PCI_ENABLE_MSI_X
-static uint32 virtio_blk_init_irq_msix(volatile virtio_pci_header *header, pci_device_t *pci_dev) {
-    int ret = pci_msix_add_vector(pci_dev, 0, PCI_MSIX_MSG_ADDR, PCI_MSIX_VEC_BASE);
-    if(ret < 0) {
-        error("virtio blk set msi-x vector 0 failed");
-        return 0;
-    }
-
-    WRITE16(header->QueueVector, 0);
-    if(READ16(header->QueueVector) == VIRTIO_MSI_NO_VECTOR) {
-        error("virtio header QueueVector not accepted");
-        return 0;
-    }
-
-    ret = pci_msix_add_vector(pci_dev, 1, PCI_MSIX_MSG_ADDR, PCI_MSIX_VEC_BASE + 1);
-    if(ret < 0) {
-        error("virtio blk set msi-x vector 1 failed");
-        return 0;
-    }
-
-    WRITE16(header->ConfigurationVector, 1);
-    if(READ16(header->ConfigurationVector) == VIRTIO_MSI_NO_VECTOR) {
-        error("virtio header ConfigurationVector not accepted");
-        return 0;
-    }
-
-    return PCI_MSIX_VEC_BASE;
-}
-#endif
-
 int virtio_blk_init(volatile virtio_pci_header *header, pci_device_t *pci_dev)
 {
     struct virtio_blk *vdev;
@@ -299,9 +262,9 @@ int virtio_blk_init(volatile virtio_pci_header *header, pci_device_t *pci_dev)
     assert(virtq_info != NULL);
     
 #ifndef VIRTIO_PCI_ENABLE_MSI_X
-    intid = virtio_blk_init_irq_intx(pci_dev);
+    intid = virtio_init_irq_intx(pci_dev);
 #else
-    intid = virtio_blk_init_irq_msix(header, pci_dev);
+    intid = virtio_init_irq_msix(header, pci_dev);
 #endif
 
     // Read and write feature bits

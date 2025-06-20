@@ -117,6 +117,7 @@ typedef struct msix_table_entry {
 
 #define PCI_MSIX_MSG_ADDR 0x2ff00000UL
 #define PCI_MSIX_VEC_BASE 0x20
+#define PCI_MSIX_VEC_RANGE 0xe0
 
 /*
     PCI设备结构体，用于保存我们所需要的pci信息，并不是和硬件的一样
