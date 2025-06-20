@@ -176,7 +176,7 @@ unsigned int __kfifo_put(struct kfifo *fifo,
  * @len: the size of the destination buffer.
  *
  * This function copies at most @len bytes from the FIFO into the
- * @buffer and returns the number of copied bytes.
+ * @buffer and returns the number of bytes.
  *
  * Note that with only one concurrent reader and one concurrent
  * writer, you don't need extra locking to use these functions.

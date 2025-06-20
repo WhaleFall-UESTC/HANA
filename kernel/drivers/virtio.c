@@ -1,5 +1,5 @@
 /**
- * This code is partly copied from Stephen's OS (MIT License)
+ * This code is partly from Stephen's OS (MIT License)
  * Original source: https://github.com/brenns10/sos/blob/master/kernel/virtio.c
  * Copyright (c) 2018-2022 Stephen Brennan
  * For full license text, see LICENSE-MIT-sos file in this repository
@@ -102,4 +102,3 @@ void virtq_show(struct virtq_info *virtq_info)
 		log("Overflowed descriptors?");
 	}
 }
-

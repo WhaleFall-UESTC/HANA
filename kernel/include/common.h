@@ -174,5 +174,21 @@ typedef unsigned int devid_t;
 #define metamacro_at5(_0, _1, _2, _3, _4, ...) metamacro_head(__VA_ARGS__)
 #define metamacro_at6(_0, _1, _2, _3, _4, _5, ...) metamacro_head(__VA_ARGS__)
 
+#define call_interface(regipt, interface, rettype, ...)                   \
+	({                                                                    \
+		rettype __ret;                                                    \
+		if ((regipt)->interface == NULL)                                  \
+		{                                                                 \
+			error(macro_param_to_str(interface)                           \
+				  "not supported in current fs/file.");                   \
+			__ret = -1;                                                   \
+		}                                                                 \
+		else                                                              \
+		{                                                                 \
+			__ret = (regipt)->interface(__VA_ARGS__);                     \
+		}                                                                 \
+		__ret;                                                            \
+	})
+
 #endif // __COMMON_H__
 

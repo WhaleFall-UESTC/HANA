@@ -20,22 +20,6 @@ const struct file_system *filesys[] = {&devfs_fs, &ext4_fs};
 
 /************************ Export and Helper functions ************************/
 
-#define call_interface(regipt, interface, rettype, ...)                   \
-	({                                                                    \
-		rettype __ret;                                                    \
-		if ((regipt)->interface == NULL)                                  \
-		{                                                                 \
-			error(macro_param_to_str(interface)                           \
-				  "not supported in current fs/file.");                   \
-			__ret = -1;                                                   \
-		}                                                                 \
-		else                                                              \
-		{                                                                 \
-			__ret = (regipt)->interface(__VA_ARGS__);                     \
-		}                                                                 \
-		__ret;                                                            \
-	})
-
 static const struct file_system *filesys_find(const char *fstype)
 {
 	int i;

@@ -18,10 +18,12 @@ struct device {
     struct list_head dev_entry;     // entry in device list
     spinlock_t dev_lock;            // lock for accessing the device
 
-    enum {
+    enum devtype {
         DEVICE_TYPE_BLOCK,
         DEVICE_TYPE_CHAR,
+        DEVICE_TYPE_NET,
         DEVICE_TYPE_OTHER,
+        DEVICE_TYPE_ANY,
     } type;                         // device type
 };
 
@@ -55,12 +57,17 @@ void device_register(struct device *device, irq_handler_t handler);
 /**
  * get a device struct by its name
  */
-struct device *device_get_by_name(const char *name);
+struct device *device_get_by_name(const char *name, int type);
 
 /**
  * get a device struct by its device id
  */
-struct device *device_get_by_id(devid_t id);
+struct device *device_get_by_id(devid_t id, int type);
+
+/**
+ * get default or first device struct of a specific type
+ */
+struct device *device_get_default(int type);
 
 /**
  * We define some categories of device ids here

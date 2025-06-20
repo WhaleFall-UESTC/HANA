@@ -5,15 +5,6 @@
 #include <locking/spinlock.h>
 #include <proc/proc.h>
 
-static struct list_head blkdev_list;
-static spinlock_t blkdev_list_lock;
-
-void block_subsys_init(void)
-{
-    INIT_LIST_HEAD(blkdev_list);
-    spinlock_init(&blkdev_list_lock, "blkdev_list_lock");
-}
-
 struct blkdev *blkdev_alloc(devid_t devid, unsigned long size, uint64 sector_size, int intr, const char *name, const struct blkdev_ops *ops)
 {
     KALLOC(struct blkdev, dev);
@@ -42,68 +33,7 @@ void blkdev_init(struct blkdev *dev, devid_t devid, unsigned long size, uint64 s
 
     device_name_append_suffix(buffer, SPINLOCK_NAME_MAX_LEN, "-blkrqlock");
     spinlock_init(&dev->rq_list_lock, buffer);
-    INIT_LIST_HEAD(dev->blk_entry);
     INIT_LIST_HEAD(dev->rq_list);
-}
-
-void blkdev_register(struct blkdev *blkdev)
-{
-    assert(blkdev != NULL);
-
-    spinlock_acquire(&blkdev_list_lock);
-    list_insert(&blkdev_list, &blkdev->blk_entry);
-    spinlock_release(&blkdev_list_lock);
-
-    device_register(&blkdev->dev, blkdev_general_isr);
-}
-
-struct blkdev *blkdev_get_by_name(const char *name)
-{
-    struct blkdev *blkdev;
-
-    spinlock_acquire(&blkdev_list_lock);
-    list_for_each_entry(blkdev, &blkdev_list, blk_entry)
-    {
-        if (strncmp(blkdev->dev.name, name, DEV_NAME_MAX_LEN) == 0)
-        {
-            spinlock_release(&blkdev_list_lock);
-            return blkdev;
-        }
-    }
-    spinlock_release(&blkdev_list_lock);
-
-    return NULL;
-}
-
-struct blkdev *blkdev_get_by_id(devid_t id) {
-    struct blkdev *blkdev;
-
-    spinlock_acquire(&blkdev_list_lock);
-    list_for_each_entry(blkdev, &blkdev_list, blk_entry)
-    {
-        if (blkdev->dev.devid == id)
-        {
-            spinlock_release(&blkdev_list_lock);
-            return blkdev;
-        }
-    }
-    spinlock_release(&blkdev_list_lock);
-
-    return NULL;
-}
-
-struct blkdev *blkdev_get_default_dev() {
-    struct blkdev *blkdev;
-
-    spinlock_acquire(&blkdev_list_lock);
-    list_for_each_entry(blkdev, &blkdev_list, blk_entry)
-    {
-        spinlock_release(&blkdev_list_lock);
-        return blkdev;
-    }
-    spinlock_release(&blkdev_list_lock);
-
-    return NULL;
 }
 
 void blkdev_submit_req(struct blkdev *dev, struct blkreq *request) {

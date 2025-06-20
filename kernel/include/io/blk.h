@@ -76,7 +76,6 @@ struct blkdev
     unsigned long size; // blkdev capacity in bytes
     uint64 sector_size;
     const struct blkdev_ops *ops;
-    struct list_head blk_entry; // list entry for block devices
     struct list_head rq_list;  // list head for requests
     spinlock_t rq_list_lock;
 };
@@ -136,11 +135,6 @@ static inline void blkreq_free(struct blkdev* blkdev, struct blkreq* req)
 }
 
 /**
- * init block device management system
- */
-void block_subsys_init(void);
-
-/**
  * alloc a block device and do initialization
  */
 struct blkdev *blkdev_alloc(devid_t devid, unsigned long size, uint64 sector_size,
@@ -153,25 +147,41 @@ void blkdev_init(struct blkdev *dev, devid_t devid, unsigned long size, uint64 s
                  int intr, const char *name, const struct blkdev_ops *ops);
 
 /**
- * register block device in list
- * blkdevs differ by devid(majo&minor)/name
+ * general setup for block device irq response
  */
-void blkdev_register(struct blkdev *blkdev);
+irqret_t blkdev_general_isr(uint32 intid, void *private);
+
+/**
+ * register block device in list
+ * blkdevs differ by devid/name
+ */
+static inline void blkdev_register(struct blkdev *blkdev)
+{
+    assert(blkdev != NULL);
+
+    device_register(&blkdev->dev, blkdev_general_isr);
+}
 
 /**
  * get a blkdev struct by its device name
  */
-struct blkdev *blkdev_get_by_name(const char *name);
+static inline struct blkdev *blkdev_get_by_name(const char *name) {
+    return (struct blkdev *)device_get_by_name(name, DEVICE_TYPE_BLOCK);
+}
 
 /**
  * get a blkdev struct by its device id
  */
-struct blkdev *blkdev_get_by_id(devid_t id);
+static inline struct blkdev *blkdev_get_by_id(devid_t id) {
+    return (struct blkdev *)device_get_by_id(id, DEVICE_TYPE_BLOCK);
+}
 
 /**
  * get default or first blkdev struct of block device
  */
-struct blkdev *blkdev_get_default_dev();
+static inline struct blkdev *blkdev_get_default_dev() {
+    return (struct blkdev *)device_get_default(DEVICE_TYPE_BLOCK);
+}
 
 /**
  * submit a request to block device
@@ -199,10 +209,5 @@ int blkdev_wait_all(struct blkdev *dev);
  * remove and free all requests in given blkdev that are done
  */
 void blkdev_free_all(struct blkdev *dev);
-
-/**
- * general setup for block device irq response
- */
-irqret_t blkdev_general_isr(uint32 intid, void *private);
 
 #endif // __BLK_H__

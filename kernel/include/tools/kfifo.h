@@ -99,7 +99,7 @@ static inline unsigned int kfifo_put(struct kfifo *fifo,
  * @len: the size of the destination buffer.
  *
  * This function copies at most @len bytes from the FIFO into the
- * @buffer and returns the number of copied bytes.
+ * @buffer and returns the number of bytes.
  */
 static inline unsigned int kfifo_get(struct kfifo *fifo,
 				     unsigned char *buffer, unsigned int len)

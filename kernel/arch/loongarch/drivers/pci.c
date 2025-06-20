@@ -1,5 +1,5 @@
 /**
- * This code is partly copied from oskernel2024-loader (GPL2.0)
+ * This code is partly from oskernel2024-loader (GPL2.0)
  * Original source: https://gitlab.eduxiji.net/T202411664992499/oskernel2024-loader/-/blob/main/drivers/pci/pci.c
  * For full license text, see LICENSE-GPL2 file in this repository
  */
