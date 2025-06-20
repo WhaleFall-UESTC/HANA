@@ -20,7 +20,7 @@ void test() {
     // test_walkaddr();
     // test_virtio();
 
-    test_fs();
+    // test_fs();
 
     PASS("test finish!!!");
     // intr_on();

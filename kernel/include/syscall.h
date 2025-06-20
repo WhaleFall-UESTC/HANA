@@ -99,5 +99,36 @@ typedef uint64 (*syscall_func_t)(void);
 
 void syscall();
 
+
+
+/* mmap flags */
+
+#define PROT_NONE      0x0
+#define PROT_READ      0x1
+#define PROT_WRITE     0x2
+#define PROT_EXEC      0x4
+
+#define MAP_SHARED     0x01     // 共享映射，对映射内容的修改会写回文件
+#define MAP_PRIVATE    0x02     // 私有映射，写操作触发 Copy-on-Write（CoW）
+#define MAP_FIXED      0x10     // 强制使用指定地址 addr，覆盖已有映射
+#define MAP_ANONYMOUS  0x20     // 匿名映射，不基于文件，内容初始化为 0
+// #define MAP_STACK      0x40000  // 指示这是一个栈映射（提示系统进行优化）
+// #define MAP_HUGETLB    0x400000 // 使用大页（huge page）进行映射（提高性能）
+
+
+/* clone flags */
+
+#define CLONE_VM             0x00000100  // 共享地址空间 (线程)
+#define CLONE_FS             0x00000200  // 共享文件系统信息
+#define CLONE_FILES          0x00000400  // 共享文件描述符表
+#define CLONE_SIGHAND        0x00000800  // 共享信号处理程序
+#define CLONE_THREAD         0x00010000  // 同线程组 (POSIX 线程)
+#define CLONE_SYSVSEM        0x00040000  // 共享 System V 信号量
+#define CLONE_SETTLS         0x00080000  // 设置 TLS (必须)
+#define CLONE_PARENT_SETTID  0x00100000  // 将子线程 TID 写入 ptid
+#define CLONE_CHILD_CLEARTID 0x00200000  // 子线程退出时清除 ctid
+#define CLONE_CHILD_SETTID   0x01000000  // 将子线程 TID 写入 ctid
+#define CLONE_SIGCHLD        0x00000011  // 子进程退出发送 SIGCHLD
+
 #include <trap/syscall.h>
 #endif // __SYSCALL_H__
