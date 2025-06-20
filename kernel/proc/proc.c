@@ -70,6 +70,9 @@ alloc_proc()
     Assert(p->fdt, "out of memory");
     fdt_init(p->fdt, "fdt_lock");
 
+    p->utime = 0;
+    p->stime = 0;
+
     return p;
 }
 
