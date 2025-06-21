@@ -58,7 +58,7 @@ alloc_objs(struct slab* slab, uint8 nr_objs)
 
             if (slab->objs[idx].size == 0) {
                 // just remove these objs from list
-                list_remove(slab, idx);
+                slab_list_remove(slab, idx);
                 set_object_entry(&slab->objs[idx], nr_objs, A, L);
                 return (void*) &slab->objects[idx];
             }
@@ -162,7 +162,7 @@ merge_low(struct slab* slab, int idx)
     // change lower size
     lower->size += slab->objs[idx].size;
     // remove idx's area from list
-    list_remove(slab, idx);
+    slab_list_remove(slab, idx);
     set_object_entry(&slab->objs[idx], 0, 0, 0);
     // clear old end and set new end
     set_object_entry(&slab->objs[idx - 1], 0, 0, 0);

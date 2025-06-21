@@ -31,6 +31,11 @@ struct proc {
 
     struct proc* next;
 
+    struct vm_area* vma_list;
+    uint64 mmap_base;
+    uint64 mmap_brk;
+    // vma_list lock
+
     int cleartid;
     int sigchld;
     
@@ -69,6 +74,7 @@ myproc()
     return p;
 }
 
+#include <mm/vma.h>
 
 void            proc_init();
 void            test_proc_init(uint64 test_func);

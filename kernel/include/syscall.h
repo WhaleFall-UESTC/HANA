@@ -112,9 +112,11 @@ void syscall();
 #define MAP_PRIVATE    0x02     // 私有映射，写操作触发 Copy-on-Write（CoW）
 #define MAP_FIXED      0x10     // 强制使用指定地址 addr，覆盖已有映射
 #define MAP_ANONYMOUS  0x20     // 匿名映射，不基于文件，内容初始化为 0
+// #define MAP_POPULATE   0x200000    // 预加载页面（避免缺页异常）
 // #define MAP_STACK      0x40000  // 指示这是一个栈映射（提示系统进行优化）
 // #define MAP_HUGETLB    0x400000 // 使用大页（huge page）进行映射（提高性能）
 
+#define MMAP_FAILED ((void*) -1)
 
 /* clone flags */
 

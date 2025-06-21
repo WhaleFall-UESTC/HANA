@@ -63,6 +63,11 @@ alloc_proc()
     p->next = NULL;
     p->parent = NULL;
 
+    // init mmap
+    p->vma_list = NULL;
+    p->mmap_base = MMAP_BASE;
+    p->mmap_brk = MMAP_BASE + MMAP_INIT_SIZE;
+
     p->cwd = strdup("/");
     Assert(p->cwd, "out of memory");
 

@@ -13,8 +13,8 @@
 #include <syscall.h>
 
 
-SYSCALL_DEFINE5(clone, int, unsigned long, flags, void*, stack, void*, ptid, void*, tls, void*, ctid) {
-    
+SYSCALL_DEFINE5(clone, int, unsigned long, flags, void*, stack, void*, ptid, void*, tls, void*, ctid)
+{
     struct proc* proc  = myproc();
     struct proc* child = alloc_proc();
     assert(child);

@@ -39,6 +39,10 @@
 #define MAXVA (1UL << (12 + 9 + 9 + 9 - 1))
 #define TRAPFRAME (MAXVA - PGSIZE)
 
+#define MMAP_BASE       0x800000000UL
+#define MMAP_INIT_SIZE  0x40000000UL
+#define MMAP_EXPAND     0x40000000UL
+
 #define KSTACK(n)   (TRAMPOLINE - (2 * (n)) * PGSIZE)
 
 /*

@@ -3,8 +3,10 @@
 #include <mm/mm.h>
 #include <klib.h>
 #include <proc/proc.h>
+#include <trap/trap.h>
 #include <debug.h>
 #include <arch.h>
+#include <syscall.h>
 
 extern char end[], trampoline[];
 extern void tlb_refill();
@@ -189,4 +191,52 @@ virt_to_phys(uint64 va) {
 uint64
 phys_to_virt(uint64 pa) {
     return pa | DMW_MASK;
+}
+
+
+#define CHECK(cond, msg, ...) \
+    if (!(cond)) { \
+        Log(ANSI_FG_RED, msg, ## __VA_ARGS__); \
+        p->killed = 1; \
+        return; \
+    }
+
+void 
+page_unmap_handler(uint64)
+{
+    struct proc* p = myproc();
+    uint64 badv = r_csr_badv();
+    uint64 va = PGROUNDDOWN(badv);
+
+    struct vm_area* vma = find_vma(p, va);
+    CHECK(vma, "vma not found");
+
+    int ecode = r_ecode();
+    CHECK((ecode == PIS && (vma->prot & PROT_WRITE)) && (ecode == PIL && (vma->prot & PROT_READ)), "vma prot error");
+
+    char* mem = kalloc(PGSIZE);
+    CHECK(mem, "out of memory");
+    memset(mem, 0, PGSIZE);
+
+    if (vma->file) {
+        // file system help
+        // ilock(vma->file->ip);
+        // readi(vma->file->ip, 0, (uint64)page, 
+        //       vma->offset + (va - vma->start), PGSIZE);
+        // iunlock(vma->file->ip);
+    }
+
+    uint perm = PTE_U | PTE_MAT_CC | PTE_P;
+    perm |= ((vma->prot & PROT_READ) ? 0 : PTE_NR);
+    perm |= ((vma->prot & PROT_EXEC) ? 0 : PTE_NX);
+    perm |= ((vma->prot & PROT_WRITE) ? PTE_W | PTE_D : 0);
+
+    if (vma->flags & MAP_PRIVATE) {
+        perm &= ~PTE_W;
+        perm |= PTE_COW;
+    }
+
+    mappages(UPGTBL(p->pagetable), va, KERNEL_VA2PA(mem), PGSIZE, perm);
+
+    flush_tlb_one(va);
 }

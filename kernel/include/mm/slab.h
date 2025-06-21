@@ -102,7 +102,7 @@ set_object_entry(struct object_entry* entry, uint8 size, int8 prev, int8 next)
 }
 
 static inline void 
-list_remove(struct slab* slab, int idx)
+slab_list_remove(struct slab* slab, int idx)
 {
     int8 idx_prev = slab->objs[idx].prev;
     int8 idx_next = slab->objs[idx].next;

@@ -73,6 +73,9 @@
 #define READ64(_reg) (*((volatile uint64 *)(&(_reg))))
 #endif
 
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+#define MIN(a, b) (((b) > (a)) ? (a) : (b))
+
 #define KALLOC(type, var) type* var = (type*) kalloc(sizeof(type))
 #define KCALLOC(type, var, count) type* var = (type*) kcalloc(sizeof(type), count)
 
@@ -105,6 +108,8 @@ typedef unsigned int fmode_t;
 typedef long int ptrdiff_t;
 
 typedef unsigned int devid_t;
+
+typedef uint64 uintptr_t ;
 
 #define bool _Bool
 #define true 1
