@@ -143,7 +143,29 @@ SYSCALL_DEFINE2(munmap, int, void*, addr, size_t, length)
 
 SYSCALL_DEFINE1(brk, uintptr_t, uintptr_t, brk)
 {
+    struct proc* p = myproc();
+    uint64 old_brk = p->sz;
+    uint64 heap_start = p->heap_start;
 
+    if (brk == 0)
+        return old_brk;
+    if (brk < heap_start || brk > MAXVA)
+        return -1;
+
+    uint64 new_brk = PGROUNDUP(brk);
+
+    if (new_brk > old_brk) {
+        uint64 size = new_brk - old_brk;
+        uint64 pa = KERNEL_VA2PA(kalloc(size));
+        if (!pa) return -1;
+        mappages(UPGTBL(p->pagetable), old_brk, pa, size, PTE_WR | PTE_U);
+    }
+    else if (new_brk < old_brk) {
+        int npages = (old_brk - new_brk) >> PGSHIFT;
+        uvmunmap(UPGTBL(p->pagetable), new_brk, npages, UVMUNMAP_FREE);
+    }
+
+    p->sz = new_brk;
     return 0;
 }
 

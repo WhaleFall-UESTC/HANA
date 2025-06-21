@@ -62,7 +62,7 @@ kvmmake()
 
     uint64* test_space = (uint64*) kalloc(PGSIZE);
     *test_space = 0x11451419198100UL;
-    mappages(kpgtbl, TEST_SPACE, KERNEL_VA2PA(test_space), PGSIZE, PTE_PLV3 | PTE_MAT_CC | PTE_G | PTE_P | PTE_COW | PTE_D);
+    mappages(kpgtbl, TEST_SPACE, KERNEL_VA2PA(test_space), PGSIZE, PTE_PLV3 | PTE_MAT_CC | PTE_P | PTE_COW | PTE_D);
 
     return kpgtbl;
 }
@@ -241,5 +241,5 @@ page_unmap_handler()
 
     mappages(UPGTBL(p->pagetable), va, KERNEL_VA2PA(mem), PGSIZE, perm);
 
-    flush_tlb_one(va);
+    flush_tlb_one(p->pid, va);
 }

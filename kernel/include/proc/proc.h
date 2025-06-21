@@ -12,7 +12,8 @@ struct proc {
     volatile int state;
     uint64 tls;
 
-    uint64 sz;
+    uint64 heap_start;
+    uint64 sz;  // brk
 
     // pagetable_t pagetable;
     upagetable* pagetable;

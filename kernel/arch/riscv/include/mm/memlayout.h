@@ -21,8 +21,8 @@
 
 #define KSTACK(n)   (TRAPFRAME - ((KSTACK_SIZE + PGSIZE) * (n)))
 
-#define KERNEL_VA2PA(va) va 
-#define KERNEL_PA2VA(pa) pa
+#define KERNEL_VA2PA(va) ((uint64)va)
+#define KERNEL_PA2VA(pa) ((uint64)pa)
 
 #define UART0   VIRT_UART0
 

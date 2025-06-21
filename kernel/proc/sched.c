@@ -39,8 +39,9 @@ scheduler()
                 // switch to this process
                 p->state = RUNNING;
                 c->proc = p;
-#ifdef ARCH_LOONGARCH
+#ifdef ARCH_LOONGARCH   
                 timer_intr_on();
+                set_asid(p->pid);
 #endif
                 // log("switch to process %s", p->name);
                 swtch(&c->context, &p->context);

@@ -12,6 +12,9 @@
 #define PTE_AVL (7L << 9)
 #define PTE_COW (1L << 9)
 
+#define PTE_WR (PTE_V | PTE_W | PTE_R)
+#define PTE_RX (PTE_V | PTE_R | PTE_X)
+
 #define PA2PTE(pa) ((((uint64)pa) >> 12) << 10)
 #define PTE2PA(pte) ((((uint64)(pte)) >> 10) << 12)
 #define PTE_FLAGS(pte) (((uint64)(pte)) & 0x3ff)

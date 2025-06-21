@@ -28,6 +28,10 @@ typedef pte_t *pagetable_t;
 #define PTE_COW (1UL << 9)
 
 #define PTE_U PTE_PLV3
+#define PTE_S PTE_PLV0
+
+#define PTE_WR (PTE_V | PTE_P | PTE_W | PTE_MAT_CC | PTE_D | PTE_NX)
+#define PTE_RX (PTE_V | PTE_P | PTE_MAT_CC)
 
 #define PAMASK  (0xFFFFFFFFFUL << PGSHIFT)
 #define PTE2PA(pte) (((uint64)(pte)) & PAMASK)
@@ -694,6 +698,27 @@ intr_get()
     return (r_csr_crmd() & CSR_CRMD_IE) != 0;
 }
 
+static inline void 
+asid_init(int asid, int nbytes)
+{
+    uint8 nbits = nbytes * 8;
+    w_csr_asid((asid & CSR_ASID_ASID) | ((nbits << 16) & CSR_ASIDBITS));
+}
+
+static inline void
+set_asid(int id) {
+    uint64 asid = r_csr_asid();
+    asid &=  ~CSR_ASID_ASID;
+    asid |= (id & CSR_ASID_ASID);
+    w_csr_asid(asid);
+}
+
+static inline int
+get_asid()
+{
+    uint64 asid = r_csr_asid();
+    return (int) (asid & CSR_ASID_ASID);
+}
 
 // Invalidate TLB Entry
 #define invtlb() asm volatile("invtlb  0x0, $zero, $zero")
@@ -704,9 +729,9 @@ flush_tlb() {
 }
 
 static inline void 
-flush_tlb_one(uint64 vaddr)
+flush_tlb_one(int asid, uint64 vaddr)
 {
-    asm volatile( "invtlb 0x5, $zero, %0" : : "r"(vaddr));
+    asm volatile( "invtlb 0x5, %0, %1" : : "r"(asid), "r"(vaddr));
 }
 
 #endif // __ARCH_H__

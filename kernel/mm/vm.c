@@ -195,9 +195,9 @@ store_page_fault_handler()
     if (page_ref_dec(pa) == 1)
         kfree((void*) pa);
 
-    #ifdef ARCH_LOONGARCH
-    flush_tlb_one(va);
-    #endif
+#ifdef ARCH_LOONGARCH
+    flush_tlb_one(myproc()->pid, va);
+#endif
 
     log("store page fault handle");
 }
@@ -216,6 +216,9 @@ uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
                 kfree((void*) pa);
         }
         *pte = 0;
+#ifdef ARCH_LOONGARCH
+        flush_tlb_one(myproc()->pid, addr);
+#endif
     }
 }
 

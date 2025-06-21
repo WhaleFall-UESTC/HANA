@@ -40,6 +40,9 @@ SYSCALL_DEFINE5(clone, int, unsigned long, flags, void*, stack, void*, ptid, voi
         uvmcopy(cpgtbl, UPGTBL(proc->pagetable), proc->sz);
     }
 
+    child->sz = proc->sz;
+    child->heap_start = proc->heap_start;
+
     *(child->trapframe) = *(proc->trapframe);
     // set tls
     child->tls = (uint64) tls;
