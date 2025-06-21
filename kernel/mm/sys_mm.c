@@ -91,6 +91,49 @@ SYSCALL_DEFINE6(mmap, void*, void*, addr, size_t, length, int, prot, int, flags,
 
 SYSCALL_DEFINE2(munmap, int, void*, addr, size_t, length)
 {
+    uint64 va = PGROUNDDOWN(addr);
+    length = PGROUNDUP(length);
+    if (length == 0) return -1;
+
+    struct proc* p = myproc();
+
+    struct vm_area* vma = find_vma(p, va);
+    if (!vma) return -1;
+
+    uint64 unmap_start = MAX(addr, vma->start);
+    uint64 unmap_end = MIN(addr + length, vma->end);
+    size_t unmap_len = unmap_end - unmap_start;
+
+    uvmunmap(UPGTBL(p->pagetable), va, (unmap_len >> PGSHIFT), UVMUNMAP_FREE);
+    
+    if (unmap_start == vma->start && unmap_end == vma->end) {
+        if (vma->prev) {
+            vma->prev->next = vma->next;
+            if (vma->next) vma->next->prev = vma->prev;
+        } else {
+            p->vma_list = vma->next;
+            vma->next->prev = NULL;
+        } 
+
+        // if (vma->file) closefile
+        kfree(vma);
+    }
+    else if (unmap_start == vma->start) {
+        vma->start = unmap_end;
+    }
+    else if (unmap_end == vma->end) {
+        vma->end = unmap_start;
+    }
+    else {
+        KALLOC(vm_area, new_vma);
+        memmove(new_vma, vma, sizeof(struct vm_area));
+        new_vma->start = unmap_end;
+        vma->end = unmap_start;
+        new_vma->next = vma->next;
+        vma->next = new_vma;
+        if (new_vma->next) new_vma->next->prev = new_vma;
+        new_vma->prev = vma;
+    }
 
     return 0;
 }

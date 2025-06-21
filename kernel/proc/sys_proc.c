@@ -24,6 +24,15 @@ SYSCALL_DEFINE5(clone, int, unsigned long, flags, void*, stack, void*, ptid, voi
         // share space with parent
         child->pagetable = upgtbl_clone(proc->pagetable);
         // TODO: mmap area copy
+        for (struct vm_area *vma = proc->vma_list; vma; vma = vma->next) {
+            KALLOC(struct vm_area, new_vma);
+            *new_vma = *vma;
+            new_vma->next = child->vma_list;
+            if (child->vma_list) child->vma_list->prev = new_vma;
+            child->vma_list = new_vma;
+        }
+        child->mmap_base = proc->mmap_base;
+        child->mmap_brk = proc->mmap_brk;
     } else {
         // initialize child pagetable
         pagetable_t cpgtbl = alloc_pagetable();

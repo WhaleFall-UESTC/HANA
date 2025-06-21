@@ -25,6 +25,7 @@ void        map_stack(pagetable_t pgtbl, uint64 stack_va);
 int         copyout(pagetable_t pgtbl, uint64 dstva, void* src, int len);
 uint64      virt_to_phys(uint64 va);
 uint64      phys_to_virt(uint64 pa);
+void        uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free);
 
 void        store_page_fault_handler();
 void        page_unmap_handler();

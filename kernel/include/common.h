@@ -82,6 +82,9 @@
 #define WALK_ALLOC 1
 #define WALK_NOALLOC 0
 
+#define UVMUNMAP_FREE 1
+#define UVMUNMAP_NOFREE 0
+
 #define nr_elem(x) (sizeof(x) / sizeof(x[0]))
 
 // typedefs

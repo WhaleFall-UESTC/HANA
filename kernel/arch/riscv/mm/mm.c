@@ -202,7 +202,7 @@ phys_to_virt(uint64 pa) {
 
 
 void 
-page_unmap_handler(uint64)
+page_unmap_handler()
 {
     struct proc* p = myproc();
     uint64 badv = r_stval();
@@ -234,6 +234,9 @@ page_unmap_handler(uint64)
     if (vma->flags & MAP_PRIVATE) {
         perm &= ~PTE_W;
         perm |= PTE_COW;
+    }
+    else if (vma->flags & MAP_SHARED) {
+        perm |= PTE_G;
     }
 
     mappages(UPGTBL(p->pagetable), va, KERNEL_VA2PA(mem), PGSIZE, perm);

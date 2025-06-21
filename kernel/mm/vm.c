@@ -157,3 +157,21 @@ store_page_fault_handler()
 
     log("store page fault handle");
 }
+
+void
+uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
+{
+    assert(IS_PGALIGNED(va));
+
+    for (uint64 addr = va; addr < va + (npages << PGSHIFT); addr += PGSIZE) {
+        pte_t* pte = walk(pagetable, addr, WALK_NOALLOC);
+        assert(pte && (*pte & PTE_V));
+        if (do_free) {
+            uint64 pa = KERNEL_PA2VA(PTE2PA(*pte));
+            if (page_ref_dec(pa) == 1)
+                kfree((void*) pa);
+        }
+        *pte = 0;
+    }
+}
+
