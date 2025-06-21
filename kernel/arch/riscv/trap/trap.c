@@ -102,7 +102,7 @@ trap_init()
 
     register_trap_handler(EXCEPTION, STORE_AMO_PAGE_FAULT, store_page_fault_handler);
     register_trap_handler(EXCEPTION, LOAD_ACCESS_FAULT, page_unmap_handler);
-    register_trap_handler(EXCEPTION, STORE_AMO_ACCESS_FAULT, page_unmap_handler)
+    register_trap_handler(EXCEPTION, STORE_AMO_ACCESS_FAULT, page_unmap_handler);
 }
 
 
