@@ -37,15 +37,8 @@ static inline uint64 phys_page_number(uint64 pa) {
 
 #include <mm/page.h>
 
-static inline uint64 copy_from_user(void *to, const void *from, unsigned long n) {
-    copyin(UPGTBL(myproc()->pagetable), (char *) to, (uint64) from, n);
-    return n;
-}
-
-static inline uint64 copy_to_user(void *to, const void *from, unsigned long n) {
-    copyout(UPGTBL(myproc()->pagetable), (uint64) to, (void *) from, n);
-    return n;
-}
+uint64 copy_from_user(void *to, const void *from, unsigned long n);
+uint64 copy_to_user(void *to, const void *from, unsigned long n);
 
 #define IS_DATA(addr) (((addr) >= (uint64) pages) && ((addr) < PHYSTOP)) 
 

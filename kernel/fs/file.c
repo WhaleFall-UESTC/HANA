@@ -190,3 +190,35 @@ void file_init(struct file *file, const struct file_operations *f_op, const char
     file->fpos = 0;
     atomic_init(&file->f_ref, 0);
 }
+
+void file_get(struct file *file)
+{
+	if (file)
+		atomic_inc(&file->f_ref);
+}
+
+int file_put(struct file *file)
+{
+	int ret = -1;
+	if (file && (ret = atomic_dec(&file->f_ref)) == 0)
+	{
+		ret = call_interface(file->f_op, close, int, file);
+		if (ret < 0) {
+			error("call specified close failed");
+			return -1;
+		}
+		if (file->f_inode)
+			kfree(file->f_inode);
+		kfree(file);
+		return 0;
+	}
+	return ret;
+}
+
+int file_refcnt(struct file *file)
+{
+	if (file == NULL)
+		return 0;
+
+	return atomic_get(&file->f_ref);
+}

@@ -153,6 +153,17 @@ copyin(pagetable_t pagetable, char* dst, uint64 srcva, int len)
 }
 
 
+uint64 copy_from_user(void *to, const void *from, unsigned long n) {
+    copyin(UPGTBL(myproc()->pagetable), (char *) to, (uint64) from, n);
+    return n;
+}
+
+uint64 copy_to_user(void *to, const void *from, unsigned long n) {
+    copyout(UPGTBL(myproc()->pagetable), (uint64) to, (void *) from, n);
+    return n;
+}
+
+
 void
 store_page_fault_handler()
 {

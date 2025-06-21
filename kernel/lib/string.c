@@ -1,5 +1,6 @@
 #include <common.h>
 #include <mm/mm.h>
+#include <debug.h>
 
 size_t 
 strlen(const char *s)

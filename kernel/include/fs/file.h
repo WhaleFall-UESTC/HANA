@@ -118,11 +118,7 @@ void file_init(struct file *file, const struct file_operations *f_op, const char
 /**
  * Increase the reference count of a struct file.
  */
-static inline void file_get(struct file *file)
-{
-	if (file)
-		atomic_inc(&file->f_ref);
-}
+void file_get(struct file *file);
 
 /**
  * Decrease the reference count of a struct file.
@@ -130,30 +126,8 @@ static inline void file_get(struct file *file)
  * If the file has an inode, free it too.
  * @return: reference count of the struct file on success, -1 on error.
  */
-static inline int file_put(struct file *file)
-{
-	int ret = -1;
-	if (file && (ret = atomic_dec(&file->f_ref)) == 0)
-	{
-		ret = call_interface(file->f_op, close, int, file);
-		if (ret < 0) {
-			error("call specified close failed");
-			return -1;
-		}
-		if (file->f_inode)
-			kfree(file->f_inode);
-		kfree(file);
-		return 0;
-	}
-	return ret;
-}
+int file_put(struct file *file);
 
-static inline int file_refcnt(struct file *file)
-{
-	if (file == NULL)
-		return 0;
-
-	return atomic_get(&file->f_ref);
-}
+int file_refcnt(struct file *file);
 
 #endif // __FILE_H__

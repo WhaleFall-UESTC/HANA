@@ -405,7 +405,7 @@ SYSCALL_DEFINE1(close, int, int, fd)
 {
 	struct file *file;
 	struct files_struct *fdt = myproc()->fdt;
-	int ret;
+	// int ret;
 
 	if (fd < 0 || fd >= NR_OPEN)
 		return -1;
