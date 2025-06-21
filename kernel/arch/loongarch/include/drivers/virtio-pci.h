@@ -36,5 +36,12 @@ typedef volatile struct __attribute__((packed)) {
 struct virtq_info *virtq_add_to_device(volatile virtio_pci_header *header, uint32 queue_sel);
 void virtio_check_capabilities(virtio_pci_header *header, struct virtio_cap *caps, uint32 n);
 int virtio_blk_init(volatile virtio_pci_header *header, pci_device_t *pci_dev);
+int virtio_net_init(virtio_pci_header *header, pci_device_t *pci_dev);
+
+#ifdef VIRTIO_PCI_ENABLE_MSI_X
+static uint32 virtio_init_irq_msix(volatile virtio_pci_header *header, pci_device_t *pci_dev);
+#else
+static uint32 virtio_init_irq_intx(pci_device_t *pci_dev);
+#endif
 
 #endif // __VIRTIO_PCI_H__

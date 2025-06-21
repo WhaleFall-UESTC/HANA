@@ -59,6 +59,8 @@ struct virtq_info* virtq_add_to_device(volatile virtio_regs *regs, uint32 queue_
 void virtio_check_capabilities(virtio_regs *regs, struct virtio_cap *caps, uint32 n);
 
 int virtio_blk_init(volatile virtio_regs *regs, uint32 intid);
-// int virtio_net_init(virtio_regs *regs, uint32 intid);
+int virtio_net_init(virtio_regs *regs, uint32 intid);
+
+#define VIRTIO_MMIO_DEV_NUM 8
 
 #endif // __VIRTIO_MMIO_H__

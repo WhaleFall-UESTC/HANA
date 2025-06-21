@@ -150,7 +150,7 @@ static int virtio_dev_init(pci_device_t* pci_dev)
         break;
 	case VIRTIO_DEV_NET:
         debug("virtio net type");
-		// return virtio_net_init(header, intid);
+		return virtio_net_init(header, pci_dev);
         break;
 	default:
 		error("unsupported virtio device type 0x%x",
@@ -159,6 +159,54 @@ static int virtio_dev_init(pci_device_t* pci_dev)
 	
 	return 0;
 }
+
+#ifdef VIRTIO_PCI_ENABLE_MSI_X
+static uint32 virtio_msi_x_vec = PCI_MSIX_VEC_BASE;
+
+static uint32 virtio_msi_x_alloc_vec(void) {
+	if (virtio_msi_x_vec >= PCI_MSIX_VEC_BASE + PCI_MSIX_VEC_RANGE) {
+		error("virtio msi-x vector exhausted");
+		return 0;
+	}
+	return virtio_msi_x_vec++;
+}
+
+static uint32 virtio_init_irq_msix(volatile virtio_pci_header *header, pci_device_t *pci_dev) {
+	uint32 intid = virtio_msi_x_alloc_vec();
+    int ret = pci_msix_add_vector(pci_dev, 0, PCI_MSIX_MSG_ADDR, intid);
+    if(ret < 0) {
+        error("virtio blk set msi-x vector 0 failed");
+        return 0;
+    }
+
+    WRITE16(header->QueueVector, 0);
+    if(READ16(header->QueueVector) == VIRTIO_MSI_NO_VECTOR) {
+        error("virtio header QueueVector not accepted");
+        return 0;
+    }
+
+    ret = pci_msix_add_vector(pci_dev, 1, PCI_MSIX_MSG_ADDR, intid);
+    if(ret < 0) {
+        error("virtio blk set msi-x vector 1 failed");
+        return 0;
+    }
+
+    WRITE16(header->ConfigurationVector, 1);
+    if(READ16(header->ConfigurationVector) == VIRTIO_MSI_NO_VECTOR) {
+        error("virtio header ConfigurationVector not accepted");
+        return 0;
+    }
+
+    return intid;
+}
+#else
+static uint32 virtio_init_irq_intx(pci_device_t *pci_dev) {
+    uint32 intid = pci_device_get_intc(pci_dev);
+    pci_device_set_irq_line(pci_dev, intid);
+
+    return intid;
+}
+#endif
 
 void virtio_device_init(void)
 {
