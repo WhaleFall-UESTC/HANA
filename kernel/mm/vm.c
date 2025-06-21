@@ -120,6 +120,39 @@ copyout(pagetable_t pgtbl, uint64 dstva, void* src, int len)
 }
 
 
+// copy from user to kernel
+// if dst is NULL will alloc a space for it
+int 
+copyin(pagetable_t pagetable, char* dst, uint64 srcva, int len)
+{
+    uint64 va0 = 0, pa0 = 0;
+
+    if (dst == NULL) dst = kalloc(len);
+    if (dst == NULL) return -1;
+
+    while (len > 0) {
+        va0 = PGROUNDDOWN(srcva);
+        pa0 = walkaddr(pagetable, va0);
+        if (pa0 == 0) {
+            Log(ANSI_FG_RED, "va0 %lx not found", va0);
+            return -1;
+        }
+
+        uint64 offset = srcva - va0;
+        uint64 n = PGSIZE - offset;
+        n = (n > len ? len : n);
+
+        memmove(dst, (void*)(KERNEL_PA2VA(pa0 + offset)), n);
+
+        len -= n;
+        dst += n;
+        srcva = va0 + PGSIZE;
+    }
+
+    return 0;
+}
+
+
 void
 store_page_fault_handler()
 {

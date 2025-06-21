@@ -23,6 +23,7 @@ pagetable_t uvminit(uint64 trapframe, char* init_code, int sz);
 void        uvmcopy(pagetable_t cpgtbl, pagetable_t ppgtbl, uint64 sz);
 void        map_stack(pagetable_t pgtbl, uint64 stack_va);
 int         copyout(pagetable_t pgtbl, uint64 dstva, void* src, int len);
+int         copyin(pagetable_t pagetable, char* dst, uint64 srcva, int len);
 uint64      virt_to_phys(uint64 va);
 uint64      phys_to_virt(uint64 pa);
 void        uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free);
