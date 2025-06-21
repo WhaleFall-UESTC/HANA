@@ -60,6 +60,8 @@ trap_init()
     register_trap_handler(INTERRUPT, HWI0, irq_response);
 
     register_trap_handler(EXCEPTION, PME, store_page_fault_handler);
+    register_trap_handler(EXCEPTION, PIL, page_unmap_handler);
+    register_trap_handler(EXCEPTION, PIS, page_unmap_handler);
 }
 
 void 

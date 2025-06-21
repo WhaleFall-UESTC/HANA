@@ -27,6 +27,7 @@ uint64      virt_to_phys(uint64 va);
 uint64      phys_to_virt(uint64 pa);
 
 void        store_page_fault_handler();
+void        page_unmap_handler();
 
 static inline uint64 phys_page_number(uint64 pa) {
     return pa >> PGSHIFT;
