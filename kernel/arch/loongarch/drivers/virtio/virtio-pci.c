@@ -149,8 +149,8 @@ static int virtio_dev_init(pci_device_t* pci_dev)
 		return virtio_blk_init(header, pci_dev);
         break;
 	case VIRTIO_DEV_NET:
-        debug("virtio net type");
-		return virtio_net_init(header, pci_dev);
+        // debug("virtio net type");
+		// return virtio_net_init(header, pci_dev);
         break;
 	default:
 		error("unsupported virtio device type 0x%x",
