@@ -39,9 +39,9 @@ int virtio_blk_init(volatile virtio_pci_header *header, pci_device_t *pci_dev);
 int virtio_net_init(virtio_pci_header *header, pci_device_t *pci_dev);
 
 #ifdef VIRTIO_PCI_ENABLE_MSI_X
-static uint32 virtio_init_irq_msix(volatile virtio_pci_header *header, pci_device_t *pci_dev);
+uint32 virtio_init_irq_msix(volatile virtio_pci_header *header, pci_device_t *pci_dev);
 #else
-static uint32 virtio_init_irq_intx(pci_device_t *pci_dev);
+uint32 virtio_init_irq_intx(pci_device_t *pci_dev);
 #endif
 
 #endif // __VIRTIO_PCI_H__
