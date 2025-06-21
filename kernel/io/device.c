@@ -5,26 +5,6 @@
 struct list_head device_list_head;
 spinlock_t devlst_lock;
 
-void device_name_append_suffix(char *name, int buflen, const char *suffix) {
-    int len = strlen(name), suflen = strlen(suffix);
-    int pos;
-
-    if(len + suflen < buflen) {
-        pos = len;
-    }
-    else if(buflen < len) {
-        pos = buflen - suflen - 1;
-    }
-    else {
-        error("device name buffer too small for suffix");
-        return;
-    }
-
-    assert(pos >= 0 && pos + suflen < buflen);
-    strncpy(name + pos, suffix, suflen);
-    name[pos + suflen] = '\0';
-}
-
 void device_subsys_init(void) {
     INIT_LIST_HEAD(device_list_head);
     spinlock_init(&devlst_lock, "device list lock");
@@ -40,7 +20,7 @@ void device_init(struct device* device, devid_t devid, uint32 intr, const char *
     strncpy(device->name, name, DEV_NAME_MAX_LEN);
 
     strncpy(buffer, name, SPINLOCK_NAME_MAX_LEN);
-    device_name_append_suffix(buffer, DEV_NAME_MAX_LEN, locksuf);
+    name_append_suffix(buffer, DEV_NAME_MAX_LEN, locksuf);
     spinlock_init(&device->dev_lock, buffer);
 }
 

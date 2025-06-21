@@ -135,3 +135,30 @@ memcpy(void *dst, const void *src, size_t n)
 {
     return memmove(dst, src, n);
 }
+
+void* memdup(const void *src, size_t n)
+{
+    void *dst = kalloc(n);
+    return memcpy(dst, src, n);
+}
+
+
+void name_append_suffix(char *name, int buflen, const char *suffix) {
+    int len = strlen(name), suflen = strlen(suffix);
+    int pos;
+
+    if(len + suflen < buflen) {
+        pos = len;
+    }
+    else if(buflen < len) {
+        pos = buflen - suflen - 1;
+    }
+    else {
+        error("device name buffer too small for suffix");
+        return;
+    }
+
+    assert(pos >= 0 && pos + suflen < buflen);
+    strncpy(name + pos, suffix, suflen);
+    name[pos + suflen] = '\0';
+}

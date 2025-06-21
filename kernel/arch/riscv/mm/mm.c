@@ -227,6 +227,7 @@ page_unmap_handler()
     memset(mem, 0, PGSIZE);
 
     if (vma->file) {
+        file_put(vma->file);
         // file system help
         // ilock(vma->file->ip);
         // readi(vma->file->ip, 0, (uint64)page, 

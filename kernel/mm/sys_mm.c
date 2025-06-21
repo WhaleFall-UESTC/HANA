@@ -78,8 +78,11 @@ SYSCALL_DEFINE6(mmap, void*, void*, addr, size_t, length, int, prot, int, flags,
         vma->file = NULL;
     } else {
         // filesystem, help to check fd valid
-        // MMAP_CHECK(fd >= 0 && fd < NR_OPEN && p->fdt[fd]);
-        // vma->file = filedup(p->fdt[fd]);
+        MMAP_CHECK(fd >= 0 && fd < NR_OPEN);
+        vma->file = fd_get(p->fdt, fd);
+
+        MMAP_CHECK(vma->file != NULL);
+        file_get(vma->file);
     }
 
     vma->next = p->vma_list;
@@ -115,7 +118,7 @@ SYSCALL_DEFINE2(munmap, int, void*, addr, size_t, length)
             vma->next->prev = NULL;
         } 
 
-        // if (vma->file) closefile
+        if (vma->file) file_put(vma->file);
         kfree(vma);
     }
     else if (unmap_start == vma->start) {

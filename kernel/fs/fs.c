@@ -283,8 +283,7 @@ SYSCALL_DEFINE4(openat, fd_t, fd_t, dirfd, const char *, path, int, flags, umode
 		goto out_file;
 	}
 
-	atomic_init(&file->f_ref, 1);
-	file->f_flags = flags;
+	file_init(file, NULL, full_path, flags);
 	debug("file->f_flags: %d", file->f_flags);
 	ret = call_interface(mount_p->fs->fs_op, ifget, int, mount_p, inode, file);
 	if (ret < 0)
@@ -326,8 +325,6 @@ SYSCALL_DEFINE4(openat, fd_t, fd_t, dirfd, const char *, path, int, flags, umode
 	inode->i_atime = stat.st_atime;
 	inode->i_mtime = stat.st_mtime;
 	inode->i_ctime = stat.st_ctime;
-
-	strcpy(file->f_path, full_path);
 
 	/**
 	 * TODO: add inode cache machanism
@@ -416,21 +413,6 @@ SYSCALL_DEFINE1(close, int, int, fd)
 	file = fd_get(fdt, fd);
 	if (file == NULL)
 		return -1;
-
-	if(atomic_dec(&file->f_ref) == 0) {
-		ret = call_interface(file->f_op, close, int, file);
-		if (ret < 0) {
-			error("call specified close failed");
-			return -1;
-		}
-	
-		if(file->f_inode)
-			kfree(file->f_inode);
-		kfree(file);
-	}
-	else {
-		debug("file ref count has not down to 1 yet");
-	}
 
 	fd_free(fdt, fd);
 
@@ -857,11 +839,6 @@ SYSCALL_DEFINE2(pipe2, int, int*, pipefd, int, flags) {
 		error("pipe init error");
 		goto out_file;
 	}
-
-	atomic_init(&rfile->f_ref, 1);
-	rfile->f_flags = O_RDONLY;
-	atomic_init(&wfile->f_ref, 1);
-	wfile->f_flags = O_WRONLY;
 
 	pipefd[0] = fd_alloc(fdt, rfile);
 	if(pipefd[0] < 0) {

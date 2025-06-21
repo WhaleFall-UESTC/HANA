@@ -31,7 +31,7 @@ void blkdev_init(struct blkdev *dev, devid_t devid, unsigned long size, uint64 s
     dev->ops = ops;
     dev->dev.type = DEVICE_TYPE_BLOCK;
 
-    device_name_append_suffix(buffer, SPINLOCK_NAME_MAX_LEN, "-blkrqlock");
+    name_append_suffix(buffer, SPINLOCK_NAME_MAX_LEN, "-blkrqlock");
     spinlock_init(&dev->rq_list_lock, buffer);
     INIT_LIST_HEAD(dev->rq_list);
 }

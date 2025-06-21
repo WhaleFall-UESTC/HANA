@@ -1,6 +1,6 @@
 #include <fs/pipe.h>
 #include <fs/file.h>
-
+#include <fs/fcntl.h>
 #include <mm/mm.h>
 
 int pipe_init(struct file* rfile, struct file* wfile) {
@@ -20,8 +20,8 @@ int pipe_init(struct file* rfile, struct file* wfile) {
 
 	spinlock_init(lock, "pipe");
 
-	rfile->f_op = wfile->f_op = &pipe_fileops;
-	rfile->f_private = wfile->f_private = (void*)pipe;
+	file_init(rfile, &pipe_fileops, NULL, O_RDONLY);
+	file_init(wfile, &pipe_fileops, NULL, O_WRONLY);
 
 	return 0;
 err:

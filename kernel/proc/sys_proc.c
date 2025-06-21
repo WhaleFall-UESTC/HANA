@@ -48,11 +48,24 @@ SYSCALL_DEFINE5(clone, int, unsigned long, flags, void*, stack, void*, ptid, voi
     child->trapframe->a0 = 0;
 
     if (flags & CLONE_FS) {
-        
+        // share fs with parent
+        child->cwd = proc->cwd;
+        // child->root = proc->root;
+        // child->fs = proc->fs;
+        // child->umask = proc->umask;
+    } else {
+        // initialize child fs
+        child->cwd = strdup(proc->cwd);
+        // child->root = strdup(proc->root);
+        // child->fs = proc->fs; // share fs
+        // child->umask = proc->umask;
     }
 
     if (flags & CLONE_FILES) {
-
+        child->fdt = proc->fdt; // share file descriptor table
+    }
+    else {
+        child->fdt = fdt_dup(proc->fdt);
     }
 
     // if (flags & CLONE_THREAD) {

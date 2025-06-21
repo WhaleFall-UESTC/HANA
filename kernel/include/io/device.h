@@ -28,14 +28,6 @@ struct device {
 };
 
 /**
- * append a suffix to device name
- * @param name: device name buffer, must be large enough
- * @param buflen: buffer length of name
- * @param suffix: suffix to append
- */
-void device_name_append_suffix(char *name, int buflen, const char *suffix);
-
-/**
  * init device management system
  */
 void device_subsys_init(void);

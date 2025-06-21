@@ -184,11 +184,7 @@ int udp_bind(struct socket *sock, const struct sockaddr *address,
 	if (address_len != sizeof(struct sockaddr_in))
 		return -EINVAL;
 
-    /**
-     * TODO: copy from userspace here
-     */
-	// rv = copy_from_user(&addr, address, address_len);
-	rv = PTR_ERR(memcpy(&addr, address, address_len));
+	rv = copy_from_user(&addr, address, address_len);
 	if (rv < 0)
 		return rv;
 
@@ -214,11 +210,7 @@ int udp_connect(struct socket *sock, const struct sockaddr *address,
 	if (address_len != sizeof(struct sockaddr_in))
 		return -EINVAL;
 
-    /**
-     * TODO: copy from userspace here
-     */
-    // rv = copy_from_user(&addr, (const void *)address, address_len);
-	rv = PTR_ERR(memcpy(&addr, (const void *)address, address_len));
+    rv = copy_from_user(&addr, (const void *)address, address_len);
 	if (rv < 0)
 		return rv;
 
@@ -254,11 +246,8 @@ int udp_sys_send(struct socket *sock, const void *data, size_t len, int flags)
 
 	pkt = packet_alloc();
 	pkt->app = (void *)&pkt->data + space;
-    /**
-     * TODO: copy from userspace here
-     */
-	// rv = copy_from_user(pkt->app, data, len);
-	rv = PTR_ERR(memcpy(pkt->app, data, len));
+    
+	rv = copy_from_user(pkt->app, data, len);
 	if (rv < 0)
 		goto error;
 

@@ -67,6 +67,13 @@ void iofd_init();
 void fdt_init(struct files_struct *files, char* name);
 
 /**
+ * Duplicate a files_struct, dup all struct file in fdt.
+ * @param fdt The files_struct to be duplicated.
+ * @return A new files_struct on success, NULL on error.
+ */
+struct files_struct* fdt_dup(struct files_struct *fdt);
+
+/**
  * Allocate a file descriptor in given files_struct.
  * @param fdt The files_struct given.
  * @param file The struct file to be filled in fdt_i.
@@ -98,5 +105,55 @@ int fd_clone(struct files_struct *fdt, fd_t old_fd, fd_t new_fd);
  * @return NULL on error, otherwise success.
  */
 struct file* fd_get(struct files_struct *fdt, fd_t fd);
+
+/**
+ * Initialize a struct file.
+ * @param file The struct file to be initialized.
+ * @param f_op The file operations to be set.
+ * @param path The path of the file, can be NULL.
+ * @param flags The flags of the file, can be 0.
+ */
+void file_init(struct file *file, const struct file_operations *f_op, const char *path, unsigned int flags);
+
+/**
+ * Increase the reference count of a struct file.
+ */
+static inline void file_get(struct file *file)
+{
+	if (file)
+		atomic_inc(&file->f_ref);
+}
+
+/**
+ * Decrease the reference count of a struct file.
+ * If the reference count reaches 0, close file and free the struct file.
+ * If the file has an inode, free it too.
+ * @return: reference count of the struct file on success, -1 on error.
+ */
+static inline int file_put(struct file *file)
+{
+	int ret = -1;
+	if (file && (ret = atomic_dec(&file->f_ref)) == 0)
+	{
+		ret = call_interface(file->f_op, close, int, file);
+		if (ret < 0) {
+			error("call specified close failed");
+			return -1;
+		}
+		if (file->f_inode)
+			kfree(file->f_inode);
+		kfree(file);
+		return 0;
+	}
+	return ret;
+}
+
+static inline int file_refcnt(struct file *file)
+{
+	if (file == NULL)
+		return 0;
+
+	return atomic_get(&file->f_ref);
+}
 
 #endif // __FILE_H__

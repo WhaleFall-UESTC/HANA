@@ -66,9 +66,41 @@ void fdt_init(struct files_struct *files, char* name)
     files->next_fd = 3;
     files->nr_avail_fd = NR_OPEN - 3;
 
-    atomic_inc(&f_stdin.f_ref);
-    atomic_inc(&f_stdout.f_ref);
-    atomic_inc(&f_stderr.f_ref);
+    file_get(&f_stdin);
+    file_get(&f_stdout);
+    file_get(&f_stderr);
+}
+
+struct files_struct* fdt_dup(struct files_struct *fdt)
+{
+    char buffer[SPINLOCK_NAME_MAX_LEN];
+    struct files_struct *new_fdt = kcalloc(sizeof(struct files_struct), 1);
+    if (new_fdt == NULL) {
+        error("Failed to allocate new files_struct");
+        return NULL;
+    }
+
+    strncpy(buffer, fdt->fdt_lock.name, SPINLOCK_NAME_MAX_LEN - 1);
+    name_append_suffix(buffer, SPINLOCK_NAME_MAX_LEN, "_dup");
+    spinlock_init(&new_fdt->fdt_lock, buffer);
+
+    spinlock_acquire(&new_fdt->fdt_lock);
+    spinlock_acquire(&fdt->fdt_lock);
+
+    for (fd_t fd = 0; fd < NR_OPEN; fd++) {
+        if (fdt->fd[fd] != NULL) {
+            new_fdt->fd[fd] = memdup(fdt->fd[fd], sizeof(struct file));
+            new_fdt->fd[fd]->f_inode = memdup(new_fdt->fd[fd]->f_inode, sizeof(struct inode));
+        }
+    }
+
+    new_fdt->next_fd = fdt->next_fd;
+    new_fdt->nr_avail_fd = fdt->nr_avail_fd;
+
+    spinlock_release(&fdt->fdt_lock);
+    spinlock_release(&new_fdt->fdt_lock);
+
+    return new_fdt;
 }
 
 fd_t fd_alloc(struct files_struct *fdt, struct file* file)
@@ -96,6 +128,8 @@ fd_t fd_alloc(struct files_struct *fdt, struct file* file)
 
     fdt->nr_avail_fd--;
 
+    file_get(file);
+
     spinlock_release(&fdt->fdt_lock);
 
     return fd;
@@ -108,6 +142,7 @@ void fd_free(struct files_struct *fdt, fd_t fd) {
     spinlock_acquire(&fdt->fdt_lock);
 
     if(fdt->fd[fd] != NULL) {
+        file_put(fdt->fd[fd]);
         fdt->fd[fd] = NULL;
         fdt->nr_avail_fd++;
         find_avail_fd(fdt);
@@ -144,4 +179,14 @@ struct file* fd_get(struct files_struct *fdt, fd_t fd) {
     spinlock_release(&fdt->fdt_lock);
 
     return res;
+}
+
+void file_init(struct file *file, const struct file_operations *f_op, const char *path, unsigned int flags) {
+    memset(file, 0, sizeof(struct file));
+    file->f_op = f_op;
+    if(path)
+        strncpy(file->f_path, path, MAX_PATH_LEN - 1);
+    file->f_flags = flags;
+    file->fpos = 0;
+    atomic_init(&file->f_ref, 0);
 }

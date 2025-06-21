@@ -16,6 +16,15 @@ void*           memset(void *dst, int c, size_t n);
 int             memcmp(const void *v1, const void *v2, size_t n);
 void*           memmove(void *dst, const void *src, size_t n);
 void*           memcpy(void *dst, const void *src, size_t n);
+void*           memdup(const void *src, size_t n);
+
+/**
+ * append a suffix to name
+ * @param name: name buffer, must be large enough
+ * @param buflen: buffer length of name
+ * @param suffix: suffix to append
+ */
+void name_append_suffix(char *name, int buflen, const char *suffix);
 
 /* lib/printf.c */
 int             vsnprintf(char *out, size_t n, const char* fmt, va_list ap);
