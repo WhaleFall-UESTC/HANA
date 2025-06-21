@@ -385,7 +385,7 @@ flush_tlb() {
 
 static inline void
 flush_tlb_one(uint64 va) {
-  asm volatile("sfence.vma %0" : : "r" (va) : "memory")
+  asm volatile("sfence.vma %0" : : "r" (va) : "memory");
 }
 
 #define read_reg(REG, res) asm volatile("mv %0, " #REG : "=r"(res))

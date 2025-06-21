@@ -2,6 +2,7 @@
 #include <mm/memlayout.h>
 #include <mm/mm.h>
 #include <klib.h>
+#include <proc/proc.h>
 #include <platform.h>
 #include <trap/trap.h>
 #include <debug.h>
@@ -201,6 +202,13 @@ phys_to_virt(uint64 pa) {
 }
 
 
+#define CHECK(cond, msg, ...) \
+    if (!(cond)) { \
+        Log(ANSI_FG_RED, msg, ## __VA_ARGS__); \
+        p->killed = 1; \
+        return; \
+    }
+
 void 
 page_unmap_handler()
 {
@@ -212,7 +220,7 @@ page_unmap_handler()
     CHECK(vma, "vma not found");
 
     uint64 scause = r_scause();
-    CHECK((scause == STORE_AMO_ACCESS_FAULT && (vma->prot & PROT_WRITE)) && (ecode == LOAD_ACCESS_FAULT && (vma->prot & PROT_READ)), "vma prot error");
+    CHECK((scause == STORE_AMO_ACCESS_FAULT && (vma->prot & PROT_WRITE)) && (scause == LOAD_ACCESS_FAULT && (vma->prot & PROT_READ)), "vma prot error");
 
     char* mem = kalloc(PGSIZE);
     CHECK(mem, "out of memory");
@@ -226,7 +234,7 @@ page_unmap_handler()
         // iunlock(vma->file->ip);
     }
 
-    uint perm = PTE_U | PTE_MAT_CC | PTE_P;
+    uint perm = PTE_U;
     perm |= ((vma->prot & PROT_READ) ? PTE_R : 0);
     perm |= ((vma->prot & PROT_EXEC) ? PTE_X : 0);
     perm |= ((vma->prot & PROT_WRITE) ? PTE_W : 0);
@@ -239,7 +247,7 @@ page_unmap_handler()
         perm |= PTE_G;
     }
 
-    mappages(UPGTBL(p->pagetable), va, KERNEL_VA2PA(mem), PGSIZE, perm);
+    mappages(UPGTBL(p->pagetable), va, (uint64)mem, PGSIZE, perm);
 
     flush_tlb_one(va);
 }
