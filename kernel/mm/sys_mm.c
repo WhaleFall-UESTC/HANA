@@ -100,8 +100,8 @@ SYSCALL_DEFINE2(munmap, int, void*, addr, size_t, length)
     struct vm_area* vma = find_vma(p, va);
     if (!vma) return -1;
 
-    uint64 unmap_start = MAX(addr, vma->start);
-    uint64 unmap_end = MIN(addr + length, vma->end);
+    uint64 unmap_start = MAX(va, vma->start);
+    uint64 unmap_end = MIN(va + length, vma->end);
     size_t unmap_len = unmap_end - unmap_start;
 
     uvmunmap(UPGTBL(p->pagetable), va, (unmap_len >> PGSHIFT), UVMUNMAP_FREE);
@@ -125,7 +125,7 @@ SYSCALL_DEFINE2(munmap, int, void*, addr, size_t, length)
         vma->end = unmap_start;
     }
     else {
-        KALLOC(vm_area, new_vma);
+        KALLOC(struct vm_area, new_vma);
         memmove(new_vma, vma, sizeof(struct vm_area));
         new_vma->start = unmap_end;
         vma->end = unmap_start;
