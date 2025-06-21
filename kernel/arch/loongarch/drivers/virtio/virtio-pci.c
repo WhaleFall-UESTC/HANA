@@ -171,7 +171,7 @@ static uint32 virtio_msi_x_alloc_vec(void) {
 	return virtio_msi_x_vec++;
 }
 
-static uint32 virtio_init_irq_msix(volatile virtio_pci_header *header, pci_device_t *pci_dev) {
+uint32 virtio_init_irq_msix(volatile virtio_pci_header *header, pci_device_t *pci_dev) {
 	uint32 intid = virtio_msi_x_alloc_vec();
     int ret = pci_msix_add_vector(pci_dev, 0, PCI_MSIX_MSG_ADDR, intid);
     if(ret < 0) {
@@ -200,7 +200,7 @@ static uint32 virtio_init_irq_msix(volatile virtio_pci_header *header, pci_devic
     return intid;
 }
 #else
-static uint32 virtio_init_irq_intx(pci_device_t *pci_dev) {
+uint32 virtio_init_irq_intx(pci_device_t *pci_dev) {
     uint32 intid = pci_device_get_intc(pci_dev);
     pci_device_set_irq_line(pci_dev, intid);
 
