@@ -268,8 +268,8 @@ int virtio_net_init(virtio_pci_header *header, pci_device_t *pci_dev)
 
 	vdev->header = header;
 	vdev->cfg = cfg;
-	vdev->rx_info = virtq_add_to_device(header, virtq_alloc_num());
-    vdev->tx_info = virtq_add_to_device(header, virtq_alloc_num());
+	vdev->rx_info = virtq_add_to_device(header, 0);
+    vdev->tx_info = virtq_add_to_device(header, 1);
     assert(vdev->rx_info != NULL);
     assert(vdev->tx_info != NULL);
 
@@ -297,6 +297,7 @@ int virtio_net_init(virtio_pci_header *header, pci_device_t *pci_dev)
     netdev_init(&vdev->netdev, virtio_net_get_devid(), intid,
                 VIRTIO_NET_DEV_NAME, &virtio_net_ops);
 
-	debug("virtio-net 0x%lx (intid %u, MAC %s): ready!", virt_to_phys((uint64)header), intid, mac_ntoa(vdev->netdev.netif.mac));
+	debug("virtio-net 0x%lx ", virt_to_phys((uint64)header));
+	debug("(intid %u, MAC %s): ready!", intid, mac_ntoa(vdev->netdev.netif.mac));
 	return 0;
 }

@@ -251,7 +251,9 @@ int virtio_blk_init(volatile virtio_regs *regs, uint32 intid)
     virtio_check_capabilities(regs, blk_caps, nr_elem(blk_caps));
 
     // Perform device-specific setup
-    virtq_info = virtq_add_to_device(regs, virtq_alloc_num(), VIRTIO_DEFAULT_QUEUE_SIZE);
+    do {
+        virtq_info = virtq_add_to_device(regs, 0, VIRTIO_DEFAULT_QUEUE_SIZE);
+    } while(virtq_info == NULL);
     assert(virtq_info != NULL);
 
     vdev->regs = regs;

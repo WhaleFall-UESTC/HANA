@@ -253,10 +253,8 @@ int virtio_net_init(virtio_regs *regs, uint32 intid)
 
 	vdev->regs = regs;
 	vdev->cfg = cfg;
-	vdev->rx_info = virtq_add_to_device(regs, virtq_alloc_num(),
-                                                    VIRTIO_DEFAULT_QUEUE_SIZE);
-    vdev->tx_info = virtq_add_to_device(regs, virtq_alloc_num(),
-                                                    VIRTIO_DEFAULT_QUEUE_SIZE);
+	vdev->rx_info = virtq_add_to_device(regs, 0, VIRTIO_DEFAULT_QUEUE_SIZE);
+    vdev->tx_info = virtq_add_to_device(regs, 1, VIRTIO_DEFAULT_QUEUE_SIZE);
     assert(vdev->rx_info != NULL);
     assert(vdev->tx_info != NULL);
 
@@ -284,6 +282,7 @@ int virtio_net_init(virtio_regs *regs, uint32 intid)
     netdev_init(&vdev->netdev, virtio_net_get_devid(), intid,
                 VIRTIO_NET_DEV_NAME, &virtio_net_ops);
 
-	debug("virtio-net 0x%lx (intid %u, MAC %s): ready!", virt_to_phys((uint64)regs), intid, mac_ntoa(vdev->netdev.netif.mac));
+	debug("virtio-net 0x%lx", virt_to_phys((uint64)regs));
+	debug("(intid %u, MAC %s) : ready!", intid, mac_ntoa(vdev->netdev.netif.mac));
 	return 0;
 }

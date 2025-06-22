@@ -229,7 +229,6 @@ struct virtio_net_hdr {
 
 #define VIRTIO_NET_HDRLEN 10
 
-uint32 virtq_alloc_num();
 void virtq_create(struct virtq_info *virtq_info);
 uint32 virtq_alloc_desc(struct virtq_info *virtq_info, void *addr);
 void virtq_free_desc(struct virtq_info *virtq_info, uint32 desc);
