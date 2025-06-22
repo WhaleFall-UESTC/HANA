@@ -72,6 +72,7 @@ uvmcopy(pagetable_t cpgtbl, pagetable_t ppgtbl, uint64 sz)
 
 // given userspace destination virtual address
 // copy len bytes from kernel to user
+// return 0 on success
 int
 copyout(pagetable_t pgtbl, uint64 dstva, void* src, int len)
 {

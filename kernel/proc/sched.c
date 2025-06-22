@@ -88,8 +88,3 @@ yield(void)
     p->state = RUNNABLE;
     sched();
 }
-
-SYSCALL_DEFINE0(sched_yield, int) {
-    yield();
-    return 0;
-}
