@@ -27,6 +27,11 @@ int         copyin(pagetable_t pagetable, char* dst, uint64 srcva, int len);
 uint64      virt_to_phys(uint64 va);
 uint64      phys_to_virt(uint64 pa);
 void        uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free);
+void        free_pgtbl(pagetable_t pgtbl, uint64 sz);
+void        freewalk(pagetable_t pgtbl, int level);
+void        uvmfree(pagetable_t pgtbl, uint64 sz);
+
+int         do_munmap(void* addr, size_t length);
 
 void        store_page_fault_handler();
 void        page_unmap_handler();

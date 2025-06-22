@@ -94,5 +94,74 @@ SYSCALL_DEFINE5(clone, int, unsigned long, flags, void*, stack, void*, ptid, voi
     child->parent = proc;
     child->state = RUNNABLE;
 
+    // add child to proc_list
+    child->next = proc_list;
+    proc_list->prev = child;
+    proc_list = child;
+
     return child->pid;
+}
+
+
+// Wait for a child process to exit and return its pid.
+// Return -1 if this process has no children.
+// Return 0 if not found and set WNOHANG
+// WUNTRACED，WCONTINUED are not implemented
+SYSCALL_DEFINE3(wait4, int, int, pid, int*, status, int, options)
+{
+    struct proc* curproc = myproc();
+
+    for (;;) {
+        int found = 0;
+        int has_child = 0;
+        
+        for (struct proc* p = proc_list; p; p = p->next) {
+            if (p->parent == curproc && !p->waited) {
+                has_child = 1;
+
+                if (p->state == ZOMBIE) {
+                    found = 1;
+
+                    if (status != NULL) {
+                        int child_status = p->status;
+                        if (copyout(UPGTBL(p->pagetable), (uint64)status, &child_status, sizeof(int)) < 0) {
+                            return -1;
+                        }
+                    }
+                    
+                    // its parent is waiting for it
+                    p->waited = 1;
+                    int pid = p->pid;
+
+                    freeproc(p);
+
+                    return pid;
+                }
+            }
+        }
+
+        if (!found) {
+            if (!has_child || curproc->killed)
+                return -1;
+
+            if (options & WNOHANG)
+                return 0;
+
+            sleep(curproc);
+        }
+    }
+}
+
+
+SYSCALL_DEFINE1(exit, int, int, ec) {
+    do_exit(ec);
+    return 0;
+}
+
+SYSCALL_DEFINE0(getppid, int) {
+    return myproc()->parent->pid;
+}
+
+SYSCALL_DEFINE0(getpid, int) {
+    return myproc()->pid;
 }

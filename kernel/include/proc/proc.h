@@ -26,11 +26,19 @@ struct proc {
 
     int killed;
     void* chan;     // proc sleep on which channel
+
     int status;     // exit() return status
+
+    // for wait4, not initialize yet
+    int stopped;
+    int continued;
+    int exit_signal;
+    int waited;
 
     struct proc* parent;
 
     struct proc* next;
+    struct proc* prev;
 
     struct vm_area* vma_list;
     uint64 mmap_base;
@@ -47,6 +55,8 @@ struct proc {
 };
 
 enum proc_state{ INIT, SLEEPING, RUNNABLE, RUNNING, ZOMBIE, NR_PROC_STATE };
+
+extern struct proc* proc_list;
 
 struct cpu { 
     struct context context;
@@ -83,14 +93,16 @@ int             alloc_pid();
 struct proc*    alloc_proc();
 void            sleep(void* chan);
 void            wakeup(void* chan);
-void            exit(int status);
+void            do_exit(int status);
 int             kill(int pid);
+void            reparent(struct proc* p);
+void            freeproc(struct proc* p);
 
 
 #define EXIT_IF(cond, msg, ...) \
     if (cond) { \
         Log(ANSI_FG_RED, msg, ## __VA_ARGS__); \
-        exit(-1); \
+        do_exit(-1); \
     }
 
 

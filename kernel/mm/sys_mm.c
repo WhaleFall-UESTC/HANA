@@ -92,8 +92,7 @@ SYSCALL_DEFINE6(mmap, void*, void*, addr, size_t, length, int, prot, int, flags,
     return NULL;
 }
 
-SYSCALL_DEFINE2(munmap, int, void*, addr, size_t, length)
-{
+int do_munmap(void* addr, size_t length) {
     uint64 va = PGROUNDDOWN(addr);
     length = PGROUNDUP(length);
     if (length == 0) return -1;
@@ -107,7 +106,18 @@ SYSCALL_DEFINE2(munmap, int, void*, addr, size_t, length)
     uint64 unmap_end = MIN(va + length, vma->end);
     size_t unmap_len = unmap_end - unmap_start;
 
-    uvmunmap(UPGTBL(p->pagetable), va, (unmap_len >> PGSHIFT), UVMUNMAP_FREE);
+    int write_back = ((vma->flags & MAP_SHARED) && !(vma->flags & MAP_PRIVATE));
+    if (write_back) {
+        for (uint64 a = unmap_start; va < unmap_end; va += PGSIZE) {
+            pte_t* pte = walk(UPGTBL(p->pagetable), a, WALK_NOALLOC);
+            if (*pte & PTE_D) {
+                // write this page back to file
+                // vma->offset
+            }
+        }
+    }
+
+    uvmunmap(UPGTBL(p->pagetable), unmap_start, (unmap_len >> PGSHIFT), UVMUNMAP_FREE);
     
     if (unmap_start == vma->start && unmap_end == vma->end) {
         if (vma->prev) {
@@ -139,6 +149,12 @@ SYSCALL_DEFINE2(munmap, int, void*, addr, size_t, length)
     }
 
     return 0;
+}
+
+// not implement write back
+SYSCALL_DEFINE2(munmap, int, void*, addr, size_t, length)
+{
+    return do_munmap(addr, length);
 }
 
 SYSCALL_DEFINE1(brk, uintptr_t, uintptr_t, brk)

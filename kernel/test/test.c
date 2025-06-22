@@ -3,7 +3,7 @@
 #include <debug.h>
 #include <arch.h>
 
-extern void exit(int);
+extern void do_exit(int);
 
 void test() {
     // intr_off();
@@ -24,5 +24,5 @@ void test() {
 
     PASS("test finish!!!");
     // intr_on();
-    exit(-1);
+    do_exit(-1);
 }

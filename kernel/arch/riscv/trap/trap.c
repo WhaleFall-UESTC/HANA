@@ -143,7 +143,7 @@ user_trap()
     }
 
     if (p->killed)
-        exit(-1);
+        do_exit(-1);
 
     dive_to_user();
 }
@@ -185,7 +185,7 @@ syscall_handler()
 {
     struct proc *p = myproc();
     if (p->killed)
-        exit(-1);
+        do_exit(-1);
     
     intr_on();
 

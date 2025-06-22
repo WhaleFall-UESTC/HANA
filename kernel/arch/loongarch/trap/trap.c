@@ -133,7 +133,7 @@ user_trap()
     }
 
     if (p->killed)
-        exit(-1);
+        do_exit(-1);
 
     dive_to_user();
 }

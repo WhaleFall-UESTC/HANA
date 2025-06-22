@@ -243,3 +243,8 @@ page_unmap_handler()
 
     flush_tlb_one(p->pid, va);
 }
+
+void free_pgtbl(pagetable_t pgtbl, uint64 sz) {
+    uvmunmap(pgtbl, TRAPFRAME, 1, UVMUNMAP_FREE);
+    uvmfree(pgtbl, sz);
+}

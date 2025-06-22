@@ -12,8 +12,6 @@
 #include <fs/file.h>
 #include <syscall.h>
 
-extern struct proc* proc_list;
-
 volatile int next_pid = 1;
 struct proc* init_proc = NULL;
 
@@ -61,6 +59,7 @@ alloc_proc()
     context_set_init_func(p, (uint64) dive_to_user);
     
     p->next = NULL;
+    p->prev = NULL;
     p->parent = NULL;
 
     // init mmap
@@ -117,6 +116,7 @@ test_proc_init(uint64 test_func)
     test_proc->state = RUNNABLE;
 
     proc_list->next = test_proc;
+    test_proc->prev = proc_list;
 }
 
 
@@ -154,14 +154,23 @@ wakeup(void* chan)
 
 // Exit current process
 void
-exit(int status)
+do_exit(int status)
 {
     struct proc* p = myproc();
+
+    // munmap all vma
+    for (struct vm_area* vma = p->vma_list; vma; vma = vma->next) {
+        do_munmap((void*) vma->start, vma->end - vma->start);
+    }
+
     // close opened files
 
+
     // reparent to init
+    reparent(p);
 
     // wakeup parent, which might be sleeping in wait
+    wakeup(p->parent);
 
     // set status ZOMBIE
     p->status = status;
@@ -193,3 +202,50 @@ kill(int pid)
 }
 
 
+// Pass p's abandoned children to init.
+// Caller must hold wait_lock，a big lock protect processes in wait
+void
+reparent(struct proc* p)
+{
+    for (struct proc* np = proc_list; np; np = np->next) {
+        if (np->parent == p) {
+            np->parent = init_proc;
+            wakeup(init_proc);
+        }
+    }
+}
+
+void
+proc_free_pagetable(struct proc* p)
+{
+    if (upgtbl_decr(p->pagetable) > 1) 
+        return;
+
+    pagetable_t pgtbl = UPGTBL(p->pagetable);
+
+    free_pgtbl(pgtbl, p->sz);
+}
+
+
+void 
+freeproc(struct proc* p)
+{
+    assert(p != init_proc);
+
+    // free trapfram physical space at the same time
+    if (p->pagetable) 
+        proc_free_pagetable(p);
+    
+    // remove p from proc_list
+    if (p == proc_list) {
+        Assert(p->next, "there should be at least two processes");
+        proc_list = p->next;
+    }
+
+    struct proc* prev = p->prev;
+    struct proc* next = p->next;
+    if (prev) prev->next = next;
+    if (next) next->prev = prev;
+
+    kfree(p);
+}

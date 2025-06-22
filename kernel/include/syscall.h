@@ -132,5 +132,13 @@ void syscall();
 #define CLONE_CHILD_SETTID   0x01000000  // 将子线程 TID 写入 ctid
 #define CLONE_SIGCHLD        0x00000011  // 子进程退出发送 SIGCHLD
 
+/* wait4 options */
+
+#define WNOHANG   0x00000001  // 非阻塞选项
+#define WUNTRACED 0x00000002  // 报告停止状态（预留）
+#define WCONTINUED 0x00000004 // 报告继续状态（预留）
+
+
+
 #include <trap/syscall.h>
 #endif // __SYSCALL_H__

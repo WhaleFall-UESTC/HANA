@@ -206,6 +206,7 @@ void
 uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
 {
     assert(IS_PGALIGNED(va));
+    pagetable = (pagetable_t) KERNEL_PA2VA(pagetable);
 
     for (uint64 addr = va; addr < va + (npages << PGSHIFT); addr += PGSIZE) {
         pte_t* pte = walk(pagetable, addr, WALK_NOALLOC);
@@ -221,4 +222,33 @@ uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
 #endif
     }
 }
+
+
+// free pagetable
+void freewalk(pagetable_t pgtbl, int level) {
+    if (level > 2)
+        return;
+
+    pgtbl = (pagetable_t) KERNEL_PA2VA(pgtbl);
+    int npte = PGSIZE / sizeof(pte_t);
+
+    for (int i = 0; i < npte; i++) {
+        pte_t pte = pgtbl[i];
+        uint64 child = PTE2PA(pte);
+        freewalk((pagetable_t) child, level + 1);
+        pgtbl[i] = 0;
+    }
+
+    kfree(pgtbl);
+}
+
+
+// free all physical space in pagetable
+void uvmfree(pagetable_t pgtbl, uint64 sz) 
+{   
+    pgtbl = (pagetable_t) KERNEL_PA2VA(pgtbl);
+    if (sz > 0)
+        uvmunmap(pgtbl, 0, (PGROUNDUP(sz) >> PGSHIFT), UVMUNMAP_FREE);
+    freewalk(pgtbl, 0);
+}   
 
