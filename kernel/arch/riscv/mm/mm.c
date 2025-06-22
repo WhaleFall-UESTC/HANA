@@ -1,4 +1,5 @@
 #include <common.h>
+#include <drivers/virtio-mmio.h>
 #include <mm/memlayout.h>
 #include <mm/mm.h>
 #include <klib.h>
@@ -51,7 +52,7 @@ kvmmake()
     mappages(kpgtbl, UART0, UART0, VIRT_UART0_SIZE, PTE_R | PTE_W);
 
     // virtio
-    mappages(kpgtbl, VIRTIO0, VIRTIO0, VIRT_VIRTIO_SIZE, PTE_R | PTE_W);
+    mappages(kpgtbl, VIRTIO0, VIRTIO0, VIRTIO_MMIO_DEV_NUM*VIRT_VIRTIO_SIZE, PTE_R | PTE_W);
 
     // CLINT
     mappages(kpgtbl, CLINT, CLINT, VIRT_CLINT_SIZE, PTE_R | PTE_W);
