@@ -9,7 +9,7 @@ void test() {
     // intr_off();
     PASS("test start!!!");
 
-    lab_cow();
+    // lab_cow();
 
     // test_slab();
     // test_kalloc();

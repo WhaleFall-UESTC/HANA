@@ -17,6 +17,4 @@ struct tms {
 
 extern uint64 tick_counter;
 
-void account_time(struct proc*);
-
 #endif

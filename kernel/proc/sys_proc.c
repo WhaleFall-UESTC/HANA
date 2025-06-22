@@ -8,10 +8,11 @@
 #include <trap/trap.h>
 #include <proc/sched.h>
 #include <mm/mm.h>
+#include <mm/vma.h>
 #include <mm/memlayout.h>
 #include <fs/file.h>
 #include <syscall.h>
-
+#include <elf/elf.h>
 
 SYSCALL_DEFINE5(clone, int, unsigned long, flags, void*, stack, void*, ptid, void*, tls, void*, ctid)
 {
@@ -102,6 +103,66 @@ SYSCALL_DEFINE5(clone, int, unsigned long, flags, void*, stack, void*, ptid, voi
     return child->pid;
 }
 
+SYSCALL_DEFINE3(execve, int, const char*, path, char *const [], argv, char *const [], envp) {
+    if (path == NULL)
+        return -1;
+
+    struct proc* proc = myproc();
+    if (proc == NULL)
+        return -1;
+
+    
+
+    struct Elf64_Ehdr ehdr;
+    struct inode* elf_inode;
+
+    elf_inode = ; // ?
+
+    if (!elf_inode) 
+        return -1;
+
+    //  read_inode(inode, isuserspace, buffer, offset, size)
+    if (read_inode(elf_inode, 0, (uint64)&ehdr, 0, sizeof(ehdr)) != sizeof(ehdr))
+        return -1;
+
+    if (ehdr.e_ident[0] != ELFMAG0 || ehdr.e_ident[1] != ELFMAG1 ||
+        ehdr.e_ident[2] != ELFMAG2 || ehdr.e_ident[3] != ELFMAG3)
+        return -1;
+
+    vm_area* vma = proc->vma_list;
+    while (vma) {
+        vm_area* next = vma->next;
+        kfree(vma);
+        vma = next;
+    }
+    proc->vma_list = NULL;
+
+    for (int i = 0; i < ehdr.e_phnum; i++) {
+        struct Elf64_Phdr phdr;
+        uint64 ph_off = ehdr.e_phoff + i * sizeof(phdr);
+        if (read_inode(elf_inode, 0, (uint64)&phdr, ph_off, sizeof(phdr)) != sizeof(phdr)) {
+            return -1;
+        }
+
+        if (phdr.p_type != PT_LOAD)
+            continue;
+
+        uint64 memsz = MAX(phdr.p_memsz, phdr.p_filesz);
+        uint64 va = phdr.p_vaddr;
+
+        // TODO
+
+        memset((void*)(va + phdr.p_filesz), 0, memsz - phdr.p_filesz);
+
+        vm_area* vma = kmalloc(sizeof(vm_area));
+        vma->vm_start = va;
+        vma->vm_end = va + memsz;
+        vma->next = proc->vma_list;
+        proc->vma_list = vma;
+    }
+
+    return 0;
+}
 
 // Wait for a child process to exit and return its pid.
 // Return -1 if this process has no children.

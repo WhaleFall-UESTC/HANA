@@ -9,6 +9,7 @@
 #include <proc/sched.h>
 #include <trap/trap.h>
 #include <arch.h>
+#include <syscall.h>
 
 struct proc* proc_list;
 
@@ -88,5 +89,7 @@ yield(void)
     sched();
 }
 
-
-
+SYSCALL_DEFINE0(sched_yield, int) {
+    yield();
+    return 0;
+}

@@ -21,9 +21,9 @@ extern char timervec[];
 
 void account_time(struct proc* p) {
     if (r_sstatus() & SSTATUS_SPP) {
-        p->stime += INTERVAL;
+        p->stime += 1;
     } else {
-        p->utime += INTERVAL;
+        p->utime += 1;
     }
 }
 
