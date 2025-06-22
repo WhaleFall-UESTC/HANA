@@ -6,6 +6,7 @@
 #include <fs/fcntl.h>
 #include <fs/stat.h>
 #include <fs/file.h>
+#include <fs/mountp.h>
 #include <fs/dirent.h>
 #include <fs/devfs/devfs.h>
 #include <klib.h>
