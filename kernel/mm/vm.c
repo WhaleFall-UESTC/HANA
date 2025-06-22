@@ -153,6 +153,42 @@ copyin(pagetable_t pagetable, char* dst, uint64 srcva, int len)
     return 0;
 }
 
+int
+copyinstr(pagetable_t pagetable, char* dst, uint64 srcva, uint64 max)
+{
+    int got_null = 0;
+    pagetable = (pagetable_t) KERNEL_PA2VA(pagetable);
+    int cnt = 0;
+
+    while (got_null == 0 && max > 0) {
+        uint64 va0 = PGROUNDDOWN(srcva);
+        uint64 pa0 = walkaddr(pagetable, va0);
+        if (pa0 == 0) return -1;
+
+        uint64 n = PGSIZE - (srcva - va0);
+        n = (n > max ? max : n);
+
+        char *p = (char *) (pa0 + (srcva - va0));
+        while (n > 0) {
+            cnt++;
+            if (*p == '\0') {
+                *dst = '\0';
+                got_null = 1;
+                break;
+            } else {
+                *dst = *p;
+            }
+
+            --n;
+            --max;
+            p++;
+            dst++;
+        }
+    }
+
+    return (got_null ? cnt : -1);
+}
+
 
 uint64 copy_from_user(void *to, const void *from, unsigned long n) {
     copyin(UPGTBL(myproc()->pagetable), (char *) to, (uint64) from, n);
@@ -225,7 +261,7 @@ uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
 }
 
 
-// free pagetable
+// free pagetable itself
 void freewalk(pagetable_t pgtbl, int level) {
     if (level > 2)
         return;
@@ -252,4 +288,3 @@ void uvmfree(pagetable_t pgtbl, uint64 sz)
         uvmunmap(pgtbl, 0, (PGROUNDUP(sz) >> PGSHIFT), UVMUNMAP_FREE);
     freewalk(pgtbl, 0);
 }   
-

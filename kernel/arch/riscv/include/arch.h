@@ -12,8 +12,10 @@
 #define PTE_AVL (7L << 9)
 #define PTE_COW (1L << 9)
 
-#define PTE_WR (PTE_V | PTE_W | PTE_R)
+#define PTE_RW (PTE_V | PTE_W | PTE_R)
 #define PTE_RX (PTE_V | PTE_R | PTE_X)
+#define PTE_RONLY (PTE_V | PTE_R)
+#define PTE_RWX (PTE_V | PTE_R | PTE_X | PTE_W)
 
 #define PA2PTE(pa) ((((uint64)pa) >> 12) << 10)
 #define PTE2PA(pte) ((((uint64)(pte)) >> 10) << 12)

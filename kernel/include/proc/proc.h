@@ -98,6 +98,9 @@ int             kill(int pid);
 void            reparent(struct proc* p);
 void            freeproc(struct proc* p);
 
+void            proc_free_pagetable(struct proc* p);
+void            freeproc(struct proc* p);
+
 
 #define EXIT_IF(cond, msg, ...) \
     if (cond) { \

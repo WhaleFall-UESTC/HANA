@@ -11,7 +11,7 @@
 #include <mm/memlayout.h>
 #include <fs/file.h>
 #include <syscall.h>
-#include <elf/elf.h>
+#include <elf.h>
 
 SYSCALL_DEFINE5(clone, int, unsigned long, flags, void*, stack, void*, ptid, void*, tls, void*, ctid)
 {
@@ -102,18 +102,195 @@ SYSCALL_DEFINE5(clone, int, unsigned long, flags, void*, stack, void*, ptid, voi
     return child->pid;
 }
 
+#define LOADER_CHECK(cond) \
+    if (!(cond)) goto bad
 
-SYSCALL_DEFINE3(execve, int, const char*, path, const char**, argv, const char**, envp)
+SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char**, uenvp)
 {
-    if (path == NULL)
+    if (upath == NULL)
         return -1;
 
-    struct proc* proc = myproc();
-    if (proc == NULL)
+    struct proc* p = myproc();
+    pagetable_t pgtbl = NULL;
+    pagetable_t old_pgtbl = UPGTBL(p->pagetable);
+    // sz is a pointer, point at the current top of virtual user space
+    uint64 sz = 0;
+
+    char* path = kalloc(PATH_MAX);
+    if (copyinstr(old_pgtbl, path, (uint64) upath, PATH_MAX) < 0) {
+        error("Path too long");
+        kfree(path);
         return -1;
+    }
+    
+    Elf64_Ehdr elf = {};
 
+    // 从文件偏移量为 0 的地方读取 Elf 头，大小 sizeof(Elf64_Ehdr)，写到 elf 里面
 
-    return 0;
+    kfree(path);
+    
+    LOADER_CHECK(*(uint*)(&elf.e_ident) == ELF_MAGIC);
+    
+    Elf64_Phdr phdr = {};
+    pgtbl = uvmmake((uint64) p->trapframe);
+
+    // for (int i = 0, off = elf.e_phoff; i < elf.phnum; i++, off += sizeof(Elf64_Phdr)) 
+    for (int i = 0; i < elf.e_phnum; i++) 
+    {
+        // 从偏移量为 off 的地方读取各个段的信息，大小 sizeof(Elf64_Phdr)，写到 phdr
+
+        if (phdr.p_type != PT_LOAD)
+            continue;
+
+        LOADER_CHECK(phdr.p_memsz >= phdr.p_filesz);
+        LOADER_CHECK(phdr.p_vaddr + phdr.p_memsz >= phdr.p_vaddr);
+        
+        // load to memory
+        LOADER_CHECK(IS_PGALIGNED(phdr.p_vaddr));
+
+        int perms = PTE_U;
+        if (phdr.p_flags & (PF_R | PF_W)) perms |= PTE_RW;
+        else if (phdr.p_flags & (PF_R | PF_X)) perms |= PTE_RX;
+        else if (phdr.p_flags & (PF_R)) perms |= PTE_RONLY;
+        else perms |= PTE_RWX;
+        
+        char* mem = kalloc(phdr.p_memsz);
+        mappages(pgtbl, phdr.p_vaddr, KERNEL_VA2PA(mem), phdr.p_memsz, perms);
+
+        sz = max_uint64(sz, phdr.p_vaddr + phdr.p_memsz);
+
+        // 将段的内容拷贝到 mem
+    }
+
+    // 关闭文件
+
+    // now map user stack 
+    // first we leave a protect page, which is blank and unmapped
+    sz = PGROUNDUP(sz) + PGSIZE;
+    // next, alloc and map user stack
+    char* ustack = kalloc(PGSIZE);
+    mappages(pgtbl, sz, KERNEL_VA2PA(ustack), PGSIZE, PTE_U | PTE_RW);
+    pte_t* pte = walk(pgtbl, sz, WALK_NOALLOC);
+
+    sz += PGSIZE;
+    // stack pointer, now point at top
+    uint64 sp = sz, stack_top = sz;
+    // user stack physical page
+    char* ustack_p = (char*) KERNEL_PA2VA(PTE2PA(*pte));
+
+    // prepare argv, envp in user stack
+    // first, copy them from user space to kernel
+    int max_size = MAX_ARGS * sizeof(char*);
+    char** argv = kalloc(max_size);
+    char** envp = kalloc(max_size);
+    copyin(old_pgtbl, (void*)argv, (uint64)uargv, max_size);
+    copyin(old_pgtbl, (void*)envp, (uint64)uenvp, max_size);
+
+    int argc, envc;
+    for (argc = 0; argv[argc]; argc++);
+    for (envc = 0; envp[envc]; envc++);
+
+    // copy all envp string to a tempoary memory
+    // caculate the real space they need
+    // then copy to ustack
+    char* envp_mem = kalloc(envc * MAX_ARG_STRLEN);
+    uint64 envp_nbytes = 0;
+    for (int i = 0; i < envc; i++) {
+        int size = copyinstr(old_pgtbl, &envp_mem[envp_nbytes], (uint64) envp[i], MAX_ARG_STRLEN);
+        if (size < 0) {
+            kfree(envp);
+            kfree(argv);
+            kfree(envp_mem);
+            goto bad;
+        }
+        size = ALIGN(size, 8);
+        // store offsets of each string
+        envp[i] = (char*) envp_nbytes;
+        envp_nbytes += size;
+    }
+
+    // copy envp string to stack
+    memmove(&ustack_p[PGSIZE - envp_nbytes], envp_mem, envp_nbytes);
+    kfree(envp_mem);
+
+    sp -= envp_nbytes;
+    uint64 p_envp = sp - 2 * 8;
+
+    // caculate envp string address, and store it
+    int addr = PGSIZE - envp_nbytes - 8;
+    for (int i = 0; i < envc; i++) {
+        addr -= 8;
+        *((uint64*)(&ustack_p[addr])) = ((uint64) envp[i]) + sp;
+    }
+
+    kfree(envp);
+    sp -= 8;
+    sp -= envc * 8;
+    sp -= 8;
+
+    // copy all arg string to a tempoary memory
+    // caculate the real space they need
+    // then copy to ustack
+    char* argv_mem = kalloc(argc * MAX_ARG_STRLEN);
+    uint64 argv_nbytes = 0;
+    for (int i = 0; i < argc; i++) {
+        int size = copyinstr(old_pgtbl, &argv_mem[argv_nbytes], (uint64) argv[i], MAX_ARG_STRLEN);
+        if (size < 0) {
+            kfree(argv);
+            kfree(argv_mem);
+            goto bad;
+        }
+        size = ALIGN(size, 8);
+        // store offsets of each string
+        argv[i] = (char*) argv_nbytes;
+        argv_nbytes += size;
+    }
+
+    // copy envp string to stack
+    memmove(&ustack_p[PGSIZE - (stack_top - sp) - argv_nbytes], argv_mem, argv_nbytes);
+    kfree(argv_mem);
+
+    sp -= argv_nbytes;
+    uint64 p_argv = sp - 2 * 8;
+
+    // caculate envp string address, and store it
+    int addr_ = PGSIZE - (stack_top - sp) - 8;
+    for (int i = 0; i < argc; i++) {
+        addr_ -= 8;
+        *((uint64*)(&ustack_p[addr_])) = ((uint64) argv[i]) + sp;
+    }
+
+    kfree(argv);
+    sp -= 8;
+    sp -= argc * 8;
+    sp -= 8;
+
+    // store argc
+    sp -= 8;
+    *((uint64*)(&ustack_p[PGSIZE - (stack_top - sp)])) = (uint64) argc;
+
+    p->trapframe->a1 = p_argv;
+    p->trapframe->a2 = p_envp;
+
+    // free old pagetable
+    proc_free_pagetable(p);
+    p->pagetable = upgtbl_init(pgtbl);
+    p->sz = sz;
+    p->heap_start = sz;
+    trapframe_set_era(p, elf.e_entry);
+    p->trapframe->sp = sp;
+
+    return argc;
+
+bad:
+    if (pgtbl) {
+        uvmfree(pgtbl, sz);
+        freewalk(pgtbl, 2);
+    }
+
+    // close file if needed
+
+    return -1;
 }
 
 // Wait for a child process to exit and return its pid.

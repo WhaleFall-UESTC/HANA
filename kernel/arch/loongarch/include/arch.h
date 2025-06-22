@@ -30,8 +30,10 @@ typedef pte_t *pagetable_t;
 #define PTE_U PTE_PLV3
 #define PTE_S PTE_PLV0
 
-#define PTE_WR (PTE_V | PTE_P | PTE_W | PTE_MAT_CC | PTE_D | PTE_NX)
+#define PTE_RW (PTE_V | PTE_P | PTE_W | PTE_MAT_CC | PTE_D | PTE_NX)
 #define PTE_RX (PTE_V | PTE_P | PTE_MAT_CC)
+#define PTE_RONLY (PTE_V | PTE_P | PTE_MAT_CC | PTE_NX)
+#define PTE_RWX (PTE_V | PTE_P | PTE_W | PTE_MAT_CC | PTE_D)
 
 #define PAMASK  (0xFFFFFFFFFUL << PGSHIFT)
 #define PTE2PA(pte) (((uint64)(pte)) & PAMASK)

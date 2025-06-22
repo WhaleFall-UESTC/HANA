@@ -13,6 +13,10 @@
 
 #define KSTACK_SIZE (2*PGSIZE)
 
+#define MAX_ARGS 32
+#define PATH_MAX 128
+#define MAX_ARG_STRLEN 128
+
 #define PGROUNDUP(sz)  (((uint64)(sz)+PGOFFMASK) & PGMASK)
 #define PGROUNDDOWN(a) (((uint64)(a)) & PGMASK)
 #define IS_PGALIGNED(a) (!((uint64)(a) & PGOFFMASK))
@@ -90,9 +94,13 @@
 // typedefs
 typedef unsigned long uint64;
 typedef unsigned int uint32;
-typedef unsigned int uint;
 typedef unsigned short uint16;
 typedef unsigned char uint8;
+
+typedef unsigned int uint;
+typedef unsigned char uchar;
+typedef unsigned short ushort;
+typedef unsigned long ulong;
 
 typedef long int64;
 typedef int int32;
