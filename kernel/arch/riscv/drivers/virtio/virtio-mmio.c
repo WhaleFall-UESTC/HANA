@@ -174,8 +174,8 @@ static int virtio_dev_init(uint64 virt, uint32 intid)
 	{
 	case VIRTIO_DEV_BLK:
 		return virtio_blk_init(regs, intid);
-	// case VIRTIO_DEV_NET:
-		// return virtio_net_init(regs, intid);
+	case VIRTIO_DEV_NET:
+		return virtio_net_init(regs, intid);
 	default:
 		error("unsupported virtio device ID 0x%x",
 			   READ32(regs->DeviceID));

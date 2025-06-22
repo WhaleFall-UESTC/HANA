@@ -258,7 +258,7 @@ int virtio_blk_init(volatile virtio_pci_header *header, pci_device_t *pci_dev)
     vdev = kalloc(sizeof(struct virtio_blk));
 
     // Perform device-specific setup
-    virtq_info = virtq_add_to_device(header, virtq_alloc_num());
+    virtq_info = virtq_add_to_device(header, 0);
     assert(virtq_info != NULL);
     
 #ifndef VIRTIO_PCI_ENABLE_MSI_X

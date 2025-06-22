@@ -268,8 +268,8 @@ int virtio_net_init(virtio_pci_header *header, pci_device_t *pci_dev)
 
 	vdev->header = header;
 	vdev->cfg = cfg;
-	vdev->rx_info = virtq_add_to_device(header, virtq_alloc_num());
-    vdev->tx_info = virtq_add_to_device(header, virtq_alloc_num());
+	vdev->rx_info = virtq_add_to_device(header, 0);
+    vdev->tx_info = virtq_add_to_device(header, 1);
     assert(vdev->rx_info != NULL);
     assert(vdev->tx_info != NULL);
 

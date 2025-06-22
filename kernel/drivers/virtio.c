@@ -14,10 +14,6 @@
 
 static uint32 virtq_num = 0;
 
-uint32 virtq_alloc_num() {
-	return virtq_num ++;
-}
-
 void virtq_create(struct virtq_info *virtq_info)
 {
 	int i;

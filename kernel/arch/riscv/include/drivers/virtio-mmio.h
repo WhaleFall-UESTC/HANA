@@ -61,6 +61,6 @@ void virtio_check_capabilities(virtio_regs *regs, struct virtio_cap *caps, uint3
 int virtio_blk_init(volatile virtio_regs *regs, uint32 intid);
 int virtio_net_init(virtio_regs *regs, uint32 intid);
 
-#define VIRTIO_MMIO_DEV_NUM 1
+#define VIRTIO_MMIO_DEV_NUM 8
 
 #endif // __VIRTIO_MMIO_H__

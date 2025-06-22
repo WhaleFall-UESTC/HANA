@@ -253,10 +253,8 @@ int virtio_net_init(virtio_regs *regs, uint32 intid)
 
 	vdev->regs = regs;
 	vdev->cfg = cfg;
-	vdev->rx_info = virtq_add_to_device(regs, virtq_alloc_num(),
-                                                    VIRTIO_DEFAULT_QUEUE_SIZE);
-    vdev->tx_info = virtq_add_to_device(regs, virtq_alloc_num(),
-                                                    VIRTIO_DEFAULT_QUEUE_SIZE);
+	vdev->rx_info = virtq_add_to_device(regs, 0, VIRTIO_DEFAULT_QUEUE_SIZE);
+    vdev->tx_info = virtq_add_to_device(regs, 1, VIRTIO_DEFAULT_QUEUE_SIZE);
     assert(vdev->rx_info != NULL);
     assert(vdev->tx_info != NULL);
 
