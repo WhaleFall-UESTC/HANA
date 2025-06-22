@@ -4,6 +4,7 @@
 #include <fs/stat.h>
 #include <fs/dirent.h>
 #include <fs/pipe.h>
+#include <fs/mountp.h>
 #include <fs/ext4/ext4.h>
 #include <fs/devfs/devfs.h>
 
@@ -12,10 +13,7 @@
 #include <syscall.h>
 #include <debug.h>
 
-#define NR_MOUNT 16
-
-struct mountpoint mount_table[NR_MOUNT];
-int mount_count = 0, i_unfixed_mp;
+const int i_unfixed_mp = 1;
 const struct file_system *filesys[] = {&devfs_fs, &ext4_fs};
 
 /************************ Export and Helper functions ************************/
@@ -30,21 +28,6 @@ static const struct file_system *filesys_find(const char *fstype)
 	return NULL;
 }
 
-static int str_match_prefix(const char *str, const char *prefix)
-{
-	int p_len = strlen(prefix);
-	int str_len = strlen(str);
-	int end_index = 0;
-
-	while (end_index < p_len && end_index < str_len &&
-		   prefix[end_index] == str[end_index])
-	{
-		end_index++;
-	}
-
-	return end_index;
-}
-
 static inline int dirent_name_len(const char* str) {
 	int ret = 0;
 	while(*str != '\0' && *str != '/') {
@@ -52,23 +35,6 @@ static inline int dirent_name_len(const char* str) {
 		ret ++;
 	}
 	return ret;
-}
-
-static int mountpoint_find(const char *path, int start)
-{
-	int max_len = -1, res = -1;
-
-	for (int i = start; i < mount_count; i++)
-	{
-		int len = str_match_prefix(path, mount_table[i].mountpoint) - 1;
-		if (len > max_len && len + 1 == strlen(mount_table[i].mountpoint))
-		{
-			max_len = len;
-			res = i;
-		}
-	}
-
-	return res;
 }
 
 /**
@@ -162,8 +128,9 @@ static int get_absolute_path(const char *path, char *full_path, fd_t dirfd)
 }
 
 int vfilesys_init() {
-	devfs_init(&mount_table[mount_count++]);
-	i_unfixed_mp = 1;
+	struct mountpoint mp;
+	devfs_init(&mp);
+	mountpoint_add(&mp);
 	iofd_init();
 	return 0;
 }
@@ -243,7 +210,7 @@ SYSCALL_DEFINE4(openat, fd_t, fd_t, dirfd, const char *, path, int, flags, umode
 {
 	fd_t fd;
 	struct mountpoint *mount_p = NULL;
-	int ret, mp_index;
+	int ret;
 	char full_path[MAX_PATH_LEN];
 	struct file *file = NULL;
 	struct inode *inode = NULL;
@@ -260,13 +227,12 @@ SYSCALL_DEFINE4(openat, fd_t, fd_t, dirfd, const char *, path, int, flags, umode
 	}
 
 	// find mountpoint
-	mp_index = mountpoint_find(full_path, 0);
-	if (mp_index < 0)
+	mount_p = mountpoint_find(full_path, 0);
+	if (mount_p == NULL)
 	{
 		error("mountpoint not found for path %s", full_path);
 		goto out_err;
 	}
-	mount_p = &mount_table[mp_index];
 	assert(mount_p->fs != NULL);
 
 	file = kcalloc(sizeof(struct file), 1);
@@ -442,7 +408,7 @@ SYSCALL_DEFINE3(lseek, off_t, int, fd, off_t, offset, int, whence)
 SYSCALL_DEFINE2(stat, int, const char *, path, struct stat *, buf)
 {
 	struct mountpoint *mount_p;
-	int ret, mp_index;
+	int ret;
 	char full_path[MAX_PATH_LEN];
 
 	ret = get_absolute_path(path, full_path, AT_FDCWD);
@@ -453,14 +419,12 @@ SYSCALL_DEFINE2(stat, int, const char *, path, struct stat *, buf)
 	}
 
 	// find mountpoint
-	mp_index = mountpoint_find(full_path, 0);
-	if (mp_index < 0)
+	mount_p = mountpoint_find(full_path, 0);
+	if (mount_p == NULL)
 	{
 		error("mountpoint not found for path %s", full_path);
 		return -1;
 	}
-	mount_p = &mount_table[mp_index];
-	assert(mount_p->fs != NULL);
 
 	ret = call_interface(mount_p->fs->fs_op, getattr, int, full_path, buf);
 	if (ret < 0)
@@ -498,7 +462,7 @@ SYSCALL_DEFINE2(fstat, int, int, fd, struct stat *, buf)
 SYSCALL_DEFINE3(unlinkat, int, fd_t, dirfd, const char *, path, unsigned int, flags)
 {
 	struct mountpoint *mount_p;
-	int ret, mp_index;
+	int ret;
 	char full_path[MAX_PATH_LEN];
 
 	ret = get_absolute_path(path, full_path, dirfd);
@@ -509,14 +473,12 @@ SYSCALL_DEFINE3(unlinkat, int, fd_t, dirfd, const char *, path, unsigned int, fl
 	}
 
 	// find mountpoint
-	mp_index = mountpoint_find(full_path, 0);
-	if (mp_index < 0)
+	mount_p = mountpoint_find(full_path, 0);
+	if (mount_p == NULL)
 	{
 		error("mountpoint not found for path %s", full_path);
 		return -1;
 	}
-	mount_p = &mount_table[mp_index];
-	assert(mount_p->fs != NULL);
 
 	if (flags & AT_REMOVEDIR)
 		ret = call_interface(mount_p->fs->fs_op, rmdir, int, full_path);
@@ -595,7 +557,7 @@ SYSCALL_DEFINE3(getdents64, ssize_t, int, fd, struct dirent *, buf, size_t, len)
 SYSCALL_DEFINE3(mkdirat, int, fd_t, dirfd, const char *, path, umode_t, mode)
 {
 	struct mountpoint *mount_p;
-	int ret, mp_index;
+	int ret;
 	char full_path[MAX_PATH_LEN];
 
 	ret = get_absolute_path(path, full_path, dirfd);
@@ -606,14 +568,12 @@ SYSCALL_DEFINE3(mkdirat, int, fd_t, dirfd, const char *, path, umode_t, mode)
 	}
 
 	// find mountpoint
-	mp_index = mountpoint_find(full_path, 0);
-	if (mp_index < 0)
+	mount_p = mountpoint_find(full_path, 0);
+	if (mount_p == NULL)
 	{
 		error("mountpoint not found for path %s", full_path);
 		return -1;
 	}
-	mount_p = &mount_table[mp_index];
-	assert(mount_p->fs != NULL);
 
 	debug("mkdir %s, mode = %d", full_path, mode);
 	ret = call_interface(mount_p->fs->fs_op, mkdir, int, full_path, mode);
@@ -629,7 +589,7 @@ SYSCALL_DEFINE3(mkdirat, int, fd_t, dirfd, const char *, path, umode_t, mode)
 SYSCALL_DEFINE5(linkat, int, fd_t, olddirfd, const char *, oldpath, fd_t, newdirfd, const char *, newpath, unsigned int, flags)
 {
 	struct mountpoint *mount_p;
-	int ret, mp_index;
+	int ret;
 	struct files_struct *fdt = myproc()->fdt;
 	struct file *old_file = fd_get(fdt, olddirfd);
 	char full_old_path[MAX_PATH_LEN];
@@ -660,14 +620,12 @@ SYSCALL_DEFINE5(linkat, int, fd_t, olddirfd, const char *, oldpath, fd_t, newdir
 	}
 
 	// find mountpoint
-	mp_index = mountpoint_find(full_old_path, 0);
-	if (mp_index < 0)
+	mount_p = mountpoint_find(full_old_path, 0);
+	if (mount_p == NULL)
 	{
 		error("mountpoint not found for path %s", full_old_path);
 		return -1;
 	}
-	mount_p = &mount_table[mp_index];
-	assert(mount_p->fs != NULL);
 
 	ret = call_interface(mount_p->fs->fs_op, link, int, full_old_path, full_new_path);
 	if (ret < 0)
@@ -693,7 +651,7 @@ SYSCALL_DEFINE5(linkat, int, fd_t, olddirfd, const char *, oldpath, fd_t, newdir
 SYSCALL_DEFINE3(symlinkat, int, const char *, target, fd_t, newdirfd, const char *, linkpath)
 {
 	struct mountpoint *mount_p;
-	int ret, mp_index;
+	int ret;
 	char full_linkpath[MAX_PATH_LEN];
 
 	ret = get_absolute_path(linkpath, full_linkpath, newdirfd);
@@ -704,14 +662,12 @@ SYSCALL_DEFINE3(symlinkat, int, const char *, target, fd_t, newdirfd, const char
 	}
 
 	// find mountpoint
-	mp_index = mountpoint_find(target, 0);
-	if (mp_index < 0)
+	mount_p = mountpoint_find(target, 0);
+	if (mount_p == NULL)
 	{
 		error("mountpoint not found for path %s", target);
 		return -1;
 	}
-	mount_p = &mount_table[mp_index];
-	assert(mount_p->fs != NULL);
 
 	ret = call_interface(mount_p->fs->fs_op, symlink, int, target, full_linkpath);
 	if (ret < 0)
@@ -729,9 +685,9 @@ SYSCALL_DEFINE3(symlinkat, int, const char *, target, fd_t, newdirfd, const char
  */
 SYSCALL_DEFINE5(mount, int, const char *, special, const char *, dir, const char *, fstype, unsigned long, flags, const void *, data)
 {
-	int len, ret, mp_index;
+	int len, ret;
 	char full_path_sp[MAX_PATH_LEN], full_path_dir[MAX_PATH_LEN];
-	struct mountpoint *mp;
+	struct mountpoint mp = {0};
 	struct blkdev *blkdev;
 
 	ret = get_absolute_path(special, full_path_sp, AT_FDCWD);
@@ -764,29 +720,26 @@ SYSCALL_DEFINE5(mount, int, const char *, special, const char *, dir, const char
 		return -1;
 	}
 
-	mp_index = mountpoint_find(full_path_dir, i_unfixed_mp);
-	if (mp_index != -1)
+	// 检查挂载点是否已被使用
+	if (mountpoint_find(full_path_dir, i_unfixed_mp) != NULL)
 	{
 		error("Mount point already used.");
 		return -1;
 	}
 
-	mp_index = mount_count++;
-	mp = &mount_table[mp_index];
+	mp.blkdev = blkdev;
+	mp.device = device;
+	mp.fs = filesys_find(fstype);
+	mp.mountpoint = strdup(full_path_dir);
 
-	assert(mp->fs == NULL);
+	mountpoint_add(&mp);
 
-	mp->blkdev = blkdev;
-	mp->device = device;
-	mp->fs = filesys_find(fstype);
-	mp->mountpoint = strdup(full_path_dir);
-
-	return call_interface(mp->fs->fs_op, mount, int, blkdev, mp, data);
+	return call_interface(mp.fs->fs_op, mount, int, blkdev, &mount_table[mount_count-1], data);
 }
 
 SYSCALL_DEFINE2(umount2, int, const char *, special, int, flags)
 {
-	int ret, mp_index;
+	int ret;
 	char full_path_sp[MAX_PATH_LEN];
 	struct mountpoint *mp;
 
@@ -797,14 +750,12 @@ SYSCALL_DEFINE2(umount2, int, const char *, special, int, flags)
 		return -1;
 	}
 
-	mp_index = mountpoint_find(full_path_sp, i_unfixed_mp);
-	if (mp_index < 0)
+	mp = mountpoint_find(full_path_sp, i_unfixed_mp);
+	if (mp == NULL)
 	{
 		error("Mount point not found.");
 		return -1;
 	}
-
-	mp = &mount_table[mp_index];
 
 	assert(mp != NULL);
 	assert(mp->fs != NULL);
@@ -817,13 +768,15 @@ SYSCALL_DEFINE2(umount2, int, const char *, special, int, flags)
 		return -1;
 	}
 
+	mountpoint_remove(mp->mountpoint);
+
 	return 0;
 }
 
 /**
  * Create a pipe
  * @param pipefd[0] refers to the read end of the pipe.
- * @param pipefd[1] refers to the write end of the pipe
+ * @param pipefd[1] refers to the write end of the pipe.
  * @param flags flag
  */
 SYSCALL_DEFINE2(pipe2, int, int*, pipefd, int, flags) {

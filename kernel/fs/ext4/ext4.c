@@ -5,6 +5,7 @@
 #include <fs/stat.h>
 #include <fs/file.h>
 #include <fs/dirent.h>
+#include <fs/mountp.h>
 #include <fs/devfs/devfs.h>
 
 #include <fs/ext4/ext4.h>

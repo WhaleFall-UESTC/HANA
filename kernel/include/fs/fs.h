@@ -100,16 +100,21 @@ struct file_system
     const struct fs_operations *fs_op;
 };
 
-struct devfs_device;
-struct mountpoint
-{
-    const char *mountpoint;
-    const struct file_system *fs;
-    const struct blkdev *blkdev;
-    const struct devfs_device *device;
-    void* private;
-};
-
 extern int vfilesys_init();
+
+static inline int str_match_prefix(const char *str, const char *prefix)
+{
+	int p_len = strlen(prefix);
+	int str_len = strlen(str);
+	int end_index = 0;
+
+	while (end_index < p_len && end_index < str_len &&
+		   prefix[end_index] == str[end_index])
+	{
+		end_index++;
+	}
+
+	return end_index;
+}
 
 #endif // __FS_H__
