@@ -112,7 +112,7 @@ int do_munmap(void* addr, size_t length) {
             pte_t* pte = walk(UPGTBL(p->pagetable), a, WALK_NOALLOC);
             if (*pte & PTE_D) {
                 // write this page back to file
-                // vma->offset
+                // vma->offset  
             }
         }
     }
