@@ -26,9 +26,9 @@ QEMU := qemu-system-loongarch64
 QEMUOPTS := -kernel $(KERNEL) -m $(MEM) -nographic -smp $(SMP) -drive file=$(FS),if=none,format=raw,id=x0  \
             -device virtio-blk-pci,drive=x0 -no-reboot \
             -rtc base=utc \
-			-device virtio-net-pci,netdev=net0 \
-            -netdev user,id=net0,hostfwd=tcp::5555-:5555,hostfwd=udp::5555-:5555  \
-            -drive file=$(DISK),if=none,format=raw,id=x1 -device virtio-blk-pci,drive=x1,bus=pcie.0 \
+			# -device virtio-net-pci,netdev=net0 \
+            # -netdev user,id=net0,hostfwd=tcp::5555-:5555,hostfwd=udp::5555-:5555  \
+            # -drive file=$(DISK),if=none,format=raw,id=x1 -device virtio-blk-pci,drive=x1,bus=pcie.0 \
 			# -d guest_errors,trace:virtio*,trace:pic*,trace:apic*,trace:ioapic*,trace:pci*,trace:loongarch_msi* \
 			# -d trace:loongarch_pch_pic_irq_handler,trace:loongarch_extioi* \
 			# -d trace:loongarch_pch_pic_low*,trace:loongarch_pch_pic_high*,trace:loongarch_pch_pic_readb,trace:loongarch_pch_pic_writeb \

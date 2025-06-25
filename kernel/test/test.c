@@ -9,10 +9,10 @@ void test() {
     // intr_off();
     PASS("test start!!!");
 
-    lab_cow();
+    // lab_cow();
 
-    // test_slab();
-    // test_kalloc();
+    test_slab();
+    test_kalloc();
 
 
     // test_uart();
@@ -20,7 +20,7 @@ void test() {
     // test_walkaddr();
     // test_virtio();
 
-    // test_fs();
+    test_fs();
 
     PASS("test finish!!!");
     // intr_on();

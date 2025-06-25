@@ -20,8 +20,8 @@ int pipe_init(struct file* rfile, struct file* wfile) {
 
 	spinlock_init(lock, "pipe");
 
-	file_init(rfile, &pipe_fileops, NULL, O_RDONLY);
-	file_init(wfile, &pipe_fileops, NULL, O_WRONLY);
+	file_init(rfile, &pipe_fileops, NULL, O_RDONLY, (void*)pipe);
+	file_init(wfile, &pipe_fileops, NULL, O_WRONLY, (void*)pipe);
 
 	return 0;
 err:

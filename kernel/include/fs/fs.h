@@ -102,6 +102,9 @@ struct file_system
 
 extern int vfilesys_init();
 
+/**
+ * @return first unmatched position
+ */
 static inline int str_match_prefix(const char *str, const char *prefix)
 {
 	int p_len = strlen(prefix);

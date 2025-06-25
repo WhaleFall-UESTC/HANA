@@ -3,7 +3,7 @@
 #include <fs/mountp.h>
 #include <mm/mm.h>
 #include <debug.h>
-#include <errno.h>
+#include <lib/errno.h>
 
 #define KERNEL_OPEN_FLAG O_RDWR
 
@@ -13,7 +13,7 @@ struct file* kernel_open(const char* path) {
     struct file *file = NULL;
 	struct inode *inode = NULL;
 
-    mount_p = mountpoint_find(path, 0);
+    mount_p = mountpoint_find(path);
 	if (mount_p == NULL)
 	{
 		error("mountpoint not found for path %s", path);
@@ -34,7 +34,7 @@ struct file* kernel_open(const char* path) {
 		goto out_file;
 	}
 
-	file_init(file, NULL, path, KERNEL_OPEN_FLAG);
+	file_init(file, NULL, path, KERNEL_OPEN_FLAG, NULL);
 
     ret = call_interface(mount_p->fs->fs_op, ifget, int, mount_p, inode, file);
 	if (ret < 0)

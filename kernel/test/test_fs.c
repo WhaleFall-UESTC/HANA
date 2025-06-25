@@ -92,7 +92,7 @@ void test_fs()
         return;
     }
     PASS("open /dev");
-    char *devdirbuf = kalloc(512);
+    char *devdirbuf = kcalloc(512, 1);
     if ((n = call_sys_getdents64(fd, (struct dirent *)devdirbuf, 512)) <= 0)
     {
         error("getdents64 failed: %ld", n);

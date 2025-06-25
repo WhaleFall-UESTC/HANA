@@ -247,8 +247,8 @@ static int pci_detect_msix(pci_device_t *device)
 			device->msix_pba_bir = cap_reg2 & PCI_MSIX_CAP_PENDING_BIT_BIR_MASK;
 			device->msix_pba_offset = cap_reg2 & PCI_MSIX_CAP_PENDING_BIR_OFS_MASK;
 
-			debug("Found MSI-X capability at %x, Table Size: %d", 
-				  offset, device->msix_table_size);
+			// debug("Found MSI-X capability at %x, Table Size: %d", 
+			// 	  offset, device->msix_table_size);
 			return 1;
 		}
 		offset = (cap_reg0 >> 8) & 0xFF; // 移动到下一个能力项
@@ -286,8 +286,8 @@ static int pci_map_msix_table(pci_device_t *device)
 
     device->msix_table = (msix_table_entry_t*)phys_to_virt(bar->base_addr + device->msix_table_offset);
     
-    debug("Mapped MSI-X table at %p, size: %d entries", 
-          device->msix_table, device->msix_table_size);
+    // debug("Mapped MSI-X table at %p, size: %d entries", 
+    //       device->msix_table, device->msix_table_size);
     return 0;
 }
 
@@ -553,7 +553,7 @@ int pci_enable_msix(pci_device_t *device)
                      device->function, PCI_STATUS_COMMAND, device->command);
     
     device->msix_enabled = 1;
-    debug("Enabled MSI-X");
+    // debug("Enabled MSI-X");
     return 0;
 }
 
@@ -601,7 +601,7 @@ static void pci_scan_buses()
 			}
 		}
 	}
-	info("pci_scan_buses done");
+	// info("pci_scan_buses done");
 }
 
 pci_device_t* pci_get_device_by_class_code(unsigned int class, unsigned int sub_class)
@@ -635,7 +635,7 @@ pci_device_t* pci_get_device_by_bus(unsigned int bus, unsigned int dev, unsigned
 			tmp->bus == bus &&
 			tmp->dev == dev &&
 			tmp->function == function) {
-			debug("pci_get_device_by_bus");
+			// debug("pci_get_device_by_bus");
 			return tmp;
 		}
 	}
@@ -705,7 +705,7 @@ pci_device_t* pci_get_next_device(devid_t* pdevid) {
 
 void pci_init()
 {
-	debug("pci_init start");
+	// debug("pci_init start");
 	/*初始化pci设备信息结构体*/
 	int i;
 	for (i = 0; i < PCI_MAX_DEVICE_NR; i++) {
@@ -713,7 +713,7 @@ void pci_init()
 	}
 	/*扫描所有总线设备*/
 	pci_scan_buses();
-	debug("scan done");
+	// debug("scan done");
 	/*pci_device_t *pci_dev=pci_get_device_by_bus(0, 8, 0);
 	  pci_device_dump(pci_dev);*/
 	info("init_pci: pci type device found %d.",

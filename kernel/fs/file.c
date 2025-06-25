@@ -181,13 +181,14 @@ struct file* fd_get(struct files_struct *fdt, fd_t fd) {
     return res;
 }
 
-void file_init(struct file *file, const struct file_operations *f_op, const char *path, unsigned int flags) {
+void file_init(struct file *file, const struct file_operations *f_op, const char *path, unsigned int flags, void* private) {
     memset(file, 0, sizeof(struct file));
     file->f_op = f_op;
     if(path)
         strncpy(file->f_path, path, MAX_PATH_LEN - 1);
     file->f_flags = flags;
     file->fpos = 0;
+    file->f_private = private;
     atomic_init(&file->f_ref, 0);
 }
 

@@ -174,7 +174,7 @@ SYSCALL_DEFINE1(brk, uintptr_t, uintptr_t, brk)
         uint64 size = new_brk - old_brk;
         uint64 pa = KERNEL_VA2PA(kalloc(size));
         if (!pa) return -1;
-        mappages(UPGTBL(p->pagetable), old_brk, pa, size, PTE_WR | PTE_U);
+        mappages(UPGTBL(p->pagetable), old_brk, pa, size, PTE_RW | PTE_U);
     }
     else if (new_brk < old_brk) {
         int npages = (old_brk - new_brk) >> PGSHIFT;

@@ -112,8 +112,9 @@ struct file* fd_get(struct files_struct *fdt, fd_t fd);
  * @param f_op The file operations to be set.
  * @param path The path of the file, can be NULL.
  * @param flags The flags of the file, can be 0.
+ * @param private The private data of the file, can be 0.
  */
-void file_init(struct file *file, const struct file_operations *f_op, const char *path, unsigned int flags);
+void file_init(struct file *file, const struct file_operations *f_op, const char *path, unsigned int flags, void* private);
 
 /**
  * Increase the reference count of a struct file.
