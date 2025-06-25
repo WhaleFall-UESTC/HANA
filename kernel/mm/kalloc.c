@@ -16,10 +16,11 @@ kalloc(uint64 sz)
     //     res = slab_alloc(sz);
     // debug("kalloc: 0x%p, sz = %lu", res, sz);
     // return res;
-    if (sz > NR_OBJS * OBJECT_SIZE)
+    
+    // if (sz > NR_OBJS * OBJECT_SIZE)
         return buddy_alloc(sz);
-    else
-        return slab_alloc(sz);
+    // else
+    //     return slab_alloc(sz);
 }
 
 void *
@@ -34,11 +35,11 @@ void
 kfree(void *addr)
 {
     // debug("kfree: 0x%p", addr);
-    if (IS_PGALIGNED(addr)) {
+    // if (IS_PGALIGNED(addr)) {
         buddy_free(addr, GET_PAGE_ORDER(addr, pages));
-    } else {
-        struct slab* s = SLAB(addr);
-        int idx = OBJECT_IDX(addr);
-        slab_free(addr, s->objs[idx].size);
-    }
+    // } else {
+    //     struct slab* s = SLAB(addr);
+    //     int idx = OBJECT_IDX(addr);
+    //     slab_free(addr, s->objs[idx].size);
+    // }
 }

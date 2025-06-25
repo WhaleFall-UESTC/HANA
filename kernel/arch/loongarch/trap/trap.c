@@ -28,9 +28,17 @@ void info_exception() {
     Log(ANSI_FG_RED, "BADV: %lx", r_csr_badv());
 }
 
+static inline void kernel_trap_panic() {
+// #ifdef DEBUG
+//     error("KERNEL TRAP ERROR");
+// #else
+    panic("KERNEL TRAP ERROR");
+// #endif
+}
+
 void kernel_trap_error() {
     info_exception();
-    panic("KERNEL TRAP ERROR");
+    kernel_trap_panic();
 }
 
 __attribute__((aligned(PGSIZE))) void panic_exception() {

@@ -62,7 +62,7 @@ kvmmake()
 
     uint64* test_space = (uint64*) kalloc(PGSIZE);
     *test_space = 0x11451419198100UL;
-    mappages(kpgtbl, TEST_SPACE, KERNEL_VA2PA(test_space), PGSIZE, PTE_PLV3 | PTE_MAT_CC | PTE_P | PTE_COW | PTE_D);
+    mappages(kpgtbl, TEST_SPACE, KERNEL_VA2PA(test_space), PGSIZE, PTE_PLV3 | PTE_MAT_CC | PTE_P | PTE_COW | PTE_D | PTE_NX);
 
     return kpgtbl;
 }

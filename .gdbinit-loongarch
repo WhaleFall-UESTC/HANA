@@ -4,8 +4,37 @@ set disassemble-next-line auto
 set print pretty on
 set history size 10000
 
+
 layout split
 b start
 b _start
 b main
+
+# b ext4_fs_mount
+b __do_sys_mount
+b kernel/test/test_fs.c:127
+b do_exit
+
+
+set logging off
+set logging file la.log
+set logging overwrite
+set logging on
+
+
+define itrace
+    set $count = 0
+    b user_trap
+    while $count < 100000
+        stepi
+        if $pc != 0
+            printf "[%d] PC = 0x%x\n", $count, $pc
+            set $count = $count + 1
+        else
+            c
+        end
+    end
+end
+
+
 c
