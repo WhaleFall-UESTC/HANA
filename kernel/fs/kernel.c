@@ -12,11 +12,19 @@ struct file* kernel_open(const char* path) {
     int ret;
     struct file *file = NULL;
 	struct inode *inode = NULL;
+    char full_path[MAX_PATH_LEN];
 
-    mount_p = mountpoint_find(path);
+    ret = get_absolute_path(path, full_path, AT_FDCWD);
+	if (ret < 0)
+	{
+		error("get absolute path error");
+		return ERR_PTR(-EINVAL);
+	}
+
+    mount_p = mountpoint_find(full_path);
 	if (mount_p == NULL)
 	{
-		error("mountpoint not found for path %s", path);
+		error("mountpoint not found for path %s", full_path);
 		goto out_err;
 	}
 
@@ -34,7 +42,7 @@ struct file* kernel_open(const char* path) {
 		goto out_file;
 	}
 
-	file_init(file, NULL, path, KERNEL_OPEN_FLAG, NULL);
+	file_init(file, NULL, full_path, KERNEL_OPEN_FLAG, NULL);
 
     ret = call_interface(mount_p->fs->fs_op, ifget, int, mount_p, inode, file);
 	if (ret < 0)
@@ -43,7 +51,7 @@ struct file* kernel_open(const char* path) {
 		goto out_inode;
 	}
 
-    ret = call_interface(file->f_op, openat, int, file, path, KERNEL_OPEN_FLAG, 0);
+    ret = call_interface(file->f_op, openat, int, file, full_path, KERNEL_OPEN_FLAG, 0);
 	if (ret != 0)
 	{
 		error("open error, ret: %d", ret);
@@ -99,4 +107,14 @@ int kernel_close(struct file* file) {
     }
 
     return 0;
+}
+
+off_t kernel_lseek(struct file* file, off_t offset, int whence) {
+	int ret;
+
+    ret = call_interface(file->f_op, llseek, int, file, offset, whence);
+	if (ret < 0)
+		return -1;
+
+	return ret;
 }

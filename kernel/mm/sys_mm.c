@@ -4,6 +4,8 @@
 #include <mm/memlayout.h>
 #include <proc/proc.h>
 #include <irq/interrupt.h>
+#include <fs/kernel.h>
+#include <fs/fcntl.h>
 
 #include <syscall.h>
 
@@ -54,6 +56,7 @@ SYSCALL_DEFINE6(mmap, void*, void*, addr, size_t, length, int, prot, int, flags,
     struct proc* p = myproc();
 
     MMAP_CHECK(length != 0 && IS_PGALIGNED(offset));
+    MMAP_CHECK((offset & (PGSIZE - 1)) == 0); // offset must be aligned
 
     length = PGROUNDUP(length);
 
@@ -108,9 +111,11 @@ int do_munmap(void* addr, size_t length) {
 
     int write_back = ((vma->flags & MAP_SHARED) && !(vma->flags & MAP_PRIVATE));
     if (write_back) {
-        for (uint64 a = unmap_start; va < unmap_end; va += PGSIZE) {
+        kernel_lseek(vma->file, vma->offset, SEEK_SET);
+        for (uint64 a = unmap_start; a < unmap_end; a += PGSIZE) {
             pte_t* pte = walk(UPGTBL(p->pagetable), a, WALK_NOALLOC);
             if (*pte & PTE_D) {
+                kernel_write(vma->file, (const void*)a, PGSIZE);
                 // write this page back to file
                 // vma->offset  
             }

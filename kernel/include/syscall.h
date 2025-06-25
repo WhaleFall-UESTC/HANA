@@ -94,7 +94,7 @@ typedef uint64 (*syscall_func_t)(void);
     {                                                                                \
         return (uint64)__do_sys##name(__MAP(x, __SC_CAST, _PARAMS(x, __VA_ARGS__))); \
     }                                                                                \
-    SYSCALL_KERNEL_DEFINE(x, name, ret_type, __VA_ARGS__)                                      \
+    SYSCALL_KERNEL_DEFINE(x, name, ret_type, __VA_ARGS__)                            \
     static inline ret_type __do_sys##name(__MAP(x, __SC_DECL, __VA_ARGS__))
 
 void syscall();

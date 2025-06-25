@@ -120,4 +120,14 @@ static inline int str_match_prefix(const char *str, const char *prefix)
 	return end_index;
 }
 
+/**
+ * Convert relative path to full path, remove all "." and ".."
+ * use this only when path is NOT started with "/"
+ * @path: path to convert
+ * @full_path: buffer to store full path, should be initialized by cwd
+ * @return: length of full path on success, -1 on error
+ */
+int fullpath_connect(const char *path, char *full_path);
+int get_absolute_path(const char *path, char *full_path, fd_t dirfd);
+
 #endif // __FS_H__

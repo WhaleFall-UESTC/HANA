@@ -36,14 +36,7 @@ static inline int dirent_name_len(const char* str) {
 	return ret;
 }
 
-/**
- * Convert relative path to full path, remove all "." and ".."
- * use this only when path is NOT started with "/"
- * @path: path to convert
- * @full_path: buffer to store full path, should be initialized by cwd
- * @return: length of full path on success, -1 on error
- */
-static int fullpath_connect(const char *path, char *full_path)
+int fullpath_connect(const char *path, char *full_path)
 {
 	int path_len = strlen(path);
 	int i_path = 0, i_f = strlen(full_path);
@@ -93,7 +86,7 @@ static int fullpath_connect(const char *path, char *full_path)
 	return i_f;
 }
 
-static int get_absolute_path(const char *path, char *full_path, fd_t dirfd)
+int get_absolute_path(const char *path, char *full_path, fd_t dirfd)
 {
 	struct files_struct *fdt = myproc()->fdt;
 	struct file *file;

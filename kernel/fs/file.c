@@ -29,6 +29,8 @@ static struct file f_stdin = {
     .fpos = 0,
 };
 
+#define IS_STDSTREAM(file) (file == &f_stdin || file == &f_stdout || file == &f_stderr)
+
 void iofd_init() {
     atomic_init(&f_stdin.f_ref, 0);
     atomic_init(&f_stdout.f_ref, 0);
@@ -101,6 +103,19 @@ struct files_struct* fdt_dup(struct files_struct *fdt)
     spinlock_release(&new_fdt->fdt_lock);
 
     return new_fdt;
+}
+
+void fdt_freeall(struct files_struct *fdt) {
+    spinlock_acquire(&fdt->fdt_lock);
+    for (fd_t fd = 0; fd < NR_OPEN; fd++) {
+        if (fdt->fd[fd] != NULL) {
+            file_put(fdt->fd[fd]);
+            fdt->fd[fd] = NULL;
+        }
+    }
+    fdt->next_fd = -1;
+    fdt->nr_avail_fd = -1;
+    spinlock_release(&fdt->fdt_lock);
 }
 
 fd_t fd_alloc(struct files_struct *fdt, struct file* file)
@@ -201,7 +216,7 @@ void file_get(struct file *file)
 int file_put(struct file *file)
 {
 	int ret = -1;
-	if (file && (ret = atomic_dec(&file->f_ref)) == 0)
+	if (file && !IS_STDSTREAM(file) && (ret = atomic_dec(&file->f_ref)) == 0)
 	{
 		ret = call_interface(file->f_op, close, int, file);
 		if (ret < 0) {

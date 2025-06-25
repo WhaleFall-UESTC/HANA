@@ -41,8 +41,6 @@ struct file_operations
 	// int (*fsync) (struct file *, off_t, off_t, int datasync);
 };
 
-typedef int fd_t;
-
 #define NR_OPEN 1024
 
 struct files_struct
@@ -72,6 +70,12 @@ void fdt_init(struct files_struct *files, char* name);
  * @return A new files_struct on success, NULL on error.
  */
 struct files_struct* fdt_dup(struct files_struct *fdt);
+
+/**
+ * Free all struct file in a fdt and make it unavailable
+ * @param fdt The files_struct to be freed
+ */
+void fdt_freeall(struct files_struct *fdt);
 
 /**
  * Allocate a file descriptor in given files_struct.
