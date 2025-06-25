@@ -18,7 +18,7 @@ struct file* kernel_open(const char* path) {
 	if (ret < 0)
 	{
 		error("get absolute path error");
-		return -1;
+		return ERR_PTR(-EINVAL);
 	}
 
     mount_p = mountpoint_find(full_path);

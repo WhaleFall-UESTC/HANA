@@ -122,6 +122,8 @@ typedef unsigned int devid_t;
 
 typedef uint64 uintptr_t ;
 
+typedef int fd_t;
+
 #define bool _Bool
 #define true 1
 #define false 0

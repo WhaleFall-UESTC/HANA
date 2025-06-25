@@ -36,6 +36,89 @@ static inline int dirent_name_len(const char* str) {
 	return ret;
 }
 
+int fullpath_connect(const char *path, char *full_path)
+{
+	int path_len = strlen(path);
+	int i_path = 0, i_f = strlen(full_path);
+
+	if (path[0] == '/')
+		return -1;
+
+	if (full_path[i_f - 1] != '/')
+		full_path[i_f ++] = '/';
+
+	while (i_path < path_len && i_f < MAX_PATH_LEN)
+	{
+		while (path[i_path] == '/' && i_path < path_len)
+			i_path++;
+		if (path[i_path] == '.' && (i_path + 2 == path_len || (i_path + 2 < path_len && path[i_path + 2] == '/')) && path[i_path + 1] == '.')
+		{
+			// "../" or "..\0"
+			i_path += 2;
+			i_f --;
+			while (i_f > 0 && full_path[i_f - 1] != '/')
+				i_f--;
+			if (i_f > 0)
+				i_f--;
+		}
+		else if (path[i_path] == '.' && (i_path + 1 == path_len || (i_path + 1 < path_len && path[i_path + 1] == '/')))
+		{
+			// "./" or ".\0"
+			i_path++;
+		}
+		else
+		{
+			// normal path
+			while (path[i_path] != '/' && i_path < path_len && i_f < MAX_PATH_LEN)
+			{
+				full_path[i_f++] = path[i_path++];
+			}
+		}
+	}
+
+	if (i_path < path_len)
+	{
+		error("path too long");
+		return -1;
+	}
+
+	full_path[i_f] = '\0';
+	return i_f;
+}
+
+int get_absolute_path(const char *path, char *full_path, fd_t dirfd)
+{
+	struct files_struct *fdt = myproc()->fdt;
+	struct file *file;
+
+	if (path == NULL || full_path == NULL)
+	{
+		error("path or full_path is NULL");
+		return -1;
+	}
+
+	if (path[0] == '/')
+	{
+		strcpy(full_path, path);
+	}
+	else
+	{
+		// convert relative path to full path
+		if (dirfd == AT_FDCWD)
+			strcpy(full_path, myproc()->cwd);
+		else
+		{
+			file = fd_get(fdt, dirfd);
+			strcpy(full_path, file->f_path);
+		}
+		int ret = fullpath_connect(path, full_path);
+		if (ret < 0)
+			return -1;
+	}
+
+	return 0;
+}
+
 int vfilesys_init() {
 	KCALLOC(struct mountpoint, mp, 1);
 	devfs_init(mp);

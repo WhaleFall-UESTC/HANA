@@ -41,8 +41,6 @@ struct file_operations
 	// int (*fsync) (struct file *, off_t, off_t, int datasync);
 };
 
-typedef int fd_t;
-
 #define NR_OPEN 1024
 
 struct files_struct
