@@ -116,19 +116,15 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
     // sz is a pointer, point at the current top of virtual user space
     uint64 sz = 0;
 
-    char* path = kalloc(PATH_MAX);
+    char path[PATH_MAX];
     if (copyinstr(old_pgtbl, path, (uint64) upath, PATH_MAX) < 0) {
         error("Path too long");
-        kfree(path);
         return -1;
     }
     
     Elf64_Ehdr elf = {};
 
     // 从文件偏移量为 0 的地方读取 Elf 头，大小 sizeof(Elf64_Ehdr)，写到 elf 里面
-
-    kfree(path);
-    
     LOADER_CHECK(*(uint*)(&elf.e_ident) == ELF_MAGIC);
     
     Elf64_Phdr phdr = {};
@@ -180,9 +176,9 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
 
     // prepare argv, envp in user stack
     // first, copy them from user space to kernel
-    int max_size = MAX_ARGS * sizeof(char*);
-    char** argv = kalloc(max_size);
-    char** envp = kalloc(max_size);
+    const int max_size = MAX_ARGS * sizeof(char*);
+    char* argv[max_size];
+    char* envp[max_size];
     copyin(old_pgtbl, (void*)argv, (uint64)uargv, max_size);
     copyin(old_pgtbl, (void*)envp, (uint64)uenvp, max_size);
 
@@ -198,8 +194,6 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
     for (int i = 0; i < envc; i++) {
         int size = copyinstr(old_pgtbl, &envp_mem[envp_nbytes], (uint64) envp[i], MAX_ARG_STRLEN);
         if (size < 0) {
-            kfree(envp);
-            kfree(argv);
             kfree(envp_mem);
             goto bad;
         }
@@ -223,7 +217,6 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
         *((uint64*)(&ustack_p[addr])) = ((uint64) envp[i]) + sp;
     }
 
-    kfree(envp);
     sp -= 8;
     sp -= envc * 8;
     sp -= 8;
@@ -236,7 +229,6 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
     for (int i = 0; i < argc; i++) {
         int size = copyinstr(old_pgtbl, &argv_mem[argv_nbytes], (uint64) argv[i], MAX_ARG_STRLEN);
         if (size < 0) {
-            kfree(argv);
             kfree(argv_mem);
             goto bad;
         }
@@ -259,8 +251,7 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
         addr_ -= 8;
         *((uint64*)(&ustack_p[addr_])) = ((uint64) argv[i]) + sp;
     }
-
-    kfree(argv);
+    
     sp -= 8;
     sp -= argc * 8;
     sp -= 8;

@@ -9,17 +9,6 @@ void test() {
     // intr_off();
     PASS("test start!!!");
 
-    // lab_cow();
-
-    // test_slab();
-    // test_kalloc();
-
-
-    // test_uart();
-    // test_virtio();
-    // test_walkaddr();
-    // test_virtio();
-
     test_fs();
 
     PASS("test finish!!!");
