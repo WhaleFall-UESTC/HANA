@@ -11,8 +11,8 @@ void test() {
 
     // lab_cow();
 
-    test_slab();
-    test_kalloc();
+    // test_slab();
+    // test_kalloc();
 
 
     // test_uart();

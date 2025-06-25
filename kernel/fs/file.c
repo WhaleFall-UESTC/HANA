@@ -29,6 +29,8 @@ static struct file f_stdin = {
     .fpos = 0,
 };
 
+#define IS_STDSTREAM(file) (file == &f_stdin || file == &f_stdout || file == &f_stderr)
+
 void iofd_init() {
     atomic_init(&f_stdin.f_ref, 0);
     atomic_init(&f_stdout.f_ref, 0);
@@ -214,7 +216,7 @@ void file_get(struct file *file)
 int file_put(struct file *file)
 {
 	int ret = -1;
-	if (file && (ret = atomic_dec(&file->f_ref)) == 0)
+	if (file && !IS_STDSTREAM(file) && (ret = atomic_dec(&file->f_ref)) == 0)
 	{
 		ret = call_interface(file->f_op, close, int, file);
 		if (ret < 0) {

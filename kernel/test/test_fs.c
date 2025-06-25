@@ -40,7 +40,8 @@ void test_fs()
     struct stat kst;
     struct dirent *d;
     char *cwd;
-    int ret, fd, new_fd, dir_fd;
+    int ret, fd, new_fd;
+    fd_t dir_fd;
     ssize_t n;
     char buf[128];
     int pipefd[2];
