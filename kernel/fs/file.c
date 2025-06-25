@@ -103,6 +103,19 @@ struct files_struct* fdt_dup(struct files_struct *fdt)
     return new_fdt;
 }
 
+void fdt_freeall(struct files_struct *fdt) {
+    spinlock_acquire(&fdt->fdt_lock);
+    for (fd_t fd = 0; fd < NR_OPEN; fd++) {
+        if (fdt->fd[fd] != NULL) {
+            file_put(fdt->fd[fd]);
+            fdt->fd[fd] = NULL;
+        }
+    }
+    fdt->next_fd = -1;
+    fdt->nr_avail_fd = -1;
+    spinlock_release(&fdt->fdt_lock);
+}
+
 fd_t fd_alloc(struct files_struct *fdt, struct file* file)
 {
     fd_t fd;

@@ -713,9 +713,6 @@ void pci_init()
 	}
 	/*扫描所有总线设备*/
 	pci_scan_buses();
-	// debug("scan done");
-	/*pci_device_t *pci_dev=pci_get_device_by_bus(0, 8, 0);
-	  pci_device_dump(pci_dev);*/
 	info("init_pci: pci type device found %d.",
 		   pic_get_device_connected());
 }

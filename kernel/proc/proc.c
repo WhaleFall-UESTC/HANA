@@ -164,7 +164,10 @@ do_exit(int status)
     }
 
     // close opened files
+    fdt_freeall(p->fdt);
+    kfree(p->fdt);
 
+    kfree(p->cwd);
 
     // reparent to init
     reparent(p);

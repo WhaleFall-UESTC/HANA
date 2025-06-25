@@ -4,6 +4,7 @@
 #include <mm/memlayout.h>
 #include <proc/proc.h>
 #include <irq/interrupt.h>
+#include <fs/kernel.h>
 
 #include <syscall.h>
 
@@ -111,6 +112,7 @@ int do_munmap(void* addr, size_t length) {
         for (uint64 a = unmap_start; va < unmap_end; va += PGSIZE) {
             pte_t* pte = walk(UPGTBL(p->pagetable), a, WALK_NOALLOC);
             if (*pte & PTE_D) {
+                kernel_write(vma->file, (const void*)va, PGSIZE);
                 // write this page back to file
                 // vma->offset  
             }
