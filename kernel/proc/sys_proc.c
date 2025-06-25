@@ -10,6 +10,8 @@
 #include <mm/mm.h>
 #include <mm/memlayout.h>
 #include <fs/file.h>
+#include <fs/fcntl.h>
+#include <fs/kernel.h>
 #include <syscall.h>
 #include <elf.h>
 
@@ -113,6 +115,7 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
     struct proc* p = myproc();
     pagetable_t pgtbl = NULL;
     pagetable_t old_pgtbl = UPGTBL(p->pagetable);
+    struct file* file;
     // sz is a pointer, point at the current top of virtual user space
     uint64 sz = 0;
 
@@ -124,16 +127,22 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
     
     Elf64_Ehdr elf = {};
 
-    // 从文件偏移量为 0 的地方读取 Elf 头，大小 sizeof(Elf64_Ehdr)，写到 elf 里面
+    file = kernel_open(path);
+    if(file == NULL) {
+        error("open path failed");
+        return -1;
+    }
+
+    kernel_read(file, &elf, sizeof(Elf64_Ehdr));
     LOADER_CHECK(*(uint*)(&elf.e_ident) == ELF_MAGIC);
     
     Elf64_Phdr phdr = {};
     pgtbl = uvmmake((uint64) p->trapframe);
 
-    // for (int i = 0, off = elf.e_phoff; i < elf.phnum; i++, off += sizeof(Elf64_Phdr)) 
-    for (int i = 0; i < elf.e_phnum; i++) 
+    for (int i = 0, off = elf.e_phoff; i < elf.e_phnum; i++, off += sizeof(Elf64_Phdr))
     {
-        // 从偏移量为 off 的地方读取各个段的信息，大小 sizeof(Elf64_Phdr)，写到 phdr
+        kernel_lseek(file, off, SEEK_SET);
+        kernel_read(file, &phdr, sizeof(Elf64_Ehdr));
 
         if (phdr.p_type != PT_LOAD)
             continue;
@@ -155,10 +164,11 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
 
         sz = max_uint64(sz, phdr.p_vaddr + phdr.p_memsz);
 
-        // 将段的内容拷贝到 mem
+        kernel_lseek(file, phdr.p_offset, SEEK_SET);
+        kernel_read(file, mem, phdr.p_filesz);
     }
 
-    // 关闭文件
+    kernel_close(file);
 
     // now map user stack 
     // first we leave a protect page, which is blank and unmapped
@@ -279,7 +289,7 @@ bad:
         freewalk(pgtbl, 2);
     }
 
-    // close file if needed
+    kernel_close(file);
 
     return -1;
 }
