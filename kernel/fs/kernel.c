@@ -108,3 +108,13 @@ int kernel_close(struct file* file) {
 
     return 0;
 }
+
+off_t kernel_lseek(struct file* file, off_t offset, int whence) {
+	int ret;
+
+    ret = call_interface(file->f_op, llseek, int, file, offset, whence);
+	if (ret < 0)
+		return -1;
+
+	return ret;
+}
