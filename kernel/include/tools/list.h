@@ -95,7 +95,7 @@ void hlist_remove(struct hlist_head *parent_or_head, struct hlist_head *item);
  */
 #define list_for_each(variable, head)                                          \
 	for (variable = (head)->next; variable != (head);                      \
-	     variable = variable->next)
+		 variable = variable->next)
 
 /**
  * Offset, in bytes, of a field named `member` within type `type`.
@@ -142,10 +142,10 @@ void hlist_remove(struct hlist_head *parent_or_head, struct hlist_head *item);
  */
 #define list_for_each_entry(var_ptr, head, field_name)                         \
 	for (var_ptr = NULL,                                                   \
-	    var_ptr = alt_container_of((head)->next, var_ptr, field_name);     \
-	     &var_ptr->field_name != (head);                                   \
-	     var_ptr = alt_container_of(var_ptr->field_name.next, var_ptr,     \
-	                                field_name))
+		var_ptr = alt_container_of((head)->next, var_ptr, field_name);     \
+		 &var_ptr->field_name != (head);                                   \
+		 var_ptr = alt_container_of(var_ptr->field_name.next, var_ptr,     \
+									field_name))
 
 /**
  * Iterate over every item within a list, but allow removing the node you are
@@ -160,10 +160,27 @@ void hlist_remove(struct hlist_head *parent_or_head, struct hlist_head *item);
  */
 #define list_for_each_entry_safe(var_ptr, next_ptr, head, field_name)          \
 	for (var_ptr = NULL,                                                   \
-	    var_ptr = alt_container_of((head)->next, var_ptr, field_name),     \
-	    next_ptr = alt_container_of(var_ptr->field_name.next, var_ptr,     \
-	                                field_name);                           \
-	     &var_ptr->field_name != (head); var_ptr = next_ptr,               \
-	    next_ptr = alt_container_of(next_ptr->field_name.next, var_ptr,    \
-	                                field_name))
+		var_ptr = alt_container_of((head)->next, var_ptr, field_name),     \
+		next_ptr = alt_container_of(var_ptr->field_name.next, var_ptr,     \
+									field_name);                           \
+		 &var_ptr->field_name != (head); var_ptr = next_ptr,               \
+		next_ptr = alt_container_of(next_ptr->field_name.next, var_ptr,    \
+									field_name))
+
+/**
+ * Init a iter within a list
+ */
+#define list_iter_init(iter, head, field_name) \
+	((iter) = alt_container_of((head)->next, iter, field_name))
+
+/**
+ * Iterate to next item within a list.
+ */
+#define list_iter_next(iter, head, field_name) \
+	((iter) = ((iter) ? \
+			  (((iter)->field_name.next != (head)) ? \
+				alt_container_of((iter)->field_name.next, iter, field_name) : \
+				NULL) : \
+			  NULL))
+
 #endif // __LIST_H__

@@ -512,7 +512,7 @@ SYSCALL_DEFINE3(getdents64, ssize_t, int, fd, struct dirent *, buf, size_t, len)
 	// Add other mp dents
 	abuf = (struct dirent*)((char*)buf + ret);
 	len -= ret;
-	vfs_for_each_mp(mp) {
+	mp_list_for_each_entry_locked(mp) {
 		if(mp == file->f_inode->i_mp)
 			continue;
 		posl = str_match_prefix(mp->mountpoint, file->f_path);

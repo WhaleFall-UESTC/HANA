@@ -16,7 +16,7 @@ uint8 broadcast_mac[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 
 void eth_recv(struct netif *netif, struct packet *pkt)
 {
-	/*log("eth_recv src=%M dst=%M ethertype=0x%x\n", &pkt->eth->src_mac,
+	/*log("eth_recv src=%M dst=%M ethertype=0x%x", &pkt->eth->src_mac,
 	       &pkt->eth->dst_mac, ntohs(pkt->eth->ethertype));*/
 	pkt->nl = pkt->ll + sizeof(struct etherframe);
 	if (memcmp(pkt->eth->dst_mac, broadcast_mac, MAC_SIZE) == 0 ||
@@ -27,12 +27,12 @@ void eth_recv(struct netif *netif, struct packet *pkt)
 			break;
 		default:
 			error("received ethernet packet of unknown ethertype "
-			       "0x%x\n",
+			       "0x%x",
 			       ntohs(pkt->eth->ethertype));
 			packet_free(pkt);
 		}
 	} else {
-		log("received ethernet packet not destined for us\n");
+		log("received ethernet packet not destined for us");
 		packet_free(pkt);
 	}
 }

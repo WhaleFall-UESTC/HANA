@@ -34,4 +34,7 @@ void        test_arch();
 /* test_cow.c */
 void        lab_cow();
 
+/* test_net.c */
+void        test_net();
+
 #endif // __TESTDEFS_H__

@@ -9,7 +9,6 @@
 #include <proc/proc.h>
 #include <irq/interrupt.h>
 
-
 void 
 spinlock_init(struct spinlock* lk, const char* name) 
 {

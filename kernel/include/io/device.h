@@ -28,11 +28,6 @@ struct device {
 };
 
 /**
- * init device management system
- */
-void device_subsys_init(void);
-
-/**
  * initialize a device
  * @param device: pointer to device struct
  * @param devid: device id
@@ -70,5 +65,36 @@ struct device *device_get_default(int type);
 #define DEVID_VIRTIO_NET_BASE 0x140
 #define DEVID_VIRTIO_NET_RANGE 0x3f
 #define DEVID_UART 0x1
+
+extern struct list_head device_list_head;
+extern spinlock_t devlst_lock;
+
+#define device_list_iter_next_locked(devptr) \
+    ({ \
+        void* __ret; \
+        spinlock_acquire(&devlst_lock); \
+        __ret = list_iter_next(devptr, &device_list_head, dev_entry); \
+        spinlock_release(&devlst_lock); \
+        __ret; \
+    })
+
+#define device_list_iter_init_locked(devptr) \
+    ({ \
+        void* __ret; \
+        spinlock_acquire(&devlst_lock); \
+        __ret = list_iter_init(devptr, &device_list_head, dev_entry); \
+        spinlock_release(&devlst_lock); \
+        __ret; \
+    })
+
+#define device_list_for_each_entry(devptr) \
+    list_for_each_entry(devptr, &device_list_head, dev_entry)
+
+#define device_list_for_each_entry_safe(devptr, nextptr) \
+    list_for_each_entry(devptr, nextptr, &device_list_head, dev_entry)
+
+#define device_list_for_each_entry_locked(devptr) \
+    for(device_list_iter_init_locked(devptr); \
+        (devptr) != NULL; device_list_iter_next_locked(devptr))
 
 #endif // __DEVICE_H__

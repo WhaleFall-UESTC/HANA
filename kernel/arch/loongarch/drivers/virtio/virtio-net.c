@@ -299,5 +299,7 @@ int virtio_net_init(virtio_pci_header *header, pci_device_t *pci_dev)
 
 	debug("virtio-net 0x%lx ", virt_to_phys((uint64)header));
 	debug("(intid %u, MAC %s): ready!", intid, mac_ntoa(vdev->netdev.netif.mac));
+
+	netdev_register(&vdev->netdev);
 	return 0;
 }

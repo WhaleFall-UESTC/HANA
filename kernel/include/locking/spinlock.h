@@ -23,5 +23,11 @@ void    spinlock_acquire(struct spinlock* lk);
 void    spinlock_release(struct spinlock* lk);
 int     spinlock_holding(struct spinlock* lk);
 
+#define SPINLOCK_DEFINE(lockname) \
+    spinlock_t lockname = { \
+        .locked = UNLOCKED, \
+        .name = #lockname, \
+        .cpu = NULL \
+    }
 
 #endif // __SPINLOCK_H__

@@ -12,6 +12,7 @@
 #include <klib.h>
 #include <debug.h>
 #include <syscall.h>
+#include <io/net.h>
 
 DECLARE_LIST_HEAD(sockops_list);
 
@@ -48,6 +49,9 @@ struct socket* socket_socket(int domain, int type, int protocol)
 	memset(sock, 0, sizeof(struct socket));
 	sock->ops = ops;
 	INIT_LIST_HEAD(sock->recvq);
+
+    sock->netdev = netdev_get_default_dev();
+    assert(sock->netdev != NULL);
 
 	return sock;
 }
@@ -118,15 +122,14 @@ struct file_operations socket_fops = {
 int socket_init(struct file* file) {
     struct socket *sock;
 
-    if (!file || !file->f_op)
+    if (!file)
         return -EINVAL;
 
     sock = socket_socket(AF_INET, SOCK_DGRAM, 0);
     if (!sock)
         return -ENOMEM;
 
-    file->f_private = sock;
-    file->f_op = &socket_fops;
+    file_init(file, &socket_fops, NULL, 0, (void*)sock);
 
     return 0;
 }
@@ -223,7 +226,7 @@ SYSCALL_DEFINE3(bind, int, int, fd, const struct sockaddr *, address, socklen_t,
     return 0;
 }
 
-SYSCALL_DEFINE3(send, ssize_t, int, fd, const void *, buffer, size_t, length)
+SYSCALL_DEFINE4(send, ssize_t, int, fd, const void *, buffer, size_t, length, int, flags)
 {
     struct file *file;
     struct socket *sock;
@@ -240,14 +243,14 @@ SYSCALL_DEFINE3(send, ssize_t, int, fd, const void *, buffer, size_t, length)
     if (!sock->ops->send)
         return -ENOSYS;
 
-    ret = call_interface(sock->ops, send, ssize_t, sock, buffer, length, 0);
+    ret = call_interface(sock->ops, send, ssize_t, sock, buffer, length, flags);
     if (ret < 0)
         return ret;
 
     return ret;
 }
 
-SYSCALL_DEFINE3(recv, ssize_t, int, fd, void *, buffer, size_t, length)
+SYSCALL_DEFINE4(recv, ssize_t, int, fd, void *, buffer, size_t, length, int, flags)
 {
     struct file *file;
     struct socket *sock;
@@ -264,7 +267,7 @@ SYSCALL_DEFINE3(recv, ssize_t, int, fd, void *, buffer, size_t, length)
     if (!sock->ops->recv)
         return -ENOSYS;
 
-    ret = call_interface(sock->ops, recv, ssize_t, sock, buffer, length, 0);
+    ret = call_interface(sock->ops, recv, ssize_t, sock, buffer, length, flags);
     if (ret < 0)
         return ret;
 

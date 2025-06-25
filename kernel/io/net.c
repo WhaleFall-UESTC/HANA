@@ -25,7 +25,7 @@ void netdev_init(struct netdev *dev, devid_t devid, int intr, const char *name, 
     device_init(&dev->dev, devid, intr, buffer);
 
     dev->ops = ops;
-    dev->dev.type = DEVICE_TYPE_CHAR;
+    dev->dev.type = DEVICE_TYPE_NET;
 }
 
 irqret_t netdev_general_isr(uint32 intid, void *private)

@@ -11,6 +11,13 @@
 #include <lib/errno.h>
 #include <irq/interrupt.h>
 
+#include <klib.h>
+#define copy_from_user(to, from, len) \
+	({ \
+		memcpy(to, from, len); \
+		0; \
+	})
+
 struct udp_wait_entry {
 	struct hlist_head list;
 	struct socket *sock;

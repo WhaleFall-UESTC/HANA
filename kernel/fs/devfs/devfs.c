@@ -86,6 +86,8 @@ int devfs_init(struct mountpoint *mp)
     struct chrdev* chrdev;
     struct blkdev* blkdev;
     struct devfs_device* device;
+    struct device *dev;
+    char blkname[4] = "sda\0";
 
     mp->mountpoint = strdup("/dev");
     mp->blkdev = NULL;
@@ -95,11 +97,6 @@ int devfs_init(struct mountpoint *mp)
 
     spinlock_init(&devfs_list_lk, "devfs list lock");
     INIT_LIST_HEAD(devfs_list);
-
-    
-    device_subsys_init();
-
-    uart_device_init();
 
     chrdev = chrdev_get_default_dev();
     assert(chrdev != NULL);
@@ -120,18 +117,23 @@ int devfs_init(struct mountpoint *mp)
     stderr.name = stderr.tty.name;
     devfs_add_device(&stderr);
 
-    virtio_device_init();
-
-    blkdev = blkdev_get_default_dev();
+    blkdev = blkdev_get_by_id(DEVID_VIRTIO_BLK_BASE);
     assert(blkdev != NULL);
+    
+    device_list_for_each_entry_locked(dev) {
+        if(dev->type == DEVICE_TYPE_BLOCK) {
+            device = kcalloc(1, sizeof(*device));
+            assert(device != NULL);
 
-    device = kcalloc(1, sizeof(*device));
-    assert(device != NULL);
+            assert(blkname[2] != 'z')
+            block_init(&device->disk, blkdev, blkname);
+            device->file_type = FT_BLKDEV;
+            device->name = device->disk.name;
+            devfs_add_device(device);
 
-    block_init(&device->disk, blkdev, "sda");
-    device->file_type = FT_BLKDEV;
-    device->name = device->disk.name;
-    devfs_add_device(device);
+            blkname[2] ++;
+        }
+    }
 
     return 0;
 }

@@ -14,6 +14,7 @@
 #include <io/chr.h>
 #include <fs/fs.h>
 #include <drivers/uart.h>
+#include <net/net.h>
 
 // #include <drivers/virtio-mmio.h>
 
@@ -61,16 +62,13 @@ main()
     
     // ecall();
 
-    // char_subsys_init();
-    // uart_device_init();
-
 #ifdef ARCH_LOONGARCH
 #include <drivers/pci.h>
     pci_init();
 #endif
-
-    // block_subsys_init();
-    // virtio_device_init();
+    udp_init();
+    uart_device_init();
+    virtio_device_init();
 
     vfilesys_init();
     out("Initialize vfs");

@@ -2,13 +2,8 @@
 #include <io/chr.h>
 #include <io/blk.h>
 
-struct list_head device_list_head;
-spinlock_t devlst_lock;
-
-void device_subsys_init(void) {
-    INIT_LIST_HEAD(device_list_head);
-    spinlock_init(&devlst_lock, "device list lock");
-}
+SPINLOCK_DEFINE(devlst_lock);
+DECLARE_LIST_HEAD(device_list_head);
 
 void device_init(struct device* device, devid_t devid, uint32 intr, const char *name) {
     static char buffer[SPINLOCK_NAME_MAX_LEN];
