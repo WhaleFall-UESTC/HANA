@@ -1,9 +1,11 @@
 #include <init.h>
 #include <io/blk.h>
-#ifdef ARCH_RISCV
+#ifdef __riscv
 #include <drivers/virtio-mmio.h>
-#else
+#elif defined(__loongarch64)
 #include <drivers/virtio-pci.h>
+#else
+#error "Unsupported architecture"
 #endif
 #include <common.h>
 #include <debug.h>
@@ -33,11 +35,13 @@ uint32 krand(void)
 void init_random()
 {
     uint32 seed;
-#ifdef ARCH_RISCV
+#ifdef __riscv
     __asm__ __volatile__("csrr %0, cycle" : "=r"(seed));
-#else
+#elif defined(__loongarch64)
     uint32 tmp = 0;
     __asm__ __volatile__("rdtimel.w %0, %1" : "=r"(seed) : "r"(tmp));
+#else
+#error "Unsupported architecture"
 #endif
     srand(seed);
 }

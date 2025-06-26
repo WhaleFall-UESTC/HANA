@@ -11,16 +11,10 @@
 #include <mm/memlayout.h>
 #include <fs/file.h>
 #include <syscall.h>
+#include <proc/init.h>
 
 volatile int next_pid = 1;
 struct proc* init_proc = NULL;
-
-// dead loop
-#ifdef ARCH_RISCV
-char init_code[] = {0x67, 0x00, 0x00, 0x00};
-#elif defined(ARCH_LOONGARCH)
-char init_code[] = {0x00, 0x00, 0x00, 0x50};
-#endif
 
 int
 alloc_pid()
@@ -90,7 +84,8 @@ proc_init()
     asid_init(p->pid, sizeof(p->pid));
 #endif
     // user vm space init
-    pagetable_t user_pagetable = uvminit((uint64)p->trapframe, init_code, sizeof(init_code));
+    // pagetable_t user_pagetable = uvminit((uint64)p->trapframe, init_code, sizeof(init_code));
+    pagetable_t user_pagetable = uvminit((uint64)p->trapframe, deadloop, sizeof(deadloop));
     p->pagetable = upgtbl_init(user_pagetable);
     p->heap_start = 2*PGSIZE;
     p->sz = 2*PGSIZE;

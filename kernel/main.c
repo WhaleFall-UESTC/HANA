@@ -28,7 +28,7 @@ char *init_stack_top = &init_stack[KSTACK_SIZE];
 struct cpu cpus[NCPU];
 struct page* pages;
 
-#ifdef ARCH_LOONGARCH
+#ifdef __loongarch64
 extern void timer_enable();
 #endif
 
@@ -38,7 +38,7 @@ main()
     uart_init();
     out("Initialize uart0");
 
-#ifdef ARCH_LOONGARCH
+#ifdef __loongarch64
     debug("CRMD: %lx", r_csr_crmd());
     debug("DMW0: %lx", r_csr_dmw0());
     PASS("loongarch64 start!!!");
@@ -62,7 +62,7 @@ main()
     
     // ecall();
 
-#ifdef ARCH_LOONGARCH
+#ifdef __loongarch64
 #include <drivers/pci.h>
     pci_init();
 #endif
@@ -76,7 +76,7 @@ main()
     out("Enter tests");
     test_proc_init((uint64) test);
 
-#ifdef ARCH_LOONGARCH
+#ifdef __loongarch64
     intr_on();
     timer_enable();
     debug("tcfg: %lx ecfg: %lx crmd:%lx", r_csr_tcfg(), r_csr_ecfg(), r_csr_crmd());

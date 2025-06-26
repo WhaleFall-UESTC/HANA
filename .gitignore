@@ -4,6 +4,7 @@
 *.img
 *.dtb
 *.dts
+*.elf
 
 kernel-rv
 kernel-la
@@ -16,5 +17,9 @@ build/
 .vscode/
 .tmp
 
+user/init/la_init
+user/init/la_initcode
+user/init/rv_init
+user/init/rv_initcode
 
 qemu.log
