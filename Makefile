@@ -1,4 +1,4 @@
-ARCH ?= loongarch
+ARCH ?= riscv
 BUILD_DIR := build/$(ARCH)
 FS := rootfs.img
 SMP := 1
@@ -15,6 +15,7 @@ QEMUOPTS := -machine virt -kernel $(KERNEL) -m $(MEM) -nographic -smp $(SMP) -bi
         	-drive file=$(DISK),if=none,format=raw,id=x1 -device virtio-blk-device,drive=x1,bus=virtio-mmio-bus.1 \
 			# -d trace:virtio*
 RISCV_CFLAGS = -mcmodel=medany -march=rv64imafd -mabi=lp64
+# RISCV_CFLAGS += -DARCH_RISCV
 RISCV_CFLAGS += -DBIOS_SBI
 
 else ifeq ($(ARCH), loongarch)
@@ -32,6 +33,7 @@ QEMUOPTS := -kernel $(KERNEL) -m $(MEM) -nographic -smp $(SMP) -drive file=$(FS)
 			# -d trace:loongarch_pch_pic_irq_handler,trace:loongarch_extioi* \
 			# -d trace:loongarch_pch_pic_low*,trace:loongarch_pch_pic_high*,trace:loongarch_pch_pic_readb,trace:loongarch_pch_pic_writeb \
 LOONGARCH_CFLAGS = -march=loongarch64 -mabi=lp64d
+# LOONGARCH_CFLAGS += -DARCH_LOONGARCH
 
 else
 $(error Unsupported ARCH $(ARCH))
