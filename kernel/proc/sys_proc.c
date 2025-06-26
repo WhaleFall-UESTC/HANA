@@ -105,7 +105,7 @@ SYSCALL_DEFINE5(clone, int, unsigned long, flags, void*, stack, void*, ptid, voi
 }
 
 #define LOADER_CHECK(cond) \
-    if (!(cond)) goto bad
+    if (!(cond)) goto execve_bad
 
 SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char**, uenvp)
 {
@@ -118,6 +118,10 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
     struct file* file;
     // sz is a pointer, point at the current top of virtual user space
     uint64 sz = 0;
+
+    const int max_size = MAX_ARGS * sizeof(char*);
+    char* argv[max_size];
+    char* envp[max_size];
 
     char path[PATH_MAX];
     if (copyinstr(old_pgtbl, path, (uint64) upath, PATH_MAX) < 0) {
@@ -186,9 +190,6 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
 
     // prepare argv, envp in user stack
     // first, copy them from user space to kernel
-    const int max_size = MAX_ARGS * sizeof(char*);
-    char* argv[max_size];
-    char* envp[max_size];
     copyin(old_pgtbl, (void*)argv, (uint64)uargv, max_size);
     copyin(old_pgtbl, (void*)envp, (uint64)uenvp, max_size);
 
@@ -205,7 +206,7 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
         int size = copyinstr(old_pgtbl, &envp_mem[envp_nbytes], (uint64) envp[i], MAX_ARG_STRLEN);
         if (size < 0) {
             kfree(envp_mem);
-            goto bad;
+            goto execve_bad;
         }
         size = ALIGN(size, 8);
         // store offsets of each string
@@ -240,7 +241,7 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
         int size = copyinstr(old_pgtbl, &argv_mem[argv_nbytes], (uint64) argv[i], MAX_ARG_STRLEN);
         if (size < 0) {
             kfree(argv_mem);
-            goto bad;
+            goto execve_bad;
         }
         size = ALIGN(size, 8);
         // store offsets of each string
@@ -283,7 +284,7 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
 
     return argc;
 
-bad:
+execve_bad:
     if (pgtbl) {
         uvmfree(pgtbl, sz);
         freewalk(pgtbl, 2);
