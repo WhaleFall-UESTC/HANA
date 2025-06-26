@@ -288,9 +288,7 @@ bad:
         uvmfree(pgtbl, sz);
         freewalk(pgtbl, 2);
     }
-
-    kernel_close(file);
-
+    
     return -1;
 }
 

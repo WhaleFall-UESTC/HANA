@@ -111,10 +111,10 @@ int do_munmap(void* addr, size_t length) {
 
     int write_back = ((vma->flags & MAP_SHARED) && !(vma->flags & MAP_PRIVATE));
     if (write_back) {
-        kernel_lseek(vma->file, vma->offset, SEEK_SET);
         for (uint64 a = unmap_start; a < unmap_end; a += PGSIZE) {
             pte_t* pte = walk(UPGTBL(p->pagetable), a, WALK_NOALLOC);
             if (*pte & PTE_D) {
+                kernel_lseek(vma->file, vma->offset + (a - vma->start), SEEK_SET);
                 kernel_write(vma->file, (const void*)a, PGSIZE);
                 // write this page back to file
                 // vma->offset  
