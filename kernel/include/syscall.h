@@ -45,7 +45,24 @@
 
 #define NR_SYSCALL 30
 
+#define SYSCALLS(f) \
+    f(getcwd) f(pipe2) f(dup) f(dup3) f(chdir) f(openat) f(close) f(getdents64) \
+    f(read) f(write) f(linkat) f(unlinkat) f(mkdirat) f(umount2) f(mount) f(fstat) \
+    f(clone) f(execve) f(wait4) f(exit) f(getppid) f(getpid) \
+    f(brk) f(munmap) f(mmap) \
+    f(times) f(uname) f(sched_yield) f(gettimeofday) f(nanosleep)
+
 typedef uint64 (*syscall_func_t)(void);
+
+#define EXTERN_SYS(sys_name)    extern uint64 sys_##sys_name(void);
+#define REGISTER_SYS(sys_name)  [SYS_##sys_name] = (syscall_func_t)sys_##sys_name,
+#define MAP(s, f) s(f)
+
+MAP(SYSCALLS, EXTERN_SYS)
+
+syscall_func_t syscalls[] = {
+    MAP(SYSCALLS, REGISTER_SYS)
+};
 
 #define _PARAM1(x, type, arg, ...) type, __sys_get_register(x)
 #define _PARAM2(x, type, arg, ...) type, __sys_get_register(x), _PARAM1(metamacro_inc(x), __VA_ARGS__)
@@ -98,8 +115,6 @@ typedef uint64 (*syscall_func_t)(void);
     static inline ret_type __do_sys##name(__MAP(x, __SC_DECL, __VA_ARGS__))
 
 void syscall();
-
-
 
 /* mmap flags */
 

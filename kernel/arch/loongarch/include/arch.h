@@ -647,6 +647,12 @@ static inline void w_csr_msgir(uint64 val) { csr_write(CSR_MSGIR, val); }
 static inline uint64 r_csr_msgie() { uint64 val; csr_read(CSR_MSGIE, val); return val; }
 static inline void w_csr_msgie(uint64 val) { csr_write(CSR_MSGIE, val); }
 
+static inline uint32 r_cpucfg(int id) { 
+    uint32 val; 
+    asm volatile("cpucfg %0, %1" : "=r"(val) : "r"(id));
+    return val;
+}
+
 #define r_reg(REG, VAL) \
     asm volatile("move %0, $" #REG : "=r"(VAL))
 

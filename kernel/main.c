@@ -41,6 +41,7 @@ main()
 #ifdef __loongarch64
     debug("CRMD: %lx", r_csr_crmd());
     debug("DMW0: %lx", r_csr_dmw0());
+    debug("FREQ: %uMHz", r_cpucfg(0x4) / 1000000);
     PASS("loongarch64 start!!!");
 #endif
 
@@ -74,7 +75,7 @@ main()
     out("Initialize vfs");
 
     out("Enter tests");
-    test_proc_init((uint64) test);
+    // test_proc_init((uint64) test);
 
 #ifdef __loongarch64
     intr_on();

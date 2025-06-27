@@ -84,8 +84,8 @@ proc_init()
     asid_init(p->pid, sizeof(p->pid));
 #endif
     // user vm space init
-    // pagetable_t user_pagetable = uvminit((uint64)p->trapframe, init_code, sizeof(init_code));
-    pagetable_t user_pagetable = uvminit((uint64)p->trapframe, deadloop, sizeof(deadloop));
+    pagetable_t user_pagetable = uvminit((uint64)p->trapframe, init_code, sizeof(init_code));
+    // pagetable_t user_pagetable = uvminit((uint64)p->trapframe, deadloop, sizeof(deadloop));
     p->pagetable = upgtbl_init(user_pagetable);
     p->heap_start = 2*PGSIZE;
     p->sz = 2*PGSIZE;

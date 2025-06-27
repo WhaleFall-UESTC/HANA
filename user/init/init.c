@@ -5,13 +5,17 @@
 long sys_execve(const char *pathname, char *const argv[], char *const envp[]);
 
 int main(void) {
-    const char *path = "/test";
-    char *const argv[] = { NULL };
-    char *const envp[] = { NULL };
+    // const char *path = "/test";
+    // char *const argv[] = { NULL };
+    // char *const envp[] = { NULL };
     
-    sys_execve(path, argv, envp);
+    // sys_execve(path, argv, envp);
+
+    printf("hello, world!\n");
     
-    while (1) {}
+    while (1) {
+
+    }
 }
 
 #if defined(__riscv)

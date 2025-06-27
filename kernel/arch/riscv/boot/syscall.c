@@ -8,11 +8,6 @@
 #include <trap/context.h>
 #include <proc/proc.h>
 
-
-syscall_func_t syscalls[] = {
-
-};
-
 void
 syscall()
 {
