@@ -119,7 +119,7 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
     // sz is a pointer, point at the current top of virtual user space
     uint64 sz = 0;
 
-    const int max_size = MAX_ARGS * sizeof(char*);
+    const size_t max_size = MAX_ARGS * sizeof(char*);
     char* argv[max_size];
     char* envp[max_size];
 

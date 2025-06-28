@@ -118,3 +118,40 @@ off_t kernel_lseek(struct file* file, off_t offset, int whence) {
 
 	return ret;
 }
+
+int kernel_mount(const char * special, const char * dir, const char * fstype, unsigned long flags, const void * data) {
+	int len;
+	KCALLOC(struct mountpoint, mp, 1);
+	struct blkdev *blkdev;
+
+	len = str_match_prefix(special, "/dev/");
+
+	if (len != 5)
+	{
+		error("cannot find special device.");
+		return -1;
+	}
+
+	struct devfs_device* device = devfs_get_by_path(special);
+	if (device == NULL || device->file_type != FT_BLKDEV)
+	{
+		error("block device %s not found", special + len);
+		return -1;
+	}
+	blkdev = device->disk.blkdev;
+
+	if (mountpoint_find(dir) != NULL)
+	{
+		error("Mount point already used.");
+		return -1;
+	}
+
+	mp->blkdev = blkdev;
+	mp->device = device;
+	mp->fs = filesys_find(fstype);
+	mp->mountpoint = strdup(dir);
+
+	mountpoint_add(mp);
+
+	return call_interface(mp->fs->fs_op, mount, int, blkdev, mp, data);
+}

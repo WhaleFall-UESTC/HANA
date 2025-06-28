@@ -7,7 +7,6 @@
 #include <proc/proc.h>
 #include <debug.h>
 
-
 void
 kmem_init(uint64 va_start, uint64 va_end)
 {
@@ -74,7 +73,7 @@ uvmcopy(pagetable_t cpgtbl, pagetable_t ppgtbl, uint64 sz)
 // copy len bytes from kernel to user
 // return 0 on success
 int
-copyout(pagetable_t pgtbl, uint64 dstva, void* src, int len)
+copyout(pagetable_t pgtbl, uint64 dstva, void* src, size_t len)
 {
     // char* s = (char*) src;
     uint64 va0 = 0, pa0 = 0;
@@ -124,7 +123,7 @@ copyout(pagetable_t pgtbl, uint64 dstva, void* src, int len)
 // copy from user to kernel
 // if dst is NULL will alloc a space for it
 int 
-copyin(pagetable_t pagetable, char* dst, uint64 srcva, int len)
+copyin(pagetable_t pagetable, char* dst, uint64 srcva, size_t len)
 {
     uint64 va0 = 0, pa0 = 0;
 
@@ -153,12 +152,12 @@ copyin(pagetable_t pagetable, char* dst, uint64 srcva, int len)
     return 0;
 }
 
-int
-copyinstr(pagetable_t pagetable, char* dst, uint64 srcva, uint64 max)
+size_t
+copyinstr(pagetable_t pagetable, char* dst, uint64 srcva, size_t max)
 {
     int got_null = 0;
     pagetable = (pagetable_t) KERNEL_PA2VA(pagetable);
-    int cnt = 0;
+    size_t cnt = 0;
 
     while (got_null == 0 && max > 0) {
         uint64 va0 = PGROUNDDOWN(srcva);
@@ -190,16 +189,28 @@ copyinstr(pagetable_t pagetable, char* dst, uint64 srcva, uint64 max)
 }
 
 
-uint64 copy_from_user(void *to, const void *from, unsigned long n) {
-    copyin(UPGTBL(myproc()->pagetable), (char *) to, (uint64) from, n);
+ssize_t copy_from_user(void *to, const void *from, size_t n) {
+    if(copyin(UPGTBL(myproc()->pagetable), (char *) to, (uint64) from, n) < 0)
+        return -1;
     return n;
 }
 
-uint64 copy_to_user(void *to, const void *from, unsigned long n) {
-    copyout(UPGTBL(myproc()->pagetable), (uint64) to, (void *) from, n);
+ssize_t copy_to_user(void *to, const void *from, size_t n) {
+    if(copyout(UPGTBL(myproc()->pagetable), (uint64) to, (void *) from, n) < 0)
+        return -1;
     return n;
 }
 
+ssize_t copy_from_user_str(char* to, const void* from, size_t max) {
+    return copyinstr(UPGTBL(myproc()->pagetable), to, (uint64)from, max);
+}
+
+ssize_t copy_to_user_str(void* to, const char* from, size_t max) {
+    size_t len = min_uint64(strlen(from) + 1, max);
+    if(copy_to_user(to, (const void*)from, len) < 0)
+        return -1;
+    return len;
+}
 
 void
 store_page_fault_handler()

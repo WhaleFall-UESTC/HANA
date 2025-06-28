@@ -22,9 +22,9 @@ pagetable_t uvmmake(uint64 trapframe);
 pagetable_t uvminit(uint64 trapframe, char* init_code, int sz);
 void        uvmcopy(pagetable_t cpgtbl, pagetable_t ppgtbl, uint64 sz);
 void        map_stack(pagetable_t pgtbl, uint64 stack_va);
-int         copyout(pagetable_t pgtbl, uint64 dstva, void* src, int len);
-int         copyin(pagetable_t pagetable, char* dst, uint64 srcva, int len);
-int         copyinstr(pagetable_t pagetable, char* dst, uint64 srcva, uint64 max);
+int         copyout(pagetable_t pgtbl, uint64 dstva, void* src, size_t len);
+int         copyin(pagetable_t pagetable, char* dst, uint64 srcva, size_t len);
+size_t      copyinstr(pagetable_t pagetable, char* dst, uint64 srcva, size_t max);
 uint64      virt_to_phys(uint64 va);
 uint64      phys_to_virt(uint64 pa);
 void        uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free);
@@ -43,8 +43,10 @@ static inline uint64 phys_page_number(uint64 pa) {
 
 #include <mm/page.h>
 
-uint64 copy_from_user(void *to, const void *from, unsigned long n);
-uint64 copy_to_user(void *to, const void *from, unsigned long n);
+ssize_t     copy_from_user(void *to, const void *from, size_t n);
+ssize_t     copy_to_user(void *to, const void *from, size_t n);
+ssize_t     copy_from_user_str(char* to, const void* from, size_t max);
+ssize_t     copy_to_user_str(void* to, const char* from, size_t max);
 
 #define IS_DATA(addr) (((addr) >= (uint64) pages) && ((addr) < PHYSTOP)) 
 

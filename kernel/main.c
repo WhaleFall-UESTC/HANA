@@ -15,8 +15,7 @@
 #include <fs/fs.h>
 #include <drivers/uart.h>
 #include <net/net.h>
-
-// #include <drivers/virtio-mmio.h>
+#include <fs/kernel.h>
 
 #include <arch.h>
 
@@ -74,7 +73,7 @@ main()
     vfilesys_init();
     out("Initialize vfs");
 
-    out("Enter tests");
+    // out("Enter tests");
     // test_proc_init((uint64) test);
 
 #ifdef __loongarch64

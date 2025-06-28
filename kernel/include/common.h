@@ -112,6 +112,7 @@ typedef unsigned long size_t;
 typedef long ssize_t;
 typedef long off_t;
 typedef long time_t;
+typedef	long suseconds_t;
 
 typedef unsigned short umode_t;
 typedef unsigned int fmode_t;

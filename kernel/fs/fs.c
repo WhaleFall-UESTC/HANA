@@ -17,7 +17,7 @@ const struct file_system *filesys[] = {&devfs_fs, &ext4_fs};
 
 /************************ Export and Helper functions ************************/
 
-static const struct file_system *filesys_find(const char *fstype)
+const struct file_system *filesys_find(const char *fstype)
 {
 	int i;
 
@@ -136,7 +136,10 @@ SYSCALL_DEFINE2(getcwd, char *, char *, buf, size_t, size)
 	if (buf == NULL || strlen(cwd) > size)
 		return NULL;
 
-	strncpy(buf, cwd, size);
+	if(copy_to_user_str(buf, cwd, size) < 0) {
+		error("copy to userspace error");
+		return NULL;
+	}
 	return buf;
 }
 
@@ -176,10 +179,16 @@ SYSCALL_DEFINE3(dup3, fd_t, fd_t, old, fd_t, new, int, flags)
 
 SYSCALL_DEFINE1(chdir, int, const char *, path)
 {
+	char buf[MAX_PATH_LEN];
 	char **p_cwd = &myproc()->cwd;
 
+	if(copy_from_user_str(buf, path, MAX_PATH_LEN) < 0) {
+		error("copy from userspace error");
+		return -1;
+	}
+
 	kfree(*p_cwd);
-	*p_cwd = strdup(path);
+	*p_cwd = strdup(buf);
 
 	if (*p_cwd == NULL)
 	{
@@ -203,15 +212,20 @@ SYSCALL_DEFINE4(openat, fd_t, fd_t, dirfd, const char *, path, int, flags, umode
 	fd_t fd;
 	struct mountpoint *mount_p = NULL;
 	int ret;
-	char full_path[MAX_PATH_LEN];
+	char full_path[MAX_PATH_LEN], __path[MAX_PATH_LEN];
 	struct file *file = NULL;
 	struct inode *inode = NULL;
 	struct files_struct *fdt = myproc()->fdt;
 	struct stat stat;
+	
+	if(copy_from_user_str(__path, path, MAX_PATH_LEN) < 0) {
+		error("copy from userspace error");
+		return -1;
+	}
 
-	debug("open path: %s, flags: %d", path, flags);
+	debug("open path: %s, flags: %d", __path, flags);
 
-	ret = get_absolute_path(path, full_path, dirfd);
+	ret = get_absolute_path(__path, full_path, dirfd);
 	if (ret < 0)
 	{
 		error("get absolute path error");
@@ -307,6 +321,12 @@ SYSCALL_DEFINE3(read, ssize_t, int, fd, char *, buf, size_t, count)
 	struct files_struct *fdt = myproc()->fdt;
 	ssize_t ret;
 	off_t ori_fpos;
+	KCALLOC(char, kernel_buf, count);
+
+	if(kernel_buf == NULL) {
+		error("alloc kernel buffer error");
+		return -1;
+	}
 
 	if (fd < 0 || fd >= NR_OPEN)
 		return -1;
@@ -321,9 +341,16 @@ SYSCALL_DEFINE3(read, ssize_t, int, fd, char *, buf, size_t, count)
 	}
 
 	ori_fpos = file->fpos;
-	ret = call_interface(file->f_op, read, ssize_t, file, buf, count, &file->fpos);
+	ret = call_interface(file->f_op, read, ssize_t, file, kernel_buf, count, &file->fpos);
 	if (ret < 0)
 		return -1;
+
+	if (copy_to_user(buf, kernel_buf, ret) < 0) {
+		error("copy to userspace error");
+		kfree(kernel_buf);
+		return -1;
+	}
+	kfree(kernel_buf);
 
 	return file->fpos - ori_fpos;
 }
@@ -334,6 +361,12 @@ SYSCALL_DEFINE3(write, ssize_t, int, fd, const char *, buf, size_t, count)
 	struct files_struct *fdt = myproc()->fdt;
 	ssize_t ret;
 	off_t ori_fpos;
+	KCALLOC(char, kernel_buf, count);
+
+	if(kernel_buf == NULL) {
+		error("alloc kernel buffer error");
+		return -1;
+	}
 
 	if (fd < 0 || fd >= NR_OPEN)
 		return -1;
@@ -351,10 +384,18 @@ SYSCALL_DEFINE3(write, ssize_t, int, fd, const char *, buf, size_t, count)
 		file->fpos = call_interface(file->f_op, llseek, off_t, file, 0, SEEK_END);
 	}
 
+	if (copy_from_user(kernel_buf, buf, count) < 0) {
+		error("copy from userspace error");
+		kfree(kernel_buf);
+		return -1;
+	}
+
 	ori_fpos = file->fpos;
-	ret = call_interface(file->f_op, write, ssize_t, file, buf, count, &file->fpos);
+	ret = call_interface(file->f_op, write, ssize_t, file, kernel_buf, count, &file->fpos);
 	if (ret < 0)
 		return -1;
+
+	kfree(kernel_buf);
 
 	return file->fpos - ori_fpos;
 }
@@ -363,7 +404,6 @@ SYSCALL_DEFINE1(close, int, int, fd)
 {
 	struct file *file;
 	struct files_struct *fdt = myproc()->fdt;
-	// int ret;
 
 	if (fd < 0 || fd >= NR_OPEN)
 		return -1;
@@ -401,9 +441,15 @@ SYSCALL_DEFINE2(stat, int, const char *, path, struct stat *, buf)
 {
 	struct mountpoint *mount_p;
 	int ret;
-	char full_path[MAX_PATH_LEN];
+	char full_path[MAX_PATH_LEN], __path[MAX_PATH_LEN];
+	struct stat stat;
 
-	ret = get_absolute_path(path, full_path, AT_FDCWD);
+	if(copy_from_user_str(__path, path, MAX_PATH_LEN) < 0) {
+		error("copy from userspace error");
+		return -1;
+	}
+
+	ret = get_absolute_path(__path, full_path, AT_FDCWD);
 	if (ret < 0)
 	{
 		error("get absolute path error");
@@ -418,10 +464,15 @@ SYSCALL_DEFINE2(stat, int, const char *, path, struct stat *, buf)
 		return -1;
 	}
 
-	ret = call_interface(mount_p->fs->fs_op, getattr, int, full_path, buf);
+	ret = call_interface(mount_p->fs->fs_op, getattr, int, full_path, &stat);
 	if (ret < 0)
 	{
 		error("stat error");
+		return -1;
+	}
+
+	if (copy_to_user(buf, &stat, sizeof(struct stat)) < 0) {
+		error("copy to userspace error");
 		return -1;
 	}
 
@@ -433,6 +484,7 @@ SYSCALL_DEFINE2(fstat, int, int, fd, struct stat *, buf)
 	struct file *file;
 	struct files_struct *fdt = myproc()->fdt;
 	struct inode *inode;
+	struct stat stat;
 	int ret;
 
 	if (fd < 0 || fd >= NR_OPEN)
@@ -444,9 +496,14 @@ SYSCALL_DEFINE2(fstat, int, int, fd, struct stat *, buf)
 
 	inode = file->f_inode;
 
-	ret = call_interface(inode->i_mp->fs->fs_op, getattr, int, file->f_path, buf);
+	ret = call_interface(inode->i_mp->fs->fs_op, getattr, int, file->f_path, &stat);
 	if (ret < 0)
 		return -1;
+
+	if (copy_to_user(buf, &stat, sizeof(struct stat)) < 0) {
+		error("copy to userspace error");
+		return -1;
+	}
 
 	return 0;
 }
@@ -455,9 +512,14 @@ SYSCALL_DEFINE3(unlinkat, int, fd_t, dirfd, const char *, path, unsigned int, fl
 {
 	struct mountpoint *mount_p;
 	int ret;
-	char full_path[MAX_PATH_LEN];
+	char full_path[MAX_PATH_LEN], __path[MAX_PATH_LEN];
 
-	ret = get_absolute_path(path, full_path, dirfd);
+	if(copy_from_user_str(__path, path, MAX_PATH_LEN) < 0) {
+		error("copy from userspace error");
+		return -1;
+	}
+
+	ret = get_absolute_path(__path, full_path, dirfd);
 	if (ret < 0)
 	{
 		error("get absolute path error");
@@ -496,6 +558,7 @@ SYSCALL_DEFINE3(getdents64, ssize_t, int, fd, struct dirent *, buf, size_t, len)
 	struct dirent *abuf;
 	const char* name;
 	struct mountpoint* mp;
+	struct dirent *kernel_buf;
 
 	if (fd < 0 || fd >= NR_OPEN) return -1;
 
@@ -503,14 +566,21 @@ SYSCALL_DEFINE3(getdents64, ssize_t, int, fd, struct dirent *, buf, size_t, len)
 	if (file == NULL || !(file->f_flags & O_DIRECTORY))
 		return -1;
 
-	ret = call_interface(file->f_op, getdents64, int, file, buf, len);
+	kernel_buf = (struct dirent *)kcalloc(len, 1);
+
+	if(kernel_buf == NULL) {
+		error("alloc kernel buffer error");
+		return -1;
+	}
+
+	ret = call_interface(file->f_op, getdents64, int, file, kernel_buf, len);
 	if(ret < 0) {
 		error("fs getdents64 failed");
 		return -1;
 	}
 
 	// Add other mp dents
-	abuf = (struct dirent*)((char*)buf + ret);
+	abuf = (struct dirent*)((char*)kernel_buf + ret);
 	len -= ret;
 	mp_list_for_each_entry_locked(mp) {
 		if(mp == file->f_inode->i_mp)
@@ -544,6 +614,15 @@ SYSCALL_DEFINE3(getdents64, ssize_t, int, fd, struct dirent *, buf, size_t, len)
 		ret += size;
 	}
 
+	if (copy_to_user(buf, kernel_buf, ret) < 0)
+	{
+		error("copy to userspace error");
+		kfree(kernel_buf);
+		return -1;
+	}
+
+	kfree(kernel_buf);
+
 	return ret;
 }
 
@@ -551,9 +630,14 @@ SYSCALL_DEFINE3(mkdirat, int, fd_t, dirfd, const char *, path, umode_t, mode)
 {
 	struct mountpoint *mount_p;
 	int ret;
-	char full_path[MAX_PATH_LEN];
+	char full_path[MAX_PATH_LEN], __path[MAX_PATH_LEN];
 
-	ret = get_absolute_path(path, full_path, dirfd);
+	if(copy_from_user_str(__path, path, MAX_PATH_LEN) < 0) {
+		error("copy from userspace error");
+		return -1;
+	}
+
+	ret = get_absolute_path(__path, full_path, dirfd);
 	if (ret < 0)
 	{
 		error("get absolute path error");
@@ -585,8 +669,17 @@ SYSCALL_DEFINE5(linkat, int, fd_t, olddirfd, const char *, oldpath, fd_t, newdir
 	int ret;
 	struct files_struct *fdt = myproc()->fdt;
 	struct file *old_file = fd_get(fdt, olddirfd);
-	char full_old_path[MAX_PATH_LEN];
-	char full_new_path[MAX_PATH_LEN];
+	char full_old_path[MAX_PATH_LEN], __old_path[MAX_PATH_LEN];
+	char full_new_path[MAX_PATH_LEN], __new_path[MAX_PATH_LEN];
+
+	if(copy_from_user_str(__old_path, oldpath, MAX_PATH_LEN) < 0) {
+		error("copy from userspace error");
+		return -1;
+	}
+	if(copy_from_user_str(__new_path, newpath, MAX_PATH_LEN) < 0) {
+		error("copy from userspace error");
+		return -1;
+	}
 
 	if (flags & AT_EMPTY_PATH)
 	{
@@ -597,7 +690,7 @@ SYSCALL_DEFINE5(linkat, int, fd_t, olddirfd, const char *, oldpath, fd_t, newdir
 	}
 	else
 	{
-		ret = get_absolute_path(oldpath, full_old_path, olddirfd);
+		ret = get_absolute_path(__old_path, full_old_path, olddirfd);
 		if (ret < 0)
 		{
 			error("get absolute old path error");
@@ -605,7 +698,7 @@ SYSCALL_DEFINE5(linkat, int, fd_t, olddirfd, const char *, oldpath, fd_t, newdir
 		}
 	}
 
-	ret = get_absolute_path(newpath, full_new_path, newdirfd);
+	ret = get_absolute_path(__new_path, full_new_path, newdirfd);
 	if (ret < 0)
 	{
 		error("get absolute new path error");
@@ -645,9 +738,18 @@ SYSCALL_DEFINE3(symlinkat, int, const char *, target, fd_t, newdirfd, const char
 {
 	struct mountpoint *mount_p;
 	int ret;
-	char full_linkpath[MAX_PATH_LEN];
+	char full_linkpath[MAX_PATH_LEN], __target[MAX_PATH_LEN], __linkpath[MAX_PATH_LEN];
 
-	ret = get_absolute_path(linkpath, full_linkpath, newdirfd);
+	if(copy_from_user_str(__target, target, MAX_PATH_LEN) < 0) {
+		error("copy from userspace error");
+		return -1;
+	}
+	if(copy_from_user_str(__linkpath, linkpath, MAX_PATH_LEN) < 0) {
+		error("copy from userspace error");
+		return -1;
+	}
+
+	ret = get_absolute_path(__linkpath, full_linkpath, newdirfd);
 	if (ret < 0)
 	{
 		error("get absolute link path error");
@@ -655,14 +757,14 @@ SYSCALL_DEFINE3(symlinkat, int, const char *, target, fd_t, newdirfd, const char
 	}
 
 	// find mountpoint
-	mount_p = mountpoint_find(target);
+	mount_p = mountpoint_find(__target);
 	if (mount_p == NULL)
 	{
-		error("mountpoint not found for path %s", target);
+		error("mountpoint not found for path %s", __target);
 		return -1;
 	}
 
-	ret = call_interface(mount_p->fs->fs_op, symlink, int, target, full_linkpath);
+	ret = call_interface(mount_p->fs->fs_op, symlink, int, __target, full_linkpath);
 	if (ret < 0)
 	{
 		error("symlink error");
@@ -680,10 +782,26 @@ SYSCALL_DEFINE5(mount, int, const char *, special, const char *, dir, const char
 {
 	int len, ret;
 	char full_path_sp[MAX_PATH_LEN], full_path_dir[MAX_PATH_LEN];
+	char __special[MAX_PATH_LEN], __dir[MAX_PATH_LEN], __fstype[MAX_PATH_LEN];
 	KCALLOC(struct mountpoint, mp, 1);
 	struct blkdev *blkdev;
 
-	ret = get_absolute_path(special, full_path_sp, AT_FDCWD);
+	assert(data == NULL);
+
+	if(copy_from_user_str(__special, special, MAX_PATH_LEN) < 0) {
+		error("copy from userspace error");
+		return -1;
+	}
+	if(copy_from_user_str(__dir, dir, MAX_PATH_LEN) < 0) {
+		error("copy from userspace error");
+		return -1;
+	}
+	if(copy_from_user_str(__fstype, fstype, MAX_PATH_LEN) < 0) {
+		error("copy from userspace error");
+		return -1;
+	}
+
+	ret = get_absolute_path(__special, full_path_sp, AT_FDCWD);
 	if (ret < 0)
 	{
 		error("get absolute special path error");
@@ -694,26 +812,25 @@ SYSCALL_DEFINE5(mount, int, const char *, special, const char *, dir, const char
 
 	if (len != 5)
 	{
-		error("cannot find special device.");
+		error("cannot find special device %s.", full_path_sp);
 		return -1;
 	}
 
 	struct devfs_device* device = devfs_get_by_path(full_path_sp);
 	if (device == NULL || device->file_type != FT_BLKDEV)
 	{
-		error("block device %s not found", special + len);
+		error("block device %s not found", __special + len);
 		return -1;
 	}
 	blkdev = device->disk.blkdev;
 
-	ret = get_absolute_path(dir, full_path_dir, AT_FDCWD);
+	ret = get_absolute_path(__dir, full_path_dir, AT_FDCWD);
 	if (ret < 0)
 	{
 		error("get absolute dir path error");
 		return -1;
 	}
 
-	// 检查挂载点是否已被使用
 	if (mountpoint_find(full_path_dir) != NULL)
 	{
 		error("Mount point already used.");
@@ -722,7 +839,7 @@ SYSCALL_DEFINE5(mount, int, const char *, special, const char *, dir, const char
 
 	mp->blkdev = blkdev;
 	mp->device = device;
-	mp->fs = filesys_find(fstype);
+	mp->fs = filesys_find(__fstype);
 	mp->mountpoint = strdup(full_path_dir);
 
 	mountpoint_add(mp);
@@ -733,10 +850,15 @@ SYSCALL_DEFINE5(mount, int, const char *, special, const char *, dir, const char
 SYSCALL_DEFINE2(umount2, int, const char *, special, int, flags)
 {
 	int ret;
-	char full_path_sp[MAX_PATH_LEN];
+	char full_path_sp[MAX_PATH_LEN], __special[MAX_PATH_LEN];
 	struct mountpoint *mp;
 
-	ret = get_absolute_path(special, full_path_sp, AT_FDCWD);
+	if(copy_from_user_str(__special, special, MAX_PATH_LEN) < 0) {
+		error("copy from userspace error");
+		return -1;
+	}
+
+	ret = get_absolute_path(__special, full_path_sp, AT_FDCWD);
 	if (ret < 0)
 	{
 		error("get absolute special path error");
@@ -777,6 +899,7 @@ SYSCALL_DEFINE2(pipe2, int, int*, pipefd, int, flags) {
 	struct files_struct *fdt = myproc()->fdt;
 	KCALLOC(struct file, rfile, 1);
 	KCALLOC(struct file, wfile, 1);
+	fd_t fds[2];
 
 	warn_on(flags, "pipe2 currently do not support flags");
 
@@ -786,19 +909,21 @@ SYSCALL_DEFINE2(pipe2, int, int*, pipefd, int, flags) {
 		goto out_file;
 	}
 
-	pipefd[0] = fd_alloc(fdt, rfile);
-	if(pipefd[0] < 0) {
+	fds[0] = fd_alloc(fdt, rfile);
+	if(fds[0] < 0) {
 		ret = -1;
 		error("read fd alloc error");
 		goto out_pipe;
 	}
 
-	pipefd[1] = fd_alloc(fdt, wfile);
-	if(pipefd[1] < 0) {
+	fds[1] = fd_alloc(fdt, wfile);
+	if(fds[1] < 0) {
 		ret = -1;
 		error("write fd alloc error");
 		goto out_rfd;
 	}
+
+	copy_to_user(pipefd, fds, sizeof(fds));
 
 	return 0;
 

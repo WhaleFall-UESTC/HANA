@@ -39,12 +39,78 @@
 #define SYS_nanosleep 101
 
 typedef unsigned long uint64;
+typedef long int64;
 typedef unsigned long size_t;
 typedef unsigned long ssize_t;
 typedef unsigned long clock_t;
 typedef unsigned mode_t;
 typedef long off_t;
 typedef int pid_t;
+typedef long time_t;
+typedef	long suseconds_t;
+
+struct dirent
+{
+	uint64 d_ino;
+	int64 d_off;
+	unsigned short d_reclen;
+	unsigned char d_type;
+	char d_name[];
+};
+
+struct stat {
+	unsigned long	st_dev;
+	unsigned long	st_ino;
+	unsigned int	st_mode;
+	unsigned int	st_nlink;
+	unsigned int	st_uid;
+	unsigned int	st_gid;
+	unsigned long	st_rdev;
+	unsigned long	__pad1;
+	long		st_size;
+	int		st_blksize;
+	int		__pad2;
+	long		st_blocks;
+	long		st_atime;
+	unsigned long	st_atime_nsec;
+	long		st_mtime;
+	unsigned long	st_mtime_nsec;
+	long		st_ctime;
+	unsigned long	st_ctime_nsec;
+	unsigned int	__unused4;
+	unsigned int	__unused5;
+};
+
+struct timeval {
+	time_t		tv_sec;		/* seconds */
+	suseconds_t	tv_usec;	/* and microseconds */
+};
+
+struct rusage {
+  	struct timeval ru_utime;	/* user time used */
+	struct timeval ru_stime;	/* system time used */
+};
+
+struct tms {
+	clock_t tms_utime;
+	clock_t tms_stime;
+	clock_t tms_cutime;
+	clock_t tms_cstime;
+};
+
+struct utsname {
+	char sysname[65];
+	char nodename[65];
+	char release[65];
+	char version[65];
+	char machine[65];
+	char domainname[65];
+};
+
+struct timespec {
+	time_t	tv_sec;		/* seconds */
+	long	tv_nsec;	/* and nanoseconds */
+};
 
 #if defined(__riscv)
 static inline uint64 internal_syscall(long n, uint64 _a0, uint64 _a1, uint64 _a2, uint64
@@ -60,7 +126,7 @@ static inline uint64 internal_syscall(long n, uint64 _a0, uint64 _a1, uint64 _a2
 			(a5), "r"(syscall_id));
 	return a0;
 }
-#else if defined(__loongarch)
+#elif defined(__loongarch)
 static inline uint64 internal_syscall(long n, uint64 a0, uint64 a1, uint64 a2,
                                     uint64 a3, uint64 a4, uint64 a5) {
     register uint64 x0 asm("$a0") = a0; // 参数寄存器 $a0 - $a5

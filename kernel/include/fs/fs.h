@@ -129,5 +129,6 @@ static inline int str_match_prefix(const char *str, const char *prefix)
  */
 int fullpath_connect(const char *path, char *full_path);
 int get_absolute_path(const char *path, char *full_path, fd_t dirfd);
+const struct file_system *filesys_find(const char *fstype);
 
 #endif // __FS_H__
