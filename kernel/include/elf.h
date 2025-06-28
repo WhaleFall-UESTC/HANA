@@ -50,6 +50,8 @@ typedef Elf64_Half Elf64_Versym;
 
 
 // File header  
+#pragma pack(push, 1) 
+
 typedef struct {
     unsigned char	e_ident[EI_NIDENT];
     Elf64_Half	e_type;			  /* Object file type */
@@ -79,6 +81,8 @@ typedef struct {
     Elf64_Xword	p_memsz;		/* Segment size in memory */
     Elf64_Xword	p_align;		/* Segment alignment */
 } Elf64_Phdr;
+
+#pragma pack(pop) 
 
 typedef Elf64_Ehdr Elf_Ehdr;
 typedef Elf64_Phdr Elf_Phdr;
