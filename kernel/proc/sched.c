@@ -10,6 +10,7 @@
 #include <trap/trap.h>
 #include <arch.h>
 #include <syscall.h>
+#include <time.h>
 
 struct proc* proc_list;
 
@@ -36,6 +37,12 @@ scheduler()
         intr_on();
         for (p = proc_list; p; p = p->next) {
             // lock process
+            if (p->state == SLEEPING && p->sleeping_due != -1) {
+                if (tick_counter >= p->sleeping_due) {
+                    p->sleeping_due = -1;
+                    p->state = RUNNABLE;
+                }
+            }
             if (p->state == RUNNABLE) {
                 // switch to this process
                 p->state = RUNNING;

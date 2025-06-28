@@ -43,6 +43,7 @@ alloc_proc()
 
     p->state = INIT;
     p->killed = 0;
+    p->sleeping_due = -1;
 
     p->trapframe = (struct trapframe*) kalloc(sizeof(struct trapframe));
     Assert(p->trapframe, "out of memory");
