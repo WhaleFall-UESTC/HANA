@@ -17,6 +17,8 @@ page_ref_inc(uint64 pa)
 int
 page_ref_dec(uint64 pa)
 {
+    if (pa < (uint64) pages || pa > PHYSTOP)
+        return -1;
     struct page* p = GET_PAGE(pa);
     return __sync_fetch_and_sub(&p->cnt, 1);
 }

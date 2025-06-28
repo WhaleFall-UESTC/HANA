@@ -7,6 +7,7 @@
 #include <proc/proc.h>
 #include <trap/trap.h>
 #include <proc/sched.h>
+#include <mm/buddy.h>
 #include <mm/mm.h>
 #include <mm/memlayout.h>
 #include <fs/file.h>
@@ -120,8 +121,8 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
     uint64 sz = 0;
 
     const size_t max_size = MAX_ARGS * sizeof(char*);
-    char* argv[max_size];
-    char* envp[max_size];
+    char* argv[max_size] = {};
+    char* envp[max_size] = {};
 
     char path[PATH_MAX];
     if (copyinstr(old_pgtbl, path, (uint64) upath, PATH_MAX) < 0) {
@@ -148,6 +149,9 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
         kernel_lseek(file, off, SEEK_SET);
         kernel_read(file, &phdr, sizeof(Elf64_Ehdr));
 
+        log("Got phdr type=%u, flags=%u, off=%lx, va=%lx, filesz=%lx, memsz=%lx", 
+            phdr.p_type, phdr.p_flags, phdr.p_offset, phdr.p_vaddr, phdr.p_filesz, phdr.p_memsz);
+
         if (phdr.p_type != PT_LOAD)
             continue;
 
@@ -163,7 +167,7 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
         else if (phdr.p_flags & (PF_R)) perms |= PTE_RONLY;
         else perms |= PTE_RWX;
         
-        char* mem = kalloc(phdr.p_memsz);
+        char* mem = buddy_alloc(phdr.p_memsz);
         mappages(pgtbl, phdr.p_vaddr, KERNEL_VA2PA(mem), phdr.p_memsz, perms);
 
         sz = max_uint64(sz, phdr.p_vaddr + phdr.p_memsz);
@@ -189,83 +193,91 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
     char* ustack_p = (char*) KERNEL_PA2VA(PTE2PA(*pte));
 
     // prepare argv, envp in user stack
-    // first, copy them from user space to kernel
-    copyin(old_pgtbl, (void*)argv, (uint64)uargv, max_size);
-    copyin(old_pgtbl, (void*)envp, (uint64)uenvp, max_size);
+    uint64 p_envp = 0, p_argv = 0;
 
-    int argc, envc;
-    for (argc = 0; argv[argc]; argc++);
-    for (envc = 0; envp[envc]; envc++);
+    if (uenvp) {
+        // first, copy them from user space to kernel
+        copyin(old_pgtbl, (void*)envp, (uint64)uenvp, max_size);
+        int envc;
+        for (envc = 0; envp[envc]; envc++);
 
-    // copy all envp string to a tempoary memory
-    // caculate the real space they need
-    // then copy to ustack
-    char* envp_mem = kalloc(envc * MAX_ARG_STRLEN);
-    uint64 envp_nbytes = 0;
-    for (int i = 0; i < envc; i++) {
-        int size = copyinstr(old_pgtbl, &envp_mem[envp_nbytes], (uint64) envp[i], MAX_ARG_STRLEN);
-        if (size < 0) {
-            kfree(envp_mem);
-            goto execve_bad;
+        // copy all envp string to a tempoary memory
+        // caculate the real space they need
+        // then copy to ustack
+        char* envp_mem = kalloc(envc * MAX_ARG_STRLEN);
+        uint64 envp_nbytes = 0;
+        for (int i = 0; i < envc; i++) {
+            int size = copyinstr(old_pgtbl, &envp_mem[envp_nbytes], (uint64) envp[i], MAX_ARG_STRLEN);
+            if (size < 0) {
+                kfree(envp_mem);
+                goto execve_bad;
+            }
+            size = ALIGN(size, 8);
+            // store offsets of each string
+            envp[i] = (char*) envp_nbytes;
+            envp_nbytes += size;
         }
-        size = ALIGN(size, 8);
-        // store offsets of each string
-        envp[i] = (char*) envp_nbytes;
-        envp_nbytes += size;
-    }
 
-    // copy envp string to stack
-    memmove(&ustack_p[PGSIZE - envp_nbytes], envp_mem, envp_nbytes);
-    kfree(envp_mem);
+        // copy envp string to stack
+        memmove(&ustack_p[PGSIZE - envp_nbytes], envp_mem, envp_nbytes);
+        kfree(envp_mem);
 
-    sp -= envp_nbytes;
-    uint64 p_envp = sp - 2 * 8;
+        sp -= envp_nbytes;
+        p_envp = sp - 2 * 8;
 
-    // caculate envp string address, and store it
-    int addr = PGSIZE - envp_nbytes - 8;
-    for (int i = 0; i < envc; i++) {
-        addr -= 8;
-        *((uint64*)(&ustack_p[addr])) = ((uint64) envp[i]) + sp;
-    }
-
-    sp -= 8;
-    sp -= envc * 8;
-    sp -= 8;
-
-    // copy all arg string to a tempoary memory
-    // caculate the real space they need
-    // then copy to ustack
-    char* argv_mem = kalloc(argc * MAX_ARG_STRLEN);
-    uint64 argv_nbytes = 0;
-    for (int i = 0; i < argc; i++) {
-        int size = copyinstr(old_pgtbl, &argv_mem[argv_nbytes], (uint64) argv[i], MAX_ARG_STRLEN);
-        if (size < 0) {
-            kfree(argv_mem);
-            goto execve_bad;
+        // caculate envp string address, and store it
+        int addr = PGSIZE - envp_nbytes - 8;
+        for (int i = 0; i < envc; i++) {
+            addr -= 8;
+            *((uint64*)(&ustack_p[addr])) = ((uint64) envp[i]) + sp;
         }
-        size = ALIGN(size, 8);
-        // store offsets of each string
-        argv[i] = (char*) argv_nbytes;
-        argv_nbytes += size;
+
+        sp -= 8;
+        sp -= envc * 8;
+        sp -= 8;
     }
 
-    // copy envp string to stack
-    memmove(&ustack_p[PGSIZE - (stack_top - sp) - argv_nbytes], argv_mem, argv_nbytes);
-    kfree(argv_mem);
 
-    sp -= argv_nbytes;
-    uint64 p_argv = sp - 2 * 8;
+    int argc = 0;
+    if (uargv) {
+        for (argc = 0; argv[argc]; argc++);
+        copyin(old_pgtbl, (void*)argv, (uint64)uargv, max_size);
 
-    // caculate envp string address, and store it
-    int addr_ = PGSIZE - (stack_top - sp) - 8;
-    for (int i = 0; i < argc; i++) {
-        addr_ -= 8;
-        *((uint64*)(&ustack_p[addr_])) = ((uint64) argv[i]) + sp;
+        // copy all arg string to a tempoary memory
+        // caculate the real space they need
+        // then copy to ustack
+        char* argv_mem = kalloc(argc * MAX_ARG_STRLEN);
+        uint64 argv_nbytes = 0;
+        for (int i = 0; i < argc; i++) {
+            int size = copyinstr(old_pgtbl, &argv_mem[argv_nbytes], (uint64) argv[i], MAX_ARG_STRLEN);
+            if (size < 0) {
+                kfree(argv_mem);
+                goto execve_bad;
+            }
+            size = ALIGN(size, 8);
+            // store offsets of each string
+            argv[i] = (char*) argv_nbytes;
+            argv_nbytes += size;
+        }
+
+        // copy envp string to stack
+        memmove(&ustack_p[PGSIZE - (stack_top - sp) - argv_nbytes], argv_mem, argv_nbytes);
+        kfree(argv_mem);
+
+        sp -= argv_nbytes;
+        p_argv = sp - 2 * 8;
+
+        // caculate envp string address, and store it
+        int addr_ = PGSIZE - (stack_top - sp) - 8;
+        for (int i = 0; i < argc; i++) {
+            addr_ -= 8;
+            *((uint64*)(&ustack_p[addr_])) = ((uint64) argv[i]) + sp;
+        }
+        
+        sp -= 8;
+        sp -= argc * 8;
+        sp -= 8;
     }
-    
-    sp -= 8;
-    sp -= argc * 8;
-    sp -= 8;
 
     // store argc
     sp -= 8;

@@ -50,7 +50,7 @@
     f(read) f(write) f(linkat) f(unlinkat) f(mkdirat) f(umount2) f(mount) f(fstat) \
     f(clone) f(execve) f(wait4) f(exit) f(getppid) f(getpid) \
     f(brk) f(munmap) f(mmap) \
-    f(times) f(uname) f(sched_yield) // f(gettimeofday) f(nanosleep)
+    f(times) f(uname) f(sched_yield) f(gettimeofday) f(nanosleep)
 
 typedef uint64 (*syscall_func_t)(void);
 

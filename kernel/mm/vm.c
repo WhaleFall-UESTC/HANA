@@ -278,12 +278,13 @@ void freewalk(pagetable_t pgtbl, int level) {
         return;
 
     pgtbl = (pagetable_t) KERNEL_PA2VA(pgtbl);
-    int npte = PGSIZE / sizeof(pte_t);
+    int npte = 512;
 
     for (int i = 0; i < npte; i++) {
         pte_t pte = pgtbl[i];
         uint64 child = PTE2PA(pte);
-        freewalk((pagetable_t) child, level + 1);
+        if (child != 0)
+            freewalk((pagetable_t) child, level + 1);
         pgtbl[i] = 0;
     }
 

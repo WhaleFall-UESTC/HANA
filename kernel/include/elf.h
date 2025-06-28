@@ -86,7 +86,7 @@ typedef Elf64_Phdr Elf_Phdr;
 // Values for Phdr type
 #define	PT_NULL		  0		/* Program header table entry unused */
 #define PT_LOAD		  1		/* Loadable program segment */
-#define PT_DYNAMIC	2		/* Dynamic linking information */
+#define PT_DYNAMIC	  2	    /* Dynamic linking information */
 #define PT_INTERP	  3		/* Program interpreter */
 #define PT_NOTE		  4		/* Auxiliary information */
 #define PT_SHLIB	  5		/* Reserved */

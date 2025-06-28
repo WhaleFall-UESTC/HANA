@@ -30,6 +30,8 @@ scheduler()
 
     c->proc = NULL;
 
+    intr_on();
+
     for (;;) {
 #ifdef ARCH_LOONGARCH
         timer_intr_off();
