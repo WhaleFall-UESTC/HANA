@@ -37,4 +37,7 @@ void        lab_cow();
 /* test_net.c */
 void        test_net();
 
+/* test_execve.c */
+void        test_execve();
+
 #endif // __TESTDEFS_H__

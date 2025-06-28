@@ -116,6 +116,8 @@ off_t kernel_lseek(struct file* file, off_t offset, int whence) {
 	if (ret < 0)
 		return -1;
 
+	file->fpos = ret;
+
 	return ret;
 }
 

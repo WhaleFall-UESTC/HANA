@@ -112,6 +112,13 @@ struct timespec {
 	long	tv_nsec;	/* and nanoseconds */
 };
 
+#define AT_FDCWD		-100
+#define O_ACCMODE	00000003
+#define O_RDONLY	00000000
+#define O_WRONLY	00000001
+#define O_RDWR		00000002
+#define O_CREAT		00000100
+
 #if defined(__riscv)
 static inline uint64 internal_syscall(long n, uint64 _a0, uint64 _a1, uint64 _a2, uint64
 		_a3, uint64 _a4, uint64 _a5) {

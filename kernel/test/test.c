@@ -9,7 +9,8 @@ void test() {
     // intr_off();
     PASS("test start!!!");
 
-    test_fs();
+    test_execve();
+    // test_fs();
 
     PASS("test finish!!!");
     // intr_on();

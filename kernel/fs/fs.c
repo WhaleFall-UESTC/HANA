@@ -434,6 +434,8 @@ SYSCALL_DEFINE3(lseek, off_t, int, fd, off_t, offset, int, whence)
 	if (ret < 0)
 		return -1;
 
+	file->fpos = ret;
+
 	return ret;
 }
 

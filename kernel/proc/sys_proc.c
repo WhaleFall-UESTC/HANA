@@ -145,12 +145,12 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
     pgtbl = uvmmake((uint64) p->trapframe);
 
     /* test for phdr read */
-    kernel_lseek(file, elf.e_phoff, SEEK_SET);
-    for (int i = 0; i < elf.e_phnum; i++) {
-        kernel_read(file, &phdr, sizeof(Elf64_Ehdr));
-        log("Got phdr type=%u, flags=%u, off=%lx, va=%lx, filesz=%lx, memsz=%lx", 
-            phdr.p_type, phdr.p_flags, phdr.p_offset, phdr.p_vaddr, phdr.p_filesz, phdr.p_memsz);
-    }
+    // for (int i = 0, off = elf.e_phoff; i < elf.e_phnum; i++, off += sizeof(Elf64_Phdr)) {
+    //     kernel_lseek(file, off, SEEK_SET);
+    //     kernel_read(file, &phdr, sizeof(Elf64_Ehdr));
+    //     log("Got phdr type=%u, flags=%u, off=%lx, va=%lx, filesz=%lx, memsz=%lx", 
+    //         phdr.p_type, phdr.p_flags, phdr.p_offset, phdr.p_vaddr, phdr.p_filesz, phdr.p_memsz);
+    // }
 
     for (int i = 0, off = elf.e_phoff; i < elf.e_phnum; i++, off += sizeof(Elf64_Phdr))
     {
