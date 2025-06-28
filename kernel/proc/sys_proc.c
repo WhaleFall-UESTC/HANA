@@ -169,11 +169,11 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
         // load to memory
         LOADER_CHECK(IS_PGALIGNED(phdr.p_vaddr));
 
-        int perms = PTE_U;
-        if (phdr.p_flags & (PF_R | PF_W)) perms |= PTE_RW;
-        else if (phdr.p_flags & (PF_R | PF_X)) perms |= PTE_RX;
-        else if (phdr.p_flags & (PF_R)) perms |= PTE_RONLY;
-        else perms |= PTE_RWX;
+        int perms = PTE_U | PTE_RWX;
+        // if (phdr.p_flags & (PF_R | PF_W)) perms |= PTE_RW;
+        // else if (phdr.p_flags & (PF_R | PF_X)) perms |= PTE_RX;
+        // else if (phdr.p_flags & (PF_R)) perms |= PTE_RONLY;
+        // else perms |= PTE_RWX;
         
         char* mem = buddy_alloc(phdr.p_memsz);
         mappages(pgtbl, phdr.p_vaddr, KERNEL_VA2PA(mem), phdr.p_memsz, perms);
@@ -287,6 +287,9 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
         sp -= 8;
     }
 
+
+    // should delete
+    sp -= 64;
     // store argc
     sp -= 8;
     *((uint64*)(&ustack_p[PGSIZE - (stack_top - sp)])) = (uint64) argc;
