@@ -66,7 +66,7 @@ void irq_pushoff() {
 }
 
 void irq_popoff() {
-    // Assert(!intr_get(), "interruptible");
+    Assert(!intr_get(), "interruptible");
     struct cpu *c = mycpu();
     assert(c->noff > 0);
     if (--c->noff == 0 && c->intena)

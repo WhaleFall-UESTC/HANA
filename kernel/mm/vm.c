@@ -260,9 +260,9 @@ uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
         pte_t* pte = walk(pagetable, addr, WALK_NOALLOC);
         assert(pte && (*pte & PTE_V));
         if (do_free) {
-            uint64 pa = KERNEL_PA2VA(PTE2PA(*pte));
-            if (page_ref_dec(pa) == 1)
-                kfree((void*) pa);
+            uint64 a = KERNEL_PA2VA(PTE2PA(*pte));
+            if (page_ref_dec(a) == 1)
+                kfree((void*) a);
         }
         *pte = 0;
 #ifdef ARCH_LOONGARCH

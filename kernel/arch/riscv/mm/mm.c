@@ -169,6 +169,7 @@ uvminit(uint64 trapframe, char* init_code, int sz)
     assert(sz <= PGSIZE);
     
     void* userspace = kalloc(2*PGSIZE);
+    memset(userspace, 0, 2*PGSIZE);
     memmove(userspace, init_code, sz);
 
     pagetable_t upgtbl = uvmmake(trapframe);
