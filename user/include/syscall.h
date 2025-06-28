@@ -133,22 +133,25 @@ static inline uint64 internal_syscall(long n, uint64 _a0, uint64 _a1, uint64 _a2
 			(a5), "r"(syscall_id));
 	return a0;
 }
-#elif defined(__loongarch)
+#elif defined(__loongarch64)
 static inline uint64 internal_syscall(long n, uint64 a0, uint64 a1, uint64 a2,
-                                    uint64 a3, uint64 a4, uint64 a5) {
-    register uint64 x0 asm("$a0") = a0; // 参数寄存器 $a0 - $a5
-    register uint64 x1 asm("$a1") = a1;
-    register uint64 x2 asm("$a2") = a2;
-    register uint64 x3 asm("$a3") = a3;
-    register uint64 x4 asm("$a4") = a4;
-    register uint64 x5 asm("$a5") = a5;
-    register long syscall_id asm("$a7") = n; // syscall number in $a7
+                                      uint64 a3, uint64 a4, uint64 a5) {
+    register uint64 x0 asm("a0") = a0; // 参数寄存器 a0 - a5
+    register uint64 x1 asm("a1") = a1;
+    register uint64 x2 asm("a2") = a2;
+    register uint64 x3 asm("a3") = a3;
+    register uint64 x4 asm("a4") = a4;
+    register uint64 x5 asm("a5") = a5;
+    register long syscall_id asm("a7") = n; // 系统调用号在 a7
 
     asm volatile (
-        "syscall\n" // LoongArch 的 syscall 指令
+        "syscall 0\n" // LoongArch 的 syscall 指令
         : "+r"(x0)
         : "r"(x1), "r"(x2), "r"(x3), "r"(x4), "r"(x5), "r"(syscall_id)
-        : "$t0", "$t1", "$t2", "$t3", "memory"
+        // 列出所有可能被破坏的临时寄存器
+        : "a6",   // 可能的破坏寄存器
+          "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8",
+          "memory"
     );
     return x0;
 }

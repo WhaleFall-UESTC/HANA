@@ -1,4 +1,4 @@
-ARCH ?= riscv
+ARCH ?= loongarch
 BUILD_DIR := build/$(ARCH)
 FS := rootfs.img
 SMP := 1
@@ -17,6 +17,8 @@ QEMUOPTS := -machine virt -kernel $(KERNEL) -m $(MEM) -nographic -smp $(SMP) -bi
 RISCV_CFLAGS = -mcmodel=medany -march=rv64imafd -mabi=lp64
 # RISCV_CFLAGS += -DARCH_RISCV
 RISCV_CFLAGS += -DBIOS_SBI
+ICCOM := rv
+OBJTAR := elf64-littleriscv
 
 else ifeq ($(ARCH), loongarch)
 KERNEL := kernel-la
@@ -35,6 +37,9 @@ QEMUOPTS := -kernel $(KERNEL) -m $(MEM) -nographic -smp $(SMP) -drive file=$(FS)
 LOONGARCH_CFLAGS = -march=loongarch64 -mabi=lp64d
 # LOONGARCH_CFLAGS += -DARCH_LOONGARCH
 
+ICCOM := la
+OBJTAR := elf64-loongarch
+
 else
 $(error Unsupported ARCH $(ARCH))
 endif
@@ -48,6 +53,7 @@ OBJDUMP = $(TOOLPREFIX)objdump
 
 KERNEL_SRC = kernel
 USER_SRC = user
+INIT_SRC = user/init
 ARCH_SRC = $(KERNEL_SRC)/arch/$(ARCH)
 ARCH_TEST_SRC = $(KERNEL_SRC)/test/arch/$(ARCH)
 
@@ -67,6 +73,7 @@ CFLAGS += -I $(KERNEL_SRC)/include -I $(ARCH_SRC)/include -I $(KERNEL_SRC)/test/
 ASFLAGS = $(CFLAGS) -D__ASSEMBLY__
 LDFLAGS = -nostdlib -T $(ARCH_SRC)/kernel.ld
 
+INIT_DST := $(BUILD_DIR)/user_init
 
 SRC_S = $(shell find $(ARCH_SRC) -type f -name '*.S')
 
@@ -86,7 +93,7 @@ UOBJS = $(addprefix $(BUILD_DIR)/, $(USRC:.c=.o))
 
 all: $(KERNEL)
 
-$(KERNEL): $(OBJS)
+$(KERNEL): $(OBJS) $(INIT_DST)/$(ICCOM)_init.o
 	$(LD) $(LDFLAGS) -o $@ $^
 	@echo "[LD] Linked kernel image: $@"
 
@@ -99,6 +106,16 @@ $(BUILD_DIR)/%.o: %.S
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c -o $@ $<
 	@echo "[CC] Assembled $<"
+
+$(INIT_DST):
+	@mkdir $(INIT_DST)
+
+$(INIT_DST)/$(ICCOM)_init.o: $(INIT_DST) $(INIT_SRC)/initcode.c $(INIT_SRC)/$(ICCOM).s
+	$(CC) $(CFLAGS) -c $(INIT_SRC)/$(ICCOM).s -o $(INIT_DST)/$(ICCOM)s.o
+	$(CC) $(CFLAGS) -c -ffreestanding $(INIT_SRC)/initcode.c -o $(INIT_DST)/initcode.o
+	$(LD) $(INIT_DST)/$(ICCOM)s.o $(INIT_DST)/initcode.o -o $(INIT_DST)/$(ICCOM)_init.elf
+	$(OBJCOPY) -O binary $(INIT_DST)/$(ICCOM)_init.elf $(INIT_DST)/initcode
+	$(OBJCOPY) -I binary -O $(OBJTAR) $(INIT_DST)/initcode $(INIT_DST)/$(ICCOM)_init.o
 
 -include $(OBJS:.o=.d)
 

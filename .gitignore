@@ -6,6 +6,7 @@
 *.dts
 *.elf
 *.log
+*.backup
 
 kernel-rv
 kernel-la

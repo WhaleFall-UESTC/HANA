@@ -19,7 +19,7 @@ pte_t*      walk(pagetable_t pgtbl, uint64 va, int alloc);
 void        mappages(pagetable_t pgtbl, uint64 va, uint64 pa, uint64 sz, uint64 flags);
 uint64      walkaddr(pagetable_t pgtbl, uint64 va);
 pagetable_t uvmmake(uint64 trapframe);
-pagetable_t uvminit(uint64 trapframe, char* init_code, int sz);
+pagetable_t uvminit(uint64 trapframe, const char* init_code, int sz);
 void        uvmcopy(pagetable_t cpgtbl, pagetable_t ppgtbl, uint64 sz);
 void        map_stack(pagetable_t pgtbl, uint64 stack_va);
 int         copyout(pagetable_t pgtbl, uint64 dstva, void* src, size_t len);

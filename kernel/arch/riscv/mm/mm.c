@@ -163,7 +163,7 @@ uvmmake(uint64 trapframe)
 
 // just for init proc
 pagetable_t
-uvminit(uint64 trapframe, char* init_code, int sz)
+uvminit(uint64 trapframe, const char* init_code, int sz)
 {
     assert(init_code);
     assert(sz <= PGSIZE);
