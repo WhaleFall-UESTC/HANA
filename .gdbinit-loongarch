@@ -10,11 +10,6 @@ b start
 b _start
 b main
 
-# b ext4_fs_mount
-b __do_sys_mount
-b kernel/test/test_fs.c:127
-b do_exit
-
 
 set logging off
 set logging file la.log

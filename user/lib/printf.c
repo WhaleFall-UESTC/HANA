@@ -1,7 +1,10 @@
 
-#include <stdarg.h>
-#include <lib.h>
+#ifndef __U_ULIB_H__
+#define __U_ULIB_H__
 
+#include <stdarg.h>
+#include <ulib.h>
+#include <syscall.h>
 
 #define ZEROPAD 1   // defalut blank pad
 #define BIN     2
@@ -251,7 +254,7 @@ printf(const char* fmt, ...)
     char buf[BUFMAX];
     va_list args;
     va_start(args, fmt);
-    write(buf, i = vsnprintf(buf, BUFMAX, fmt, args));
+    write(STDOUT_FILENO, buf, i = vsnprintf(buf, BUFMAX, fmt, args));
     va_end(args);
     return i;
 }
@@ -266,3 +269,4 @@ puts(char* buf)
 }
 
 
+#endif // __U_ULIB_H__

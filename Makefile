@@ -47,6 +47,7 @@ OBJCOPY = $(TOOLPREFIX)objcopy
 OBJDUMP = $(TOOLPREFIX)objdump
 
 KERNEL_SRC = kernel
+USER_SRC = user
 ARCH_SRC = $(KERNEL_SRC)/arch/$(ARCH)
 ARCH_TEST_SRC = $(KERNEL_SRC)/test/arch/$(ARCH)
 
@@ -55,10 +56,13 @@ KERNELDUMP = $(KERNEL).asm
 
 CFLAGS = -Wall -Werror -O0 -fno-omit-frame-pointer -ggdb -nostdlib
 CFLAGS += $(if $(RISCV_CFLAGS),$(RISCV_CFLAGS),$(LOONGARCH_CFLAGS)) 
-CFLAGS += -I $(KERNEL_SRC)/include -I $(ARCH_SRC)/include -I $(KERNEL_SRC)/test/include
 CFLAGS += -MD -MP -MF $@.d
 CFLAGS += -Wno-unused-va$(@F).driable -Wno-unused-function
 CFLAGS += -DDEBUG 
+
+U_CFLAGS = CFLAGS
+
+CFLAGS += -I $(KERNEL_SRC)/include -I $(ARCH_SRC)/include -I $(KERNEL_SRC)/test/include
 
 ASFLAGS = $(CFLAGS) -D__ASSEMBLY__
 LDFLAGS = -nostdlib -T $(ARCH_SRC)/kernel.ld
@@ -75,6 +79,10 @@ SRC_C := $(shell find $(ARCH_SRC) -type f -name '*.c') \
 OBJS = $(addprefix $(BUILD_DIR)/, $(SRC_C:.c=.o) $(SRC_S:.S=.o))
 
 
+USRC := $(shell find $(USER_SRC) -type f -name '*.c' \
+			-not -path '$(USER_SRC)/init/*') 
+
+UOBJS = $(addprefix $(BUILD_DIR)/, $(USRC:.c=.o))
 
 all: $(KERNEL)
 
@@ -96,6 +104,9 @@ $(BUILD_DIR)/%.o: %.S
 
 clean:
 	rm -rf build kernel-rv kernel-rv.asm kernel-la kernel-la.asm
+
+user:
+	
 
 $(FS):
 	qemu-img create -f raw $(FS) 2G
