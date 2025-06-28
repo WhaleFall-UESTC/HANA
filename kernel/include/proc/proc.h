@@ -26,6 +26,7 @@ struct proc {
 
     int killed;
     void* chan;     // proc sleep on which channel
+    long sleeping_due;
 
     int status;     // exit() return status
 
