@@ -34,7 +34,12 @@ scheduler()
 #ifdef ARCH_LOONGARCH
         timer_intr_off();
 #endif
-        intr_on();
+        // Avoid deadlock by ensuring that devices can interrupt.
+        if (!intr_get()) {
+            intr_on();
+            intr_off();
+        }
+        
         for (p = proc_list; p; p = p->next) {
             // lock process
             if (p->state == SLEEPING && p->sleeping_due != -1) {

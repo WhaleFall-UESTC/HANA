@@ -1,6 +1,7 @@
 riscv: riscv.s
-	riscv64-unknown-elf-as -march=rv64imafd riscv.s -o rv_init.o
-	riscv64-unknown-elf-ld -Ttext=0 rv_init.o -o rv_init.elf
+	riscv64-unknown-elf-gcc -c -march=rv64imafd riscv.s -o rvs.o
+	riscv64-unknown-elf-gcc -c -march=rv64imafd -ffreestanding riscv.c -o rvc.o
+	riscv64-unknown-elf-ld -T riscv.ld rvs.o rvc.o -o rv_init.elf
 	riscv64-unknown-elf-objcopy -O binary rv_init.elf rv_initcode
 	riscv64-unknown-elf-objdump -d rv_init.elf
 	od -A x1 -t x1 rv_initcode
