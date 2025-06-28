@@ -161,6 +161,7 @@ dive_to_user()
     w_csr_prmd(prmd);
 
     w_csr_era(p->trapframe->era);
+    log("write to era: %lx", p->trapframe->era);
 
     p->trapframe->kernel_sp = p->stack + KSTACK_SIZE;
     p->trapframe->kernel_hartid = r_tp();

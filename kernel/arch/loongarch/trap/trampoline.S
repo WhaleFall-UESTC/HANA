@@ -24,9 +24,9 @@ uservec:
     csrwr   $t0, CSR_SAVE1
     csrwr   $t1, CSR_SAVE2
     csrwr   $t2, CSR_SAVE3
-    csrwr   $t0, CSR_ESTAT  // ESTAT
-    csrwr   $t1, CSR_ERA    // ERA
-    csrwr   $t2, CSR_BADV   // BADV
+    csrrd   $t0, CSR_ESTAT  // ESTAT
+    csrrd   $t1, CSR_ERA    // ERA
+    csrrd   $t2, CSR_BADV   // BADV
     csrwr   $t0, CSR_SAVE1
     csrwr   $t1, CSR_SAVE2
     csrwr   $t2, CSR_SAVE3
@@ -81,12 +81,22 @@ uservec:
 
 
 
+.align 4
 .globl userret
 userret:
     csrrd   $t0, CSR_PGDL
     beq     $t0, $a1, load
     csrwr   $a1, CSR_PGDL
     invtlb  0x0, $zero, $zero
+
+    csrwr   $t0, CSR_SAVE1
+    csrwr   $t1, CSR_SAVE2
+    csrrd   $t0, CSR_ERA
+    // prefetch era
+    ld.d    $t1, $t0, 0
+    csrwr   $t0, CSR_SAVE1
+    csrwr   $t1, CSR_SAVE2
+
 
 load:
     # load a0 in trapframe, and restore it in SAVE0

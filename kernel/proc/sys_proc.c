@@ -121,8 +121,8 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
     uint64 sz = 0;
 
     const size_t max_size = MAX_ARGS * sizeof(char*);
-    char* argv[max_size] = {};
-    char* envp[max_size] = {};
+    char* argv[max_size];
+    char* envp[max_size];
 
     char path[PATH_MAX];
     if (copyinstr(old_pgtbl, path, (uint64) upath, PATH_MAX) < 0) {
@@ -289,7 +289,7 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
 
 
     // should delete
-    sp -= 64;
+    // sp -= 64;
     // store argc
     sp -= 8;
     *((uint64*)(&ustack_p[PGSIZE - (stack_top - sp)])) = (uint64) argc;
@@ -302,7 +302,9 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
     p->pagetable = upgtbl_init(pgtbl);
     p->sz = sz;
     p->heap_start = sz;
-    trapframe_set_era(p, elf.e_entry);
+    // syscall will add 4 later
+    trapframe_set_era(p, elf.e_entry - 4);
+    log("entry: %lx", elf.e_entry);
     p->trapframe->sp = sp;
 
     return argc;
