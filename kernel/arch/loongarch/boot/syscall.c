@@ -31,5 +31,5 @@ syscall()
         panic("unknown syscall %d", code);
     }
 
-    p->trapframe->epc += 4;
+    p->trapframe->era += 4;
 }

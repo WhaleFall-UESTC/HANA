@@ -8,6 +8,7 @@
 #include <irq/interrupt.h>
 #include <proc/proc.h>
 #include <proc/sched.h>
+#include <syscall.h>
 
 extern char kernelvec[], uservec[], trampoline[], userret[];
 
@@ -70,6 +71,7 @@ trap_init()
     register_trap_handler(EXCEPTION, PME, store_page_fault_handler);
     register_trap_handler(EXCEPTION, PIL, page_unmap_handler);
     register_trap_handler(EXCEPTION, PIS, page_unmap_handler);
+    register_trap_handler(EXCEPTION, SYS, syscall);
 }
 
 void 

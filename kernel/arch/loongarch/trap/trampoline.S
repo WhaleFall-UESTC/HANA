@@ -24,9 +24,9 @@ uservec:
     csrwr   $t0, CSR_SAVE1
     csrwr   $t1, CSR_SAVE2
     csrwr   $t2, CSR_SAVE3
-    csrwr   $t0, CSR_ESTAT
-    csrwr   $t1, CSR_ERA
-    csrwr   $t2, CSR_BADV
+    csrwr   $t0, CSR_ESTAT  // ESTAT
+    csrwr   $t1, CSR_ERA    // ERA
+    csrwr   $t2, CSR_BADV   // BADV
     csrwr   $t0, CSR_SAVE1
     csrwr   $t1, CSR_SAVE2
     csrwr   $t2, CSR_SAVE3

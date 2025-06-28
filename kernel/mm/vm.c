@@ -168,7 +168,7 @@ copyinstr(pagetable_t pagetable, char* dst, uint64 srcva, uint64 max)
         uint64 n = PGSIZE - (srcva - va0);
         n = (n > max ? max : n);
 
-        char *p = (char *) (pa0 + (srcva - va0));
+        char *p = (char *) KERNEL_PA2VA(pa0 + (srcva - va0));
         while (n > 0) {
             cnt++;
             if (*p == '\0') {
