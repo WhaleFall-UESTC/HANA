@@ -8,4 +8,13 @@ set riscv use-compressed-breakpoints yes
 layout split
 b _start
 b main
+
+b ext4_bdif_bread
+b ext4_bdif_unlock
+
+set logging off
+set logging file rv.log
+set logging overwrite
+set logging on
+
 c
