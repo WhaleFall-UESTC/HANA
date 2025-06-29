@@ -166,7 +166,7 @@ pagetable_t
 uvminit(uint64 trapframe, const char* init_code, int sz)
 {
     assert(init_code);
-    assert(sz <= PGSIZE);
+    assert(sz <= 2*PGSIZE);
     
     void* userspace = kalloc(2*PGSIZE);
     memset(userspace, 0, 2*PGSIZE);
@@ -174,10 +174,10 @@ uvminit(uint64 trapframe, const char* init_code, int sz)
 
     pagetable_t upgtbl = uvmmake(trapframe);
 
-    mappages(upgtbl, 0, (uint64)userspace, PGSIZE, PTE_U | PTE_R | PTE_X);
+    mappages(upgtbl, 0, (uint64)userspace, 2*PGSIZE, PTE_U | PTE_R | PTE_X);
 
     // map guard page, for uvmcpoy
-    mappages(upgtbl, PGSIZE, 0, PGSIZE, 0);
+    // mappages(upgtbl, PGSIZE, 0, PGSIZE, 0);
 
     mappages(upgtbl, 2 * PGSIZE, (uint64)userspace + PGSIZE, PGSIZE, PTE_U | PTE_R | PTE_W);
 
