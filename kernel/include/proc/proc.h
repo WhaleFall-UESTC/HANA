@@ -109,6 +109,6 @@ void            freeproc(struct proc* p);
         do_exit(-1); \
     }
 
-
+#define PROC_SCHED 
 
 #endif // __PROC_H__

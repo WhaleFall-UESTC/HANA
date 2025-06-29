@@ -688,17 +688,19 @@ intr_off()
     w_csr_crmd(r_csr_crmd() & ~CSR_CRMD_IE);
 }
 
-static inline void
-timer_intr_off() 
-{
-    w_csr_ecfg(~(1UL << 11) & r_csr_ecfg());
-}
+// static inline void
+// timer_intr_off() 
+// {
+//     // w_csr_ecfg(~(1UL << 11) & r_csr_ecfg());
+//     w_csr_tcfg(r_csr_tcfg() & ~CSR_TCFG_En);
+// }
 
-static inline void
-timer_intr_on() 
-{
-    w_csr_ecfg((1UL << 11) | r_csr_ecfg());
-}
+// static inline void
+// timer_intr_on() 
+// {
+//     w_csr_tcfg(r_csr_tcfg() | CSR_TCFG_En);
+//     // w_csr_ecfg((1UL << 11) | r_csr_ecfg());
+// }
 
 static inline int
 intr_get() 

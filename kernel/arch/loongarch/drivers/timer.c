@@ -7,6 +7,8 @@
 #include <proc/sched.h>
 #include <time.h>
 
+extern int timer_intr_get();
+
 void timer_init() {
     // set timer id
     uint64 id = r_csr_cpuid();
@@ -37,5 +39,6 @@ void timer_isr() {
         account_time(p);
     }
 
-    yield();
+    if (timer_intr_get())
+        yield();
 }

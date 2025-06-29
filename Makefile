@@ -24,7 +24,7 @@ OBJTAR := elf64-littleriscv
 else ifeq ($(ARCH), loongarch)
 KERNEL := kernel-la
 DISK := disk-la.img
-FS := sdcard-rv.img
+FS := sdcard-la.img
 TOOLPREFIX := loongarch64-unknown-linux-gnu-
 QEMU := qemu-system-loongarch64
 QEMUOPTS := -kernel $(KERNEL) -m $(MEM) -nographic -smp $(SMP) -drive file=$(FS),if=none,format=raw,id=x0  \

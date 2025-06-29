@@ -209,7 +209,7 @@ page_unmap_handler()
     uint64 va = PGROUNDDOWN(badv);
 
     struct vm_area* vma = find_vma(p, va);
-    CHECK(vma, "vma not found");
+    CHECK(vma, "vma not found, badv: %lx", badv);
 
     int ecode = r_ecode();
     CHECK((ecode == PIS && (vma->prot & PROT_WRITE)) && (ecode == PIL && (vma->prot & PROT_READ)), "vma prot error");

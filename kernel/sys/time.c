@@ -6,6 +6,7 @@
 #include <proc/sched.h>
 
 uint64 tick_counter = 0;
+volatile int timer_intr = 1;
 
 SYSCALL_DEFINE1(times, clock_t, struct tms*, user_buf) {
     struct proc* proc = myproc();
@@ -60,4 +61,16 @@ SYSCALL_DEFINE2(nanosleep, int, struct timespec*, dura, struct timespec*, rem) {
     proc->sleeping_due = tick_counter + (t_ms - 1) / MS_PER_TICK + 1;
     sched();
     return 0;
+}
+
+void timer_intr_off() {
+    __sync_lock_test_and_set(&timer_intr, 0);
+}
+
+void timer_intr_on() {
+    __sync_lock_test_and_set(&timer_intr, 1);
+}
+
+int timer_intr_get() {
+    return timer_intr;
 }

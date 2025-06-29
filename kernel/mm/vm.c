@@ -130,12 +130,14 @@ copyin(pagetable_t pagetable, char* dst, uint64 srcva, size_t len)
     if (dst == NULL) dst = kalloc(len);
     if (dst == NULL) return -1;
 
+    int cnt = 0;
+
     while (len > 0) {
         va0 = PGROUNDDOWN(srcva);
         pa0 = walkaddr(pagetable, va0);
         if (pa0 == 0) {
-            Log(ANSI_FG_RED, "va0 %lx not found", va0);
-            return -1;
+            // Log(ANSI_FG_RED, "va0 %lx not found", va0);
+            return cnt;
         }
 
         uint64 offset = srcva - va0;
@@ -147,6 +149,8 @@ copyin(pagetable_t pagetable, char* dst, uint64 srcva, size_t len)
         len -= n;
         dst += n;
         srcva = va0 + PGSIZE;
+
+        cnt += n;
     }
 
     return 0;
@@ -256,19 +260,47 @@ uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
     assert(IS_PGALIGNED(va));
     pagetable = (pagetable_t) KERNEL_PA2VA(pagetable);
 
-    for (uint64 addr = va; addr < va + (npages << PGSHIFT); addr += PGSIZE) {
-        pte_t* pte = walk(pagetable, addr, WALK_NOALLOC);
-        assert(pte && (*pte & PTE_V));
-        if (do_free) {
-            uint64 a = KERNEL_PA2VA(PTE2PA(*pte));
-            if (page_ref_dec(a) == 1)
-                kfree((void*) a);
-        }
-        *pte = 0;
+    // not free trapframe & trapoline
+    for (int i = 0; i < 511; i++) {
+        if (PTE2PA(pagetable[i] != 0)) {
+            pagetable_t pgtbl1 = (pagetable_t) KERNEL_PA2VA(PA2PTE(pagetable[i]));
+            for (int j = 0; j < 512; j++) {
+                if (PTE2PA(pgtbl1[j]) != 0) {
+                    pagetable_t pgtbl2 = (pagetable_t) KERNEL_PA2VA(PA2PTE(pgtbl1[j]));
+                    for (int k = 0; k < 512; k++) {
+                        pte_t pte = pgtbl2[k];
+                        uint64 pa = PTE2PA(pte);
+
+                        if (pa) {
+                            if (do_free) {
+                                uint64 a = KERNEL_PA2VA(pa);
+                                if (page_ref_dec(a) == 1)
+                                    kfree((void*) a);
+                            }
+                            pgtbl2[k] = 0;
 #ifdef ARCH_LOONGARCH
-        flush_tlb_one(myproc()->pid, addr);
+                            flush_tlb_one(myproc()->pid, addr);
 #endif
+                        }
+                    }
+                }
+            }
+        }
     }
+
+//     for (uint64 addr = va; addr < va + (npages << PGSHIFT); addr += PGSIZE) {
+//         pte_t* pte = walk(pagetable, addr, WALK_NOALLOC);
+//         assert(pte && (*pte & PTE_V));
+//         if (do_free) {
+//             uint64 a = KERNEL_PA2VA(PTE2PA(*pte));
+//             if (page_ref_dec(a) == 1)
+//                 kfree((void*) a);
+//         }
+//         *pte = 0;
+// #ifdef ARCH_LOONGARCH
+//         flush_tlb_one(myproc()->pid, addr);
+// #endif
+//     }
 }
 
 

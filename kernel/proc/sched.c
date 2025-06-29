@@ -14,6 +14,8 @@
 
 struct proc* proc_list;
 
+extern void timer_intr_on();
+extern void timer_intr_off();
 
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
@@ -33,9 +35,7 @@ scheduler()
     intr_on();
 
     for (;;) {
-#ifdef ARCH_LOONGARCH
         timer_intr_off();
-#endif
         // Avoid deadlock by ensuring that devices can interrupt.
         if (!intr_get()) {
             intr_on();
@@ -54,13 +54,14 @@ scheduler()
                 // switch to this process
                 p->state = RUNNING;
                 c->proc = p;
-#ifdef ARCH_LOONGARCH   
                 timer_intr_on();
+#ifdef ARCH_LOONGARCH   
                 set_asid(p->pid);
 #endif
                 // log("switch to process %s", p->name);
                 swtch(&c->context, &p->context);
 
+                timer_intr_off();
                 // prev running process is done
                 // it should have changed its state brfore swtch back
                 c->proc = 0;

@@ -157,8 +157,10 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
         kernel_lseek(file, off, SEEK_SET);
         kernel_read(file, &phdr, sizeof(Elf64_Ehdr));
 
-        log("Got phdr(at %x) type=%u, flags=%u, off=%lx, va=%lx, filesz=%lx, memsz=%lx", off,  
-            phdr.p_type, phdr.p_flags, phdr.p_offset, phdr.p_vaddr, phdr.p_filesz, phdr.p_memsz);
+        log("Got phdr type=%u, flags=%u, off=%lx",  
+            phdr.p_type, phdr.p_flags, phdr.p_offset);
+        log("\tva=%lx, filesz=%lx, memsz=%lx",
+             phdr.p_vaddr, phdr.p_filesz, phdr.p_memsz);
 
         if (phdr.p_type != PT_LOAD)
             continue;
@@ -167,8 +169,8 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
         LOADER_CHECK(phdr.p_vaddr + phdr.p_memsz >= phdr.p_vaddr);
         
         // load to memory
-        LOADER_CHECK(IS_PGALIGNED(phdr.p_vaddr));
-
+        // LOADER_CHECK(IS_PGALIGNED(phdr.p_vaddr));
+        
         int perms = PTE_U | PTE_RWX;
         // if (phdr.p_flags & (PF_R | PF_W)) perms |= PTE_RW;
         // else if (phdr.p_flags & (PF_R | PF_X)) perms |= PTE_RX;
@@ -248,8 +250,8 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
 
     int argc = 0;
     if (uargv) {
-        for (argc = 0; argv[argc]; argc++);
         copyin(old_pgtbl, (void*)argv, (uint64)uargv, max_size);
+        for (argc = 0; argv[argc]; argc++);
 
         // copy all arg string to a tempoary memory
         // caculate the real space they need
