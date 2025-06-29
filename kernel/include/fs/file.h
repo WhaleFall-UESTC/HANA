@@ -37,7 +37,7 @@ struct file_operations
 	int (*openat)(struct file *, path_t, int, umode_t);
 	int (*close)(struct file *);
 	int (*getdents64)(struct file *, struct dirent *, size_t);
-	int (*truncate)(struct file*, off_t offset);
+	int (*truncate)(struct file*, off_t length);
 	// int (*flush) (struct file *, fl_owner_t id);
 	// int (*fsync) (struct file *, off_t, off_t, int datasync);
 };

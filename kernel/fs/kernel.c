@@ -69,6 +69,68 @@ out_err:
 	return NULL;
 }
 
+struct file* kernel_openat(fd_t dfd, const char* path) {
+    struct mountpoint *mount_p = NULL;
+    int ret;
+    struct file *file = NULL;
+	struct inode *inode = NULL;
+    char full_path[MAX_PATH_LEN];
+
+    ret = get_absolute_path(path, full_path, dfd);
+	if (ret < 0)
+	{
+		error("get absolute path error");
+		return ERR_PTR(-EINVAL);
+	}
+
+    mount_p = mountpoint_find(full_path);
+	if (mount_p == NULL)
+	{
+		error("mountpoint not found for path %s", full_path);
+		goto out_err;
+	}
+
+    file = kcalloc(sizeof(struct file), 1);
+	if (file == NULL)
+	{
+		error("alloc file error");
+		goto out_err;
+	}
+
+	inode = kcalloc(sizeof(struct inode), 1);
+	if (inode == NULL)
+	{
+		error("alloc inode error");
+		goto out_file;
+	}
+
+	file_init(file, NULL, full_path, KERNEL_OPEN_FLAG, NULL);
+
+    ret = call_interface(mount_p->fs->fs_op, ifget, int, mount_p, inode, file);
+	if (ret < 0)
+	{
+		error("ifget error");
+		goto out_inode;
+	}
+
+    ret = call_interface(file->f_op, openat, int, file, full_path, KERNEL_OPEN_FLAG, 0);
+	if (ret != 0)
+	{
+		error("open error, ret: %d", ret);
+		goto out_inode;
+	}
+
+    file_get(file);
+    return file;
+
+out_inode:
+	kfree(inode);
+out_file:
+	kfree(file);
+out_err:
+	return NULL;
+}
+
 ssize_t kernel_read(struct file* file, void* buf, size_t size) {
     ssize_t ret;
     off_t ori_fpos;

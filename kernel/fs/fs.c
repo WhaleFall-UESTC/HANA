@@ -447,7 +447,7 @@ SYSCALL_DEFINE3(lseek, off_t, int, fd, off_t, offset, int, whence)
 	return ret;
 }
 
-SYSCALL_DEFINE2(truncate, int, const char *, path, off_t, offset) {
+SYSCALL_DEFINE2(truncate64, long, const char *, path, off_t, length) {
 	struct file* file;
 	int ret;
 	char __path[MAX_PATH_LEN];
@@ -463,17 +463,54 @@ SYSCALL_DEFINE2(truncate, int, const char *, path, off_t, offset) {
 		return -1;
 	}
 
-	ret = call_interface(file->f_op, truncate, int, file, offset);
+	ret = call_interface(file->f_op, truncate, int, file, length);
 	if(ret < 0) {
 		error("file truncate failed");
 		goto out;
 	}
+
+	file->f_inode->i_size = length;
 
 	ret = 0;
 
 out:
 	kernel_close(file);
 	return ret;
+}
+
+SYSCALL_DEFINE3(faccessat, long, int, dfd, const char*, filename, int, mode) {
+	int ret;
+	struct mountpoint *mount_p;
+	char full_path[MAX_PATH_LEN], __filename[MAX_PATH_LEN];
+	struct stat stat;
+
+	if(copy_from_user_str(__filename, filename, MAX_PATH_LEN) < 0) {
+		error("copy from userspace error");
+		return -1;
+	}
+
+	ret = get_absolute_path(__filename, full_path, AT_FDCWD);
+	if (ret < 0)
+	{
+		error("get absolute path error");
+		return -1;
+	}
+
+	// find mountpoint
+	mount_p = mountpoint_find(full_path);
+	if (mount_p == NULL)
+	{
+		error("mountpoint not found for path %s", full_path);
+		return -1;
+	}
+
+	ret = call_interface(mount_p->fs->fs_op, getattr, int, full_path, &stat);
+	if(ret < 0) {
+		error("File does not exist: %s", full_path);
+		return -1;
+	}
+
+	return 0;
 }
 
 SYSCALL_DEFINE2(stat, int, const char *, path, struct stat *, buf)

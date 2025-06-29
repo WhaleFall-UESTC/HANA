@@ -286,11 +286,11 @@ static int ext4_unlink(path_t path) {
 	return ret;
 }
 
-static int ext4_truncate(struct file* file, off_t offset) {
+static int ext4_truncate(struct file* file, off_t length) {
 	struct ext4_file *ext4_file = (struct ext4_file *)file->f_private;
 	int ret;
 	
-	ret = ext4_ftruncate(ext4_file, offset);
+	ret = ext4_ftruncate(ext4_file, length);
 	if (ret != EOK) {
 		error_ext4("ext4_ftruncate error! ret: %d", ret);
 		return -1;
