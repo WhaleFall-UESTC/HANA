@@ -6,26 +6,12 @@
 #include <irq/interrupt.h>
 #include <mm/mm.h>
 
-struct user_desc {
-    uint32 entry_number;    // TLS条目索引（通常忽略）
-    uint32 base_addr;       // TLS基地址（低32位）
-    uint32 limit;           // 段限制（通常忽略）
-    uint32 seg_32bit:1;     // 32位模式标志
-    uint32 contents:2;      // 段内容类型
-    uint32 read_exec_only:1;// 只读执行标志
-    uint32 limit_in_pages:1;// 页粒度限制
-    uint32 seg_not_present:1;// 段存在标志
-    uint32 useable:1;       // 可用标志
-    uint32 base_addr_high;  // TLS基地址（高32位）
-};
-
 struct proc {
     int pid;
     int tgid;
     volatile int state;
-    
-    struct user_desc tls;
-    uint64 tls_base;
+
+    uint64 tls;
 
     uint64 heap_start;
     uint64 sz;  // brk

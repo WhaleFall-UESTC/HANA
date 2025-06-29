@@ -49,7 +49,7 @@ SYSCALL_DEFINE5(clone, int, unsigned long, flags, void*, stack, void*, ptid, voi
 
     *(child->trapframe) = *(proc->trapframe);
     // set tls
-    child->tls_base = (uint64) tls;
+    child->tls = (uint64) tls;
     child->trapframe->tp = (uint64) tls;
     // set child process return 0
     child->trapframe->a0 = 0;
@@ -464,40 +464,56 @@ SYSCALL_DEFINE0(sched_yield, int) {
     return 0;
 }
 
-
-SYSCALL_DEFINE1(set_thread_area, int, struct user_desc*, uaddr) {
-    struct proc* p = myproc();
-
-    struct user_desc desc;
-    if(copyin(UPGTBL(p->pagetable), (char *)&desc, (uint64)uaddr, sizeof(desc)) < 0)
-        return -1;
-
-    // 验证描述符
-    if(desc.entry_number != -1 && desc.entry_number != 0) {
-        // 只支持单个TLS条目
-        return -EINVAL;
-    }
-    
-    // 合并64位地址 (RISC-V是64位架构)
-    uint64 base_addr = ((uint64)desc.base_addr_high << 32) | desc.base_addr;
-    
-    // 保存到进程结构
-    p->tls = desc;
-    p->tls_base = base_addr;
-    
-    return 0;  // 成功
-}
-
-
-SYSCALL_DEFINE1(get_thread_area, int, struct user_desc*, uaddr)
-{
-    struct proc* p = myproc();
-
-    if (uaddr == NULL)
-        return -EFAULT;
-
-    if (copyout(UPGTBL(p->pagetable), (uint64)uaddr, &(p->tls), sizeof(p->tls)) < 0)
-        return -EFAULT;
-
+SYSCALL_DEFINE0(geteuid, int) {
     return 0;
 }
+
+SYSCALL_DEFINE0(getuid, int) {
+    return 0;
+}
+
+SYSCALL_DEFINE0(getegid, int) {
+    return 0;
+}
+
+SYSCALL_DEFINE0(getgid, int) {
+    return myproc()->tgid;
+}
+
+
+// SYSCALL_DEFINE1(set_thread_area, int, struct user_desc*, uaddr) {
+//     struct proc* p = myproc();
+
+//     struct user_desc desc;
+//     if(copyin(UPGTBL(p->pagetable), (char *)&desc, (uint64)uaddr, sizeof(desc)) < 0)
+//         return -1;
+
+//     // 验证描述符
+//     if(desc.entry_number != -1 && desc.entry_number != 0) {
+//         // 只支持单个TLS条目
+//         return -EINVAL;
+//     }
+    
+//     // 合并64位地址 (RISC-V是64位架构)
+//     uint64 base_addr = ((uint64)desc.base_addr_high << 32) | desc.base_addr;
+    
+//     // 保存到进程结构
+//     p->tls = desc;
+//     p->tls_base = base_addr;
+    
+//     return 0;  // 成功
+// }
+
+
+// SYSCALL_DEFINE1(get_thread_area, int, struct user_desc*, uaddr)
+// {
+//     struct proc* p = myproc();
+
+//     if (uaddr == NULL)
+//         return -EFAULT;
+
+//     if (copyout(UPGTBL(p->pagetable), (uint64)uaddr, &(p->tls), sizeof(p->tls)) < 0)
+//         return -EFAULT;
+
+//     return 0;
+// }
