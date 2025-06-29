@@ -10,13 +10,9 @@
 #define ioscr_set_bit(base, cnt) \
     iocsr_writeq((base) + (((cnt) >> 6UL) << 3UL), \
     iocsr_readq((base) + (((cnt) >> 6UL) << 3UL)) | (0x1UL << ((cnt) & 0x3FUL)));
-    // debug("setbit 0x%x in 0x%x", cnt, base);
-    // debug("setbit write 0x%x for 0x%lx", ((cnt) >> 6UL) << 3UL, 0x1UL << ((cnt) & 0x3FUL));
 #define ioscr_reset_bit(base, cnt) \
     iocsr_writeq((base) + (((cnt) >> 6UL) << 3UL), \
     iocsr_readq((base) + (((cnt) >> 6UL) << 3UL)) & ~(0x1UL << ((cnt) & 0x3FUL)));
-// debug("resetbit 0x%x in 0x%x", cnt, base);
-// debug("resetbit write 0x%x for 0x%lx", ((cnt) >> 6UL) << 3UL, 0x1UL << ((cnt) & 0x3FUL)); 
 
 static inline uint64 lowbit(uint64 val) {
     return val & (-val);
@@ -31,8 +27,8 @@ static inline uint64 _log2(uint64 val) {
 void
 extioi_init(int hart)
 {
-    /* extioi[31:0] map to cpu irq pin INT1, other to INT0 */
-    iocsr_writeq(EXT_IOImap_Base, 1);
+    /* extioi[255:0] map to cpu irq pin0 */
+    iocsr_writeq(EXT_IOImap_Base, 0);
 
     /* nodetype0 set to 1, always trigger at node 0 */
     iocsr_writeq(EXT_IOI_node_type_Base, 1);

@@ -1,5 +1,6 @@
 #include "../include/syscall.h"
 
+char arg0[32] = "/glibc/rv_init";
 char arg1[32] = "/glibc/basic_testcode.sh";
 char arg2[32] = "/glibc/basic_test.sh";
 char arg3[32] = "/glibc/basic_.sh";
@@ -7,7 +8,7 @@ char arg3[32] = "/glibc/basic_.sh";
 char env1[32] = "/glibc/basic.sh";
 char env2[32] = "/glibc";
 
-char* const argv[] = { arg1, arg2, arg3, 0 };
+char* const argv[] = { arg0, arg1, arg2, arg3, 0 };
 char* const envp[] = { env1, env2, 0 };
 
 
