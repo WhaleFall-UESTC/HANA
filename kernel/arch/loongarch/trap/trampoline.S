@@ -89,14 +89,6 @@ userret:
     csrwr   $a1, CSR_PGDL
     invtlb  0x0, $zero, $zero
 
-    csrwr   $t0, CSR_SAVE1
-    csrwr   $t1, CSR_SAVE2
-    csrrd   $t0, CSR_ERA
-    // prefetch era
-    ld.d    $t1, $t0, 0
-    csrwr   $t0, CSR_SAVE1
-    csrwr   $t1, CSR_SAVE2
-
 
 load:
     # load a0 in trapframe, and restore it in SAVE0

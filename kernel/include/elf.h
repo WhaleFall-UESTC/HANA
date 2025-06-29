@@ -103,4 +103,23 @@ typedef Elf64_Phdr Elf_Phdr;
 #define PF_W		(1 << 1)	/* Segment is writable */
 #define PF_R		(1 << 2)	/* Segment is readable */
 
+#define AT_NULL   0
+#define AT_PHDR   3
+#define AT_PHENT  4
+#define AT_PHNUM  5
+#define AT_ENTRY  9
+#define AT_BASE   7
+
+#define AT_NULL   0
+#define AT_PHDR   3
+#define AT_PHENT  4
+#define AT_PHNUM  5
+#define AT_ENTRY  9
+#define AT_BASE   7
+
+typedef struct {
+    uint64 a_type;
+    uint64 a_val;
+} Elf64_auxv_t;
+
 #endif

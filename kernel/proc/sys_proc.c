@@ -123,6 +123,9 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
     const size_t max_size = MAX_ARGS * sizeof(char*);
     char* argv[max_size];
     char* envp[max_size];
+    
+    char interp_path[PATH_MAX] = {};
+    int has_interp = 0;
 
     char path[PATH_MAX];
     if (copyinstr(old_pgtbl, path, (uint64) upath, PATH_MAX) < 0) {
@@ -162,6 +165,14 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
         log("\tva=%lx, filesz=%lx, memsz=%lx",
              phdr.p_vaddr, phdr.p_filesz, phdr.p_memsz);
 
+        if (phdr.p_type == PT_INTERP) {
+            kernel_lseek(file, phdr.p_offset, SEEK_SET);
+            kernel_read(file, interp_path, phdr.p_filesz + 1);
+            interp_path[phdr.p_filesz] = '\0';
+            has_interp = 1;
+            continue;
+        }
+
         if (phdr.p_type != PT_LOAD)
             continue;
 
@@ -188,6 +199,46 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
 
     kernel_close(file);
 
+
+    // load dynamic linker
+    uint64 ld_base = 0x700000000000;
+    uint64 ld_entry = 0;
+
+    if (has_interp) {
+        Elf64_Ehdr ld_elf = {};
+
+        struct file* ld_file = kernel_open(interp_path);
+        if (!ld_file) {
+            error("filad to open file: %s", interp_path);
+            goto execve_bad;
+        }
+
+        kernel_read(ld_file, &ld_elf, sizeof(Elf64_Ehdr));
+        LOADER_CHECK(*(uint*)(&ld_elf.e_ident) == ELF_MAGIC);
+
+        for (int i = 0, off = ld_elf.e_phoff; i < ld_elf.e_phnum; i++, off += sizeof(Elf64_Phdr)) {
+            kernel_lseek(ld_file, off, SEEK_SET);
+            kernel_read(ld_file, &phdr, sizeof(Elf64_Phdr));
+            
+            if (phdr.p_type != PT_LOAD) 
+                continue;
+            
+            uint64 load_addr = ld_base;
+            
+            char* mem = buddy_alloc(phdr.p_memsz);
+            mappages(pgtbl, load_addr + phdr.p_vaddr, KERNEL_VA2PA(mem), 
+                    phdr.p_memsz, PTE_U | PTE_RWX);
+            
+            kernel_lseek(ld_file, phdr.p_offset, SEEK_SET);
+            kernel_read(ld_file, mem, phdr.p_filesz);
+        }
+
+        ld_entry = ld_base + ld_elf.e_entry;
+        kernel_close(ld_file);
+    }
+    
+
+
     // now map user stack 
     // first we leave a protect page, which is blank and unmapped
     sz = PGROUNDUP(sz) + PGSIZE;
@@ -205,10 +256,16 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
     // prepare argv, envp in user stack
     uint64 p_envp = 0, p_argv = 0;
 
+    // start of envp & argv strings
+    uint64 p_envp_str = 0, p_argv_str = 0;
+
+    uint64* envp_str_off = (uint64*) envp;
+    uint64* argv_str_off = (uint64*) argv;
+
+    int envc = 0;
     if (uenvp) {
         // first, copy them from user space to kernel
         copyin(old_pgtbl, (void*)envp, (uint64)uenvp, max_size);
-        int envc;
         for (envc = 0; envp[envc]; envc++);
 
         // copy all envp string to a tempoary memory
@@ -224,7 +281,7 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
             }
             size = ALIGN(size, 8);
             // store offsets of each string
-            envp[i] = (char*) envp_nbytes;
+            envp_str_off[i] = envp_nbytes;
             envp_nbytes += size;
         }
 
@@ -233,18 +290,7 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
         kfree(envp_mem);
 
         sp -= envp_nbytes;
-        p_envp = sp - 2 * 8;
-
-        // caculate envp string address, and store it
-        int addr = PGSIZE - envp_nbytes - 8;
-        for (int i = 0; i < envc; i++) {
-            addr -= 8;
-            *((uint64*)(&ustack_p[addr])) = ((uint64) envp[i]) + sp;
-        }
-
-        sp -= 8;
-        sp -= envc * 8;
-        sp -= 8;
+        p_envp_str = sp;
     }
 
 
@@ -266,7 +312,7 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
             }
             size = ALIGN(size, 8);
             // store offsets of each string
-            argv[i] = (char*) argv_nbytes;
+            argv_str_off[i] = argv_nbytes;
             argv_nbytes += size;
         }
 
@@ -275,24 +321,42 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
         kfree(argv_mem);
 
         sp -= argv_nbytes;
-        p_argv = sp - 2 * 8;
-
-        // caculate envp string address, and store it
-        int addr_ = PGSIZE - (stack_top - sp) - 8;
-        for (int i = 0; i < argc; i++) {
-            addr_ -= 8;
-            *((uint64*)(&ustack_p[addr_])) = ((uint64) argv[i]) + sp;
-        }
-        
-        sp -= 8;
-        sp -= argc * 8;
-        sp -= 8;
+        p_argv_str = sp;
     }
 
+    // alloc auxv for interp
+    if (has_interp) {
+        Elf64_auxv_t auxv[] = {
+            {AT_PHDR,   elf.e_phoff},
+            {AT_PHENT,  sizeof(Elf64_Phdr)},
+            {AT_PHNUM,  elf.e_phnum},
+            {AT_ENTRY,  elf.e_entry},
+            {AT_BASE,   ld_base},
+            {AT_NULL,   0}
+        };
 
-    // should delete
-    // sp -= 64;
-    // store argc
+        sp -= sizeof(auxv);
+        memmove(&ustack_p[PGSIZE - (stack_top - sp)], auxv, sizeof(auxv));
+    }
+
+    if (uenvp) {
+        sp -= 8;
+        for (int i = envc - 1; i >= 0; i--) {
+            sp -= 8;
+            *((uint64*)(&ustack_p[PGSIZE - (stack_top - sp)])) = p_envp_str + envp_str_off[i];
+        }
+        p_envp = sp;
+    }
+
+    if (uargv) {
+        sp -= 8;
+        for (int i = argc - 1; i >= 0; i--) {
+            sp -= 8;
+            *((uint64*)(&ustack_p[PGSIZE - (stack_top - sp)])) = p_argv_str + argv_str_off[i];
+        }
+        p_argv = sp;
+    }
+
     sp -= 8;
     *((uint64*)(&ustack_p[PGSIZE - (stack_top - sp)])) = (uint64) argc;
 
@@ -305,7 +369,8 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
     p->sz = sz;
     p->heap_start = sz;
     // syscall will add 4 later
-    trapframe_set_era(p, elf.e_entry - 4);
+    uint64 entrypoint = (has_interp ? ld_entry : elf.e_entry);
+    trapframe_set_era(p, entrypoint - 4);
     log("entry: %lx", elf.e_entry);
     p->trapframe->sp = sp;
 
