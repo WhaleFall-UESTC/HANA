@@ -7,7 +7,7 @@
 #include <fs/mountp.h>
 #include <fs/ext4/ext4.h>
 #include <fs/devfs/devfs.h>
-
+#include <fs/kernel.h>
 #include <io/blk.h>
 #include <proc/proc.h>
 #include <syscall.h>
@@ -444,6 +444,35 @@ SYSCALL_DEFINE3(lseek, off_t, int, fd, off_t, offset, int, whence)
 
 	file->fpos = ret;
 
+	return ret;
+}
+
+SYSCALL_DEFINE2(truncate, int, const char *, path, off_t, offset) {
+	struct file* file;
+	int ret;
+	char __path[MAX_PATH_LEN];
+
+	if(copy_from_user_str(__path, path, MAX_PATH_LEN) < 0) {
+		error("copy from userspace error");
+		return -1;
+	}
+
+	file = kernel_open(__path);
+	if(file == NULL) {
+		error("open path failed");
+		return -1;
+	}
+
+	ret = call_interface(file->f_op, truncate, int, file, offset);
+	if(ret < 0) {
+		error("file truncate failed");
+		goto out;
+	}
+
+	ret = 0;
+
+out:
+	kernel_close(file);
 	return ret;
 }
 

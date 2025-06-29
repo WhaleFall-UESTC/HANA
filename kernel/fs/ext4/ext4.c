@@ -1,5 +1,4 @@
 #include <io/blk.h>
-#include <fs/io.h>
 #include <fs/fs.h>
 #include <fs/fcntl.h>
 #include <fs/stat.h>
@@ -287,6 +286,19 @@ static int ext4_unlink(path_t path) {
 	return ret;
 }
 
+static int ext4_truncate(struct file* file, off_t offset) {
+	struct ext4_file *ext4_file = (struct ext4_file *)file->f_private;
+	int ret;
+	
+	ret = ext4_ftruncate(ext4_file, offset);
+	if (ret != EOK) {
+		error_ext4("ext4_ftruncate error! ret: %d", ret);
+		return -1;
+	}
+
+	return 0;
+}
+
 // int readlink(const char *path, char *buf, size_t bufsize, size_t *rcnt)
 // {
 // 	int ret = ext4_readlink(path,buf,bufsize,rcnt);
@@ -408,6 +420,7 @@ const struct file_operations ext4_file_fops = {
 	.openat = ext4_openat,
 	.close = ext4_close,
 	.getdents64 = ext4_getdents64,
+	.truncate = ext4_truncate,
 };
 
 const struct fs_operations ext4_filesystem_ops = {

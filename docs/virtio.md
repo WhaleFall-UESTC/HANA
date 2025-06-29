@@ -22,8 +22,7 @@ VIRTIO 是 HANAOS 采用的底层 I/O 协议和网络栈物理层协议。VIRTIO
 MMIO 设备初始化流程如下：
 
 1. **重置设备**：清除设备状态寄存器
-2. **特性协商**：调用
-`virtio_check_capabilities`函数，检查设备支持的功能标志（如 `VIRTIO_BLK_F_SIZE_MAX`）并启用所需功能
+2. **特性协商**：调用`virtio_check_capabilities`函数，检查设备支持的功能标志（如 `VIRTIO_BLK_F_SIZE_MAX`）并启用所需功能
 3. **队列设置**：
    - 通过 `QueueSelect` 选择队列索引
    - 设置 `QueueNum` 指定队列大小
@@ -31,54 +30,6 @@ MMIO 设备初始化流程如下：
    - 取得内存地址的物理页号，写入 `QueuePFN` 寄存器
 4. **完成配置**：设置 `GuestPageSize` 为系统页大小 `PGSIZE`
 5. **启动设备**：设置状态寄存器为 `VIRTIO_STATUS_DRIVER_OK`
-
-### Virt Queue 初始化
-
-不同种类的设备需要不同个数的 Virt Queue，队列结构和信息由`struct virtq_info`和`struct virtqueue`两个结构体记录，其结构如下：
-
-```c
-struct virtqueue
-{
-    // The actual descriptors (16 bytes each)
-    union {
-        void* base;
-        volatile struct virtqueue_desc* desc;
-    };
-
-    // A ring of available descriptor heads with free-running index.
-    volatile struct virtqueue_avail* avail;
-
-    // A ring of used descriptor heads with free-running index.
-    volatile struct virtqueue_used* used;
-};
-
-struct virtq_info
-{
-    /* Physical page frame number of struct virtqueue. */
-    uint64 pfn;
-
-    uint32 seen_used;
-    uint32 free_desc;
-
-    struct virtqueue virtq;
-    void **desc_virt;
-
-    uint32 queue_num;
-    uint32 queue_size;
-};
-```
-
-对于新分配的队列，初始化流程为：
-
-1. 根据队列大小计算内存需求：
-   - 描述符表 (`virtqueue_desc`)：`queue_size × 16字节`
-   - 可用环 (`virtqueue_avail`)：`8 + queue_size × 2字节`
-   - 已用环 (`virtqueue_used`)：`8 + queue_size × 8字节`
-2. 严格对齐分配内存，队列的基地址和`virtqueue_used`的起始地址都要按照 4KB 对齐
-3. 初始化链表：
-   - 所有描述符按顺序链接，形成空闲链表
-   - 可用环头尾索引清零
-   - 设置已用环的 `flags` 与 `idx` 为0
 
 ### 中断通知
 
@@ -131,46 +82,88 @@ PCI 设备初始化流程：
 
 4. **特性协商**：`virtio_check_capabilities`函数，通过 `DeviceFeature/GuestFeature` 交互
 
-5. **提交队列地址**：将 `virtqueue` 物理地址写入 `QueueAddress`
+5. **提交队列地址**：将 `virtqueue` 物理地址除以4096，写入 `QueueAddress`
 
 6. **最终启动**：设置设备状态为 `DRIVER_OK`
 
-### Virt Queue 初始化
-
-PCI 模式队列初始化与 MMIO 基本一致，但是没有队列大小的沟通机制，驱动只能接受设备给出的队列大小。
+注意，PCI 模式队列初始化与 MMIO 基本一致，但是没有队列大小的沟通机制，驱动只能接受设备给出的队列大小。
 
 ### 中断初始化
 
 #### 传统中断
 
-驱动通过 PCI 配置空间获取中断引脚号，调用 `pci_device_set_irq_line()` 绑定到系统中断控制器。触发流程为：
-
-1. 设备操作导致中断断言
-2. PCI 控制器转发中断信号
-3. CPU 查询中断状态寄存器确认事件来源
-
-#### MSI-X 中断
+驱动通过 PCI 配置空间获取中断引脚号，调用 `pci_device_set_irq_line()` 绑定到系统中断控制器，通过 #int 引脚产生中断。
 
 #### MSI-X 中断
 
 MSI-X 提供非共享高性能中断：
 
-1. **分配向量**：系统分配专属中断号
+1. **分配向量**：系统分配专属 MSI-X 中断号
 
-2. **绑定队列**：
+2. **绑定向量号**：
 
 ```c
-pci_msix_add_vector(dev, 0, PCI_MSIX_MSG_ADDR, intid);
-WRITE16(header->QueueVector, 0); // 关联队列0
+pci_msix_add_vector(dev, 0, PCI_MSIX_MSG_ADDR, intid); // 添加设备的 MSI-X 中断向量 0
+WRITE16(header->QueueVector, 0); // 将中断向量 0 关联到队列
 ```
 
-3. **配置空间关联**：设置 `ConfigurationVector` 对应配置变更事件
+3. **直接通知**：设备通过内存写操作触发中断，无需中断引脚
 
-4. **直接通知**：设备通过内存写操作触发中断，无需中断引脚
+## Virt Queue
+
+不同种类的设备需要不同个数的 Virt Queue，队列结构和信息由`struct virtq_info`和`struct virtqueue`两个结构体记录，其结构如下：
+
+```c
+struct virtqueue
+{
+    // The actual descriptors (16 bytes each)
+    union {
+        void* base;
+        volatile struct virtqueue_desc* desc;
+    };
+
+    // A ring of available descriptor heads with free-running index.
+    volatile struct virtqueue_avail* avail;
+
+    // A ring of used descriptor heads with free-running index.
+    volatile struct virtqueue_used* used;
+};
+
+struct virtq_info
+{
+    /* Physical page frame number of struct virtqueue. */
+    uint64 pfn;
+
+    uint32 seen_used;
+    uint32 free_desc;
+
+    struct virtqueue virtq;
+    void **desc_virt;
+
+    uint32 queue_num;
+    uint32 queue_size;
+};
+```
+
+对于新分配的队列，初始化流程为：
+
+1. 根据队列大小计算内存需求：
+   - 描述符表 (`virtqueue_desc`)：`queue_size × 16字节`
+   - 可用环 (`virtqueue_avail`)：`8 + queue_size × 2字节`
+   - 已用环 (`virtqueue_used`)：`8 + queue_size × 8字节`
+2. 严格对齐分配内存，队列的基地址和`virtqueue_used`的起始地址都要按照 4KB 对齐
+3. 初始化链表：
+   - 所有描述符按顺序链接，形成空闲链表
+   - 可用环头尾索引清零
+   - 设置已用环的 `flags` 与 `idx` 为0
 
 ## Virtio-blk
 
-块设备驱动实现以下核心功能：
+Virtio 的块设备模拟了一个虚拟磁盘，在 qemu 中提供磁盘服务。块设备驱动实现以下核心功能：
+
+### I/O 机制
+
+Virtio-blk 设备从上层的块设备获取 I/O 请求`struct blkreq`，将请求的相应字段填写到新分配的描述符的对应字段后通知设备进行处理。当设备处理完成该请求之后，中断触发通知 Virtio-blk 驱动，驱动进入中断处理函数回收空间并唤醒等待进程。
 
 ### 请求管理
 
@@ -187,20 +180,14 @@ WRITE16(header->QueueVector, 0); // 关联队列0
 2. 结果解析：检查状态描述符的完成状态：
 
    ```c
-   switch (req->status) {
+   switch (req->status)
    case VIRTIO_BLK_S_OK:  // 成功
    case VIRTIO_BLK_S_IOERR: // I/O错误
    ```
 
 3. 资源回收：释放描述符回空闲链表
 
-4. 请求完成：回调上层文件系统结束 I/O 等待
-
-### 读写优化
-
-- **扇区对齐**：强制请求大小为 512 字节的倍数
-- **批量提交**：支持多描述符链并行处理
-- **写缓存控制**：利用 `VIRTIO_BLK_F_CONFIG_WCE` 动态调整写策略
+4. 请求完成：回调上层块设备子系统结束 I/O 等待
 
 ## Virtio-net
 

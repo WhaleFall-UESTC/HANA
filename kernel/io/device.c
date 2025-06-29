@@ -23,7 +23,7 @@ void device_register(struct device *device, irq_handler_t handler) {
     assert(device != NULL);
 
     spinlock_acquire(&devlst_lock);
-    list_insert(&device_list_head, &device->dev_entry);
+    list_insert_end(&device_list_head, &device->dev_entry);
     spinlock_release(&devlst_lock);
 
     irq_register(device->intr, handler, (void *)device);

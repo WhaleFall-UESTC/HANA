@@ -1,7 +1,6 @@
 #include <io/blk.h>
 #include <io/chr.h>
 #include <io/device.h>
-#include <fs/io.h>
 #include <fs/fs.h>
 #include <fs/fcntl.h>
 #include <fs/stat.h>
@@ -116,15 +115,13 @@ int devfs_init(struct mountpoint *mp)
     stderr.file_type = FT_CHRDEV;
     stderr.name = stderr.tty.name;
     devfs_add_device(&stderr);
-
-    blkdev = blkdev_get_by_id(DEVID_VIRTIO_BLK_BASE);
-    assert(blkdev != NULL);
     
     device_list_for_each_entry_locked(dev) {
         if(dev->type == DEVICE_TYPE_BLOCK) {
             device = kcalloc(1, sizeof(*device));
             assert(device != NULL);
 
+            blkdev = container_of(dev, struct blkdev, dev);
             assert(blkname[2] != 'z')
             block_init(&device->disk, blkdev, blkname);
             device->file_type = FT_BLKDEV;

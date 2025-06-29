@@ -5,7 +5,7 @@
 #include <debug.h>
 #include <lib/errno.h>
 
-#define KERNEL_OPEN_FLAG O_RDWR
+#define KERNEL_OPEN_FLAG O_RDONLY
 
 struct file* kernel_open(const char* path) {
     struct mountpoint *mount_p = NULL;

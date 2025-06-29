@@ -2,7 +2,6 @@
 #include <fs/file.h>
 #include <fs/fcntl.h>
 #include <fs/stat.h>
-#include <fs/io.h>
 #include <fs/dirent.h>
 #include <fs/ext4/ext4.h>
 #include <fs/ext4/ext4_blk.h>

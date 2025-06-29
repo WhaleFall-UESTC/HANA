@@ -22,6 +22,7 @@
 #define SYS_umount2 39
 #define SYS_mount 40
 #define SYS_fstat 80
+#define SYS_truncate 48
 
 // Process Management
 #define SYS_clone 220
@@ -49,7 +50,7 @@
 #define NR_SYSCALL 30
 
 #define SYSCALLS(f) \
-    f(getcwd) f(pipe2) f(dup) f(dup3) f(chdir) f(openat) f(close) f(getdents64) \
+    f(getcwd) f(pipe2) f(dup) f(dup3) f(chdir) f(openat) f(close) f(getdents64) f(truncate) \
     f(read) f(write) f(linkat) f(unlinkat) f(mkdirat) f(umount2) f(mount) f(fstat) \
     f(clone) f(execve) f(wait4) f(exit) f(getppid) f(getpid) f(set_thread_area) f(get_thread_area)\
     f(brk) f(munmap) f(mmap) \
