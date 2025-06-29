@@ -488,3 +488,16 @@ SYSCALL_DEFINE1(set_thread_area, int, struct user_desc*, uaddr) {
     return 0;  // 成功
 }
 
+
+SYSCALL_DEFINE1(get_thread_area, int, struct user_desc*, uaddr)
+{
+    struct proc* p = myproc();
+
+    if (uaddr == NULL)
+        return -EFAULT;
+
+    if (copyout(UPGTBL(p->pagetable), (uint64)uaddr, &(p->tls), sizeof(p->tls)) < 0)
+        return -EFAULT;
+
+    return 0;
+}

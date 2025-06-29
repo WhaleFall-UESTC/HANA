@@ -32,6 +32,7 @@
 #define SYS_getpid 172
 
 #define SYS_set_thread_area 175
+#define SYS_get_thread_area 174
 
 // Memory Management
 #define SYS_brk 214
@@ -50,7 +51,7 @@
 #define SYSCALLS(f) \
     f(getcwd) f(pipe2) f(dup) f(dup3) f(chdir) f(openat) f(close) f(getdents64) \
     f(read) f(write) f(linkat) f(unlinkat) f(mkdirat) f(umount2) f(mount) f(fstat) \
-    f(clone) f(execve) f(wait4) f(exit) f(getppid) f(getpid) f(set_thread_area)\
+    f(clone) f(execve) f(wait4) f(exit) f(getppid) f(getpid) f(set_thread_area) f(get_thread_area)\
     f(brk) f(munmap) f(mmap) \
     f(times) f(uname) f(sched_yield) f(gettimeofday) f(nanosleep)
 

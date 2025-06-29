@@ -83,7 +83,7 @@ copyout(pagetable_t pgtbl, uint64 dstva, void* src, size_t len)
         va0 = PGROUNDDOWN(dstva);
         
         pte = walk(pgtbl, va0, WALK_NOALLOC);
-        EXIT_IF(!CHECK_PTE(pte, PTE_V | PTE_U), "copyout occurs pte illegal");
+        EXIT_IF((*pte & PTE_V) == 0 || (*pte & PTE_U) == 0, "copyout occurs pte illegal");
             
         pa0 = KERNEL_PA2VA(PTE2PA(*pte));
         if (pa0 == 0)
