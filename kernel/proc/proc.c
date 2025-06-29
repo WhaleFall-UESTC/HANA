@@ -88,11 +88,11 @@ proc_init()
     pagetable_t user_pagetable = uvminit((uint64)p->trapframe, INIT_CODE, INIT_CODE_SIZE);
     // pagetable_t user_pagetable = uvminit((uint64)p->trapframe, deadloop, sizeof(deadloop));
     p->pagetable = upgtbl_init(user_pagetable);
-    p->heap_start = 2*PGSIZE;
-    p->sz = 2*PGSIZE;
+    p->heap_start = 18*PGSIZE;
+    p->sz = 18*PGSIZE;
 
     trapframe_set_era(p, 0);
-    trapframe_set_stack(p, 3*PGSIZE);
+    trapframe_set_stack(p, 18*PGSIZE);
 
     strcpy(p->name, "init");
     

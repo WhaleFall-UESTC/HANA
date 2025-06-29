@@ -155,20 +155,21 @@ pagetable_t
 uvminit(uint64 trapframe, const char* init_code, int sz)
 {
     assert(init_code);
-    assert(sz <= 2*PGSIZE);
+    assert(sz <= 16*PGSIZE);
     
-    void* userspace = kalloc(2*PGSIZE);
+    void* userspace = kalloc(sz);
     memmove(userspace, init_code, sz);
     uint64 userspace_pa = KERNEL_VA2PA(userspace);
 
     pagetable_t upgtbl = uvmmake(trapframe);
 
-    mappages(upgtbl, 0, userspace_pa, PGSIZE*2, PTE_PLV3 | PTE_MAT_CC | PTE_P);
+    mappages(upgtbl, 0, userspace_pa, sz, PTE_PLV3 | PTE_MAT_CC | PTE_P | PTE_D | PTE_W);
 
     // map guard page, for uvmcpoy
-    // mappages(upgtbl, PGSIZE, 0, PGSIZE, 0);
+    mappages(upgtbl, 16*PGSIZE, 0, PGSIZE, 0);
 
-    mappages(upgtbl, 2 * PGSIZE, userspace_pa + PGSIZE, PGSIZE, PTE_PLV3 | PTE_MAT_CC | PTE_P | PTE_W | PTE_NX | PTE_D);
+    char* ustack = kalloc(PGSIZE);
+    mappages(upgtbl, 17 * PGSIZE, (uint64)ustack, PGSIZE, PTE_PLV3 | PTE_MAT_CC | PTE_P | PTE_W | PTE_NX | PTE_D);
 
     return (pagetable_t) KERNEL_VA2PA(upgtbl);
 }

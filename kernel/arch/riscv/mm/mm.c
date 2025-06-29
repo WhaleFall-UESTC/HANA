@@ -166,20 +166,21 @@ pagetable_t
 uvminit(uint64 trapframe, const char* init_code, int sz)
 {
     assert(init_code);
-    assert(sz <= 2*PGSIZE);
+    assert(sz <= 16*PGSIZE);
     
-    void* userspace = kalloc(2*PGSIZE);
-    memset(userspace, 0, 2*PGSIZE);
+    void* userspace = kalloc(sz);
+    // memset(userspace, 0, sz);
     memmove(userspace, init_code, sz);
 
     pagetable_t upgtbl = uvmmake(trapframe);
 
-    mappages(upgtbl, 0, (uint64)userspace, 2*PGSIZE, PTE_U | PTE_R | PTE_X);
+    mappages(upgtbl, 0, (uint64)userspace, sz, PTE_U | PTE_R | PTE_X | PTE_W);
 
     // map guard page, for uvmcpoy
-    // mappages(upgtbl, PGSIZE, 0, PGSIZE, 0);
+    mappages(upgtbl, 16*PGSIZE, 0, PGSIZE, 0);
 
-    mappages(upgtbl, 2 * PGSIZE, (uint64)userspace + PGSIZE, PGSIZE, PTE_U | PTE_R | PTE_W);
+    char* ustack = kalloc(PGSIZE);
+    mappages(upgtbl, 17 * PGSIZE, (uint64)ustack, PGSIZE, PTE_U | PTE_R | PTE_W);
 
     return upgtbl;
 }
