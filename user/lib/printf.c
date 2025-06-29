@@ -3,8 +3,8 @@
 #define __U_ULIB_H__
 
 #include <stdarg.h>
-#include <ulib.h>
-#include <syscall.h>
+#include "../include/ulib.h"
+#include "../include/syscall.h"
 
 #define ZEROPAD 1   // defalut blank pad
 #define BIN     2
@@ -263,8 +263,9 @@ int
 puts(char* buf)
 {
     int i;
-    for (i = 0; buf[i] != '\0'; i++)
-        putchar(buf[i]);
+    const char ln = '\n';
+    write(STDOUT_FILENO, buf, i = strlen(buf));
+    write(STDOUT_FILENO, &ln, 1);
     return i;
 }
 

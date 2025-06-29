@@ -1,4 +1,5 @@
 #include "../include/syscall.h"
+#include "../include/ulib.h"
 
 char arg0[32] = "/glibc/busybox";
 char arg1[32] = "/glibc/basic_testcode.sh";
@@ -18,6 +19,12 @@ int main(void) {
 
     const char busybox[] = "/glibc/rv_init";
     
+    puts(arg0);
+    puts(arg1);
+
+    printf("arg0 addr 0x%p, arg1 addr 0x%p\n", arg0, arg1);
+    printf("argv addr 0x%p\n", argv);
+
     execve(busybox, argv, 0);
 
     return 0;
