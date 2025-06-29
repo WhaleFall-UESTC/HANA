@@ -16,7 +16,7 @@ int main(void) {
     mount("/dev/sda", "/", "ext4", 0, 0);
     // execve("/la_init", 0, 0);
 
-    const char busybox[] = "/glibc/busybox";
+    const char busybox[] = "/glibc/rv_init";
     
     execve(busybox, argv, 0);
 

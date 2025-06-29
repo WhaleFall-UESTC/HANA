@@ -242,6 +242,7 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
     // now map user stack 
     // first we leave a protect page, which is blank and unmapped
     sz = PGROUNDUP(sz) + PGSIZE;
+    log("stack range %lx - %lx", sz, sz + PGSIZE - 1);
     // next, alloc and map user stack
     char* ustack = kalloc(PGSIZE);
     mappages(pgtbl, sz, KERNEL_VA2PA(ustack), PGSIZE, PTE_U | PTE_RW);
