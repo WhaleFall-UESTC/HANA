@@ -13,8 +13,8 @@ strlen(const char *s)
 
 int main(int argc, char* const argv[], char* const envp[]) {
     // printf("argc: %d", argc);
-    write(1, argv[0], strlen(argv[0]));
-    write(1, argv[1], strlen(argv[1]));
+    write(1, argv[0], 15);
+    write(1, argv[1], 25);
 
     char *msg = "Hello, World!\n";
     write(1, msg, strlen(msg));

@@ -306,7 +306,9 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
         char* argv_mem = kalloc(argc * MAX_ARG_STRLEN);
         uint64 argv_nbytes = 0;
         for (int i = 0; i < argc; i++) {
+            log("%lx", (uint64)argv[i]);
             int size = copyinstr(old_pgtbl, &argv_mem[argv_nbytes], (uint64) argv[i], MAX_ARG_STRLEN);
+            log("Got argv[%d]: %s", i, &argv_mem[argv_nbytes]);
             if (size < 0) {
                 kfree(argv_mem);
                 goto execve_bad;
@@ -353,6 +355,8 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
         sp -= 8;
         for (int i = argc - 1; i >= 0; i--) {
             sp -= 8;
+            uint64 off = p_argv_str + argv_str_off[i];
+            log("argv[%d] at %lx: %s", i, off, &ustack_p[off]);
             *((uint64*)(&ustack_p[PGSIZE - (stack_top - sp)])) = p_argv_str + argv_str_off[i];
         }
         p_argv = sp;
