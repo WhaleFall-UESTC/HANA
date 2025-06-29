@@ -61,3 +61,81 @@ typedef struct pci_device
 
 ## BAR 空间的配置和映射
 
+PCI 中的 BAR 寄存器（ Base Address Register ）指向的空间通常分为 I/O 空间与 MEM 空间两种类型。在 QEMU 的龙芯编程中，这俩中空间都是通过地址映射进行访问，二者的映射基址和范围如下：
+
+```c
+#define PCI_IO_BASE 0x18000000UL
+#define PCI_IOSPACE_STA 0x4000UL
+#define PCI_IOSPACE_END 0xFFFFUL
+#define PCI_MEM_BASE 0x40000000UL
+#define PCI_MEM_SIZE 0x40000000UL
+```
+
+BAR 寄存器的头信息和两种布局如下：
+
+1. 基地址寄存器
+
+    Bit0: 标志位，若为1则为io空间，若为0则为mem空间
+
+2. I/O基地址寄存器:
+
+    Bit1: 保留
+
+    Bit31-2: 基地址单元
+
+    Bit63-32: 保留
+
+3. MEM 基地址存储器:
+
+    Bit2-1: MEM 基地址寄存器-译码器宽度单元,00-32 位,10-64 位
+
+    Bit3: 预提取属性
+
+    Bit64-4: 基地址单元
+
+初始化时，PCI 驱动将 BAR 寄存器写全 1，并再次读取它的值，将读取的值取反加一即为设备要求的空间大小。PCI 驱动将在 BAR 寄存器指定类型的空间范围，根据长度要求分配对齐的一段地址。
+
+## PCI 传统中断的配置
+
+PCI 设备的中断号是由中断引脚和 SLOT ID 决定的，后者等于设备的 dev 号。该映射在设备树中进行了规定，其关系为：
+
+```c
+static struct slot_pin_info slot_info[][4] = {
+	{
+		{0x01, 0x10},
+		{0x02, 0x11},
+		{0x03, 0x12},
+		{0x04, 0x13},
+	},
+	{
+		{0x01, 0x11},
+		{0x02, 0x12},
+		{0x03, 0x13},
+		{0x04, 0x10},
+	},
+	{
+		{0x01, 0x12},
+		{0x02, 0x13},
+		{0x03, 0x10},
+		{0x04, 0x11},
+	},
+	{
+		{0x01, 0x13},
+		{0x02, 0x10},
+		{0x03, 0x11},
+		{0x04, 0x12},
+	}
+};
+```
+
+其中 slot_info 第一维下标为 SLOT ID，每个`struct slot_pin_info`中记录了中断引脚和中断号的对应，其中中断引脚号 0x1 对应 INTA#, 0x2 对应 INTB#, 0x3 对应 INTC#, 0x4 对应 INTD#。
+
+获取中断号后，写入偏移为 0x3C 的 Interrupt Line 寄存器即可完成设置。
+
+## PCI MSI-X 中断
+
+PCI 设备初始化时，`pci_detect_msix`函数遍历设备的 PCI capability 链表并找出 MSI-X capability 的位置，将相应的信息填入`pci_device_t`的 MSI-X 相关字段，然后`pci_map_msix_table`函数从 BAR 空间中找出计算出`msix_table`的地址。
+
+设备要使用 MSI-X 中断时，首先调用`pci_enable_msix`函数，将 MSI-X 中断使能并禁用传统中断，然后调用`pci_msix_add_vector`函数将新的 MSI-X vector 加入到 MSI-X table 中。
+
+在 MSI-X vector 加入到 MSI-X table 的步骤中，需要`msg_addr`和`msg_data`两个信息。对于龙芯来说，这两个信息应该分别填入 PCH-MSI 控制器的 64 位寄存器的地址，以及设备的 MSI-X 中断向量号。
