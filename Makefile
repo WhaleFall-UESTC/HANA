@@ -1,12 +1,13 @@
 ARCH ?= loongarch
 BUILD_DIR := build/$(ARCH)
-FS := rootfs.img
+# FS := rootfs.img
 SMP := 1
 MEM := 128M
 
 ifeq ($(ARCH), riscv)
 KERNEL := kernel-rv
 DISK := disk.img
+FS := sdcard-rv.img
 TOOLPREFIX := riscv64-unknown-elf-
 QEMU := qemu-system-riscv64
 QEMUOPTS := -machine virt -kernel $(KERNEL) -m $(MEM) -nographic -smp $(SMP) -bios default -drive file=$(FS),if=none,format=raw,id=x0 \
@@ -23,6 +24,7 @@ OBJTAR := elf64-littleriscv
 else ifeq ($(ARCH), loongarch)
 KERNEL := kernel-la
 DISK := disk-la.img
+FS := sdcard-rv.img
 TOOLPREFIX := loongarch64-unknown-linux-gnu-
 QEMU := qemu-system-loongarch64
 QEMUOPTS := -kernel $(KERNEL) -m $(MEM) -nographic -smp $(SMP) -drive file=$(FS),if=none,format=raw,id=x0  \
