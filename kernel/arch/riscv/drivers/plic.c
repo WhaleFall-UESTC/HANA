@@ -29,8 +29,8 @@ plic_enable_irq(int hart, int irq, int priority)
 
 void
 plic_disable_irq(int hart, int irq) {
-    DISABLE_IRQ(hart, irq);
     SET_IRQ_PRIORITY(irq, 0);
+    DISABLE_IRQ(hart, irq);
 }
 
 // get the claim id of the highest-priority pending interrupt for the current hart
@@ -54,15 +54,12 @@ plic_complete_irq(int hart, int irq)
 void
 plic_init()
 {
-    SET_IRQ_PRIORITY(UART0_IRQ, 1);
-    SET_IRQ_PRIORITY(VIRTIO0_IRQ, 1);
+
 }
 
 void
 plic_init_hart(int hart)
 {
-    ENABLE_IRQ(hart, UART0_IRQ);
-    ENABLE_IRQ(hart, VIRTIO0_IRQ);
     SET_THRESHOLD(hart, 0);
 }
 

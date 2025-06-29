@@ -1,4 +1,4 @@
-ARCH ?= loongarch
+ARCH ?= riscv
 BUILD_DIR := build/$(ARCH)
 # FS := rootfs.img
 SMP := 1

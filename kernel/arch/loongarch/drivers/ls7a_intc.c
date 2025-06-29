@@ -51,4 +51,6 @@ void ls7a_disable_irq(int irq)
 
     /* 屏蔽对应中断 (1<<irq对应的bit置1) */
     ADDRVAL(64, LS7A_INT_MASK) |= (0x1UL << irq);
+
+	ADDRVAL(64, LS7A_HTMSI_EN) &= ~(0x1UL << irq);
 }
