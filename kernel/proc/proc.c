@@ -35,7 +35,8 @@ alloc_proc()
     p->stack = KSTACK(p->pid);
 
     p->tgid = 0;
-    p->tls = 0;
+    p->tls = (struct user_desc){};
+    p->tls_base = 0;
     p->cleartid = 0;
     p->sigchld = 0;
     

@@ -367,6 +367,8 @@ w_tp(uint64 x)
   asm volatile("mv tp, %0" : : "r"(x));
 }
 
+#define r_cpuid() 0
+
 static inline uint64
 r_ra()
 {

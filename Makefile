@@ -75,7 +75,6 @@ CFLAGS += -I $(KERNEL_SRC)/include -I $(ARCH_SRC)/include -I $(KERNEL_SRC)/test/
 ASFLAGS = $(CFLAGS) -D__ASSEMBLY__
 LDFLAGS = -nostdlib -T $(ARCH_SRC)/kernel.ld
 
-INIT_DST := $(BUILD_DIR)/user_init
 
 SRC_S = $(shell find $(ARCH_SRC) -type f -name '*.S')
 
@@ -88,14 +87,20 @@ SRC_C := $(shell find $(ARCH_SRC) -type f -name '*.c') \
 OBJS = $(addprefix $(BUILD_DIR)/, $(SRC_C:.c=.o) $(SRC_S:.S=.o))
 
 
+USRS := $(INIT_SRC)/$(ICCOM).S
+
 USRC := $(shell find $(USER_SRC) -type f -name '*.c' \
 			-not -path '$(USER_SRC)/init/*') 
+USRC += $(INIT_SRC)/initcode.c
 
-UOBJS = $(addprefix $(BUILD_DIR)/, $(USRC:.c=.o))
+UOBJS = $(addprefix $(BUILD_DIR)/, $(USRC:.c=.o) $(USRS:.S=.o))
+
+INIT_DST := $(BUILD_DIR)/user
+INITCOBJ := $(INIT_DST)/$(ICCOM)_init.o
 
 all: $(KERNEL)
 
-$(KERNEL): $(OBJS) $(INIT_DST)/$(ICCOM)_init.o
+$(KERNEL): $(OBJS) $(INITCOBJ)
 	$(LD) $(LDFLAGS) -o $@ $^
 	@echo "[LD] Linked kernel image: $@"
 
@@ -109,15 +114,13 @@ $(BUILD_DIR)/%.o: %.S
 	$(CC) $(CFLAGS) -c -o $@ $<
 	@echo "[CC] Assembled $<"
 
-$(INIT_DST):
-	@mkdir $(INIT_DST)
-
-$(INIT_DST)/$(ICCOM)_init.o: $(INIT_DST) $(INIT_SRC)/initcode.c $(INIT_SRC)/$(ICCOM).s
-	$(CC) $(CFLAGS) -c $(INIT_SRC)/$(ICCOM).s -o $(INIT_DST)/$(ICCOM)s.o
-	$(CC) $(CFLAGS) -c -ffreestanding $(INIT_SRC)/initcode.c -o $(INIT_DST)/initcode.o
-	$(LD) $(INIT_DST)/$(ICCOM)s.o $(INIT_DST)/initcode.o -o $(INIT_DST)/$(ICCOM)_init.elf
+$(INITCOBJ): $(UOBJS)
+	$(LD) $^ -o $(INIT_DST)/$(ICCOM)_init.elf
+	@echo "[LD] Linked initcode elf: $(INIT_DST)/$(ICCOM)_init.elf"
 	$(OBJCOPY) -O binary $(INIT_DST)/$(ICCOM)_init.elf $(INIT_DST)/initcode
-	$(OBJCOPY) -I binary -O $(OBJTAR) $(INIT_DST)/initcode $(INIT_DST)/$(ICCOM)_init.o
+	@echo "[OBJCOPY] Copied to binary $(INIT_DST)/initcode"
+	$(OBJCOPY) -I binary -O $(OBJTAR) $(INIT_DST)/initcode $@
+	@echo "[OBJCOPY] Copied to binary $@"
 
 -include $(OBJS:.o=.d)
 

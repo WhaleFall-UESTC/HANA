@@ -9,10 +9,10 @@
  * Refer to user/init/la.s,  user/init/initcode.c
  */
 
-extern const char _binary_build_loongarch_user_init_initcode_start[];
-extern const char _binary_build_loongarch_user_init_initcode_end[];
-#define INIT_CODE _binary_build_loongarch_user_init_initcode_start
-#define INIT_CODE_SIZE ((size_t)(_binary_build_loongarch_user_init_initcode_end - _binary_build_loongarch_user_init_initcode_start))
+extern const char _binary_build_loongarch_user_initcode_start[];
+extern const char _binary_build_loongarch_user_initcode_end[];
+#define INIT_CODE _binary_build_loongarch_user_initcode_start
+#define INIT_CODE_SIZE ((size_t)(_binary_build_loongarch_user_initcode_end - _binary_build_loongarch_user_initcode_start))
 
 char deadloop[] = {0x00, 0x00, 0x00, 0x50};
 

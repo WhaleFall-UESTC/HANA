@@ -26,6 +26,8 @@
 #define SYS_getppid 173
 #define SYS_getpid 172
 
+#define SYS_set_thread_area 175
+
 // Memory Management
 #define SYS_brk 214
 #define SYS_munmap 215

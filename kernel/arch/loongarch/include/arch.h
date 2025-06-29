@@ -584,6 +584,8 @@ static inline void w_csr_rvacfg(uint64 val) { csr_write(CSR_RVACFG, val); }
 static inline uint64 r_csr_cpuid() { uint64 val; csr_read(CSR_CPUID, val); return val; }
 static inline void w_csr_cpuid(uint64 val) { csr_write(CSR_CPUID, val); }
     
+#define r_cpuid() r_csr_cpuid() 
+
 static inline uint64 r_csr_prcfg1() { uint64 val; csr_read(CSR_PRCFG1, val); return val; }
 static inline void w_csr_prcfg1(uint64 val) { csr_write(CSR_PRCFG1, val); }
     

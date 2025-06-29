@@ -321,6 +321,10 @@ SYSCALL_DEFINE3(read, ssize_t, int, fd, char *, buf, size_t, count)
 	struct files_struct *fdt = myproc()->fdt;
 	ssize_t ret;
 	off_t ori_fpos;
+
+	if(count == 0)
+		return 0;
+
 	KCALLOC(char, kernel_buf, count);
 
 	if(kernel_buf == NULL) {
@@ -361,6 +365,10 @@ SYSCALL_DEFINE3(write, ssize_t, int, fd, const char *, buf, size_t, count)
 	struct files_struct *fdt = myproc()->fdt;
 	ssize_t ret;
 	off_t ori_fpos;
+
+	if(count == 0)
+		return 0;
+
 	KCALLOC(char, kernel_buf, count);
 
 	if(kernel_buf == NULL) {

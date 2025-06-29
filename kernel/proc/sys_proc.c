@@ -15,6 +15,7 @@
 #include <fs/kernel.h>
 #include <syscall.h>
 #include <elf.h>
+#include <errno.h>
 
 SYSCALL_DEFINE5(clone, int, unsigned long, flags, void*, stack, void*, ptid, void*, tls, void*, ctid)
 {
@@ -48,7 +49,7 @@ SYSCALL_DEFINE5(clone, int, unsigned long, flags, void*, stack, void*, ptid, voi
 
     *(child->trapframe) = *(proc->trapframe);
     // set tls
-    child->tls = (uint64) tls;
+    child->tls_base = (uint64) tls;
     child->trapframe->tp = (uint64) tls;
     // set child process return 0
     child->trapframe->a0 = 0;
@@ -74,9 +75,9 @@ SYSCALL_DEFINE5(clone, int, unsigned long, flags, void*, stack, void*, ptid, voi
         child->fdt = fdt_dup(proc->fdt);
     }
 
-    // if (flags & CLONE_THREAD) {
-    //     child->tgid = proc->tgid;
-    // }
+    if (flags & CLONE_THREAD) {
+        child->tgid = proc->tgid;
+    }
 
     if (flags & CLONE_PARENT_SETTID){
         copyout(UPGTBL(proc->pagetable), (uint64) ptid, &child->pid, sizeof(child->pid));
@@ -254,6 +255,10 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
     // user stack physical page
     char* ustack_p = (char*) KERNEL_PA2VA(PTE2PA(*pte));
 
+    // filename null
+    sp -= 8;
+    ustack_p[PGSIZE - 1] = 0;
+
     // prepare argv, envp in user stack
     uint64 p_envp = 0, p_argv = 0;
 
@@ -287,7 +292,7 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
         }
 
         // copy envp string to stack
-        memmove(&ustack_p[PGSIZE - envp_nbytes], envp_mem, envp_nbytes);
+        memmove(&ustack_p[PGSIZE - (stack_top - sp) - envp_nbytes], envp_mem, envp_nbytes);
         kfree(envp_mem);
 
         sp -= envp_nbytes;
@@ -306,9 +311,9 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
         char* argv_mem = kalloc(argc * MAX_ARG_STRLEN);
         uint64 argv_nbytes = 0;
         for (int i = 0; i < argc; i++) {
-            log("%lx", (uint64)argv[i]);
             int size = copyinstr(old_pgtbl, &argv_mem[argv_nbytes], (uint64) argv[i], MAX_ARG_STRLEN);
-            log("Got argv[%d]: %s", i, &argv_mem[argv_nbytes]);
+            log("Got argv[%d]: %s, copy to %p", i, &argv_mem[argv_nbytes], &argv_mem[argv_nbytes]);
+            log("user %p, offset: %lx", argv[i], argv_nbytes);
             if (size < 0) {
                 kfree(argv_mem);
                 goto execve_bad;
@@ -319,12 +324,13 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
             argv_nbytes += size;
         }
 
-        // copy envp string to stack
-        memmove(&ustack_p[PGSIZE - (stack_top - sp) - argv_nbytes], argv_mem, argv_nbytes);
-        kfree(argv_mem);
-
         sp -= argv_nbytes;
         p_argv_str = sp;
+
+        // copy envp string to stack
+        memmove(&ustack_p[PGSIZE - (stack_top - sp)], argv_mem, argv_nbytes);
+        log("sp at %lx", sp);
+        kfree(argv_mem);
     }
 
     // alloc auxv for interp
@@ -356,7 +362,7 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
         for (int i = argc - 1; i >= 0; i--) {
             sp -= 8;
             uint64 off = p_argv_str + argv_str_off[i];
-            log("argv[%d] at %lx: %s", i, off, &ustack_p[off]);
+            log("argv[%d] at %lx: %s", i, off, &ustack_p[off - (stack_top - PGSIZE)]);
             *((uint64*)(&ustack_p[PGSIZE - (stack_top - sp)])) = p_argv_str + argv_str_off[i];
         }
         p_argv = sp;
@@ -457,3 +463,28 @@ SYSCALL_DEFINE0(sched_yield, int) {
     yield();
     return 0;
 }
+
+
+SYSCALL_DEFINE1(set_thread_area, int, struct user_desc*, uaddr) {
+    struct proc* p = myproc();
+
+    struct user_desc desc;
+    if(copyin(UPGTBL(p->pagetable), (char *)&desc, (uint64)uaddr, sizeof(desc)) < 0)
+        return -1;
+
+    // 验证描述符
+    if(desc.entry_number != -1 && desc.entry_number != 0) {
+        // 只支持单个TLS条目
+        return -EINVAL;
+    }
+    
+    // 合并64位地址 (RISC-V是64位架构)
+    uint64 base_addr = ((uint64)desc.base_addr_high << 32) | desc.base_addr;
+    
+    // 保存到进程结构
+    p->tls = desc;
+    p->tls_base = base_addr;
+    
+    return 0;  // 成功
+}
+

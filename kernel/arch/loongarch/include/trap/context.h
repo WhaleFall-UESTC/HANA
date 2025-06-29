@@ -5,6 +5,7 @@ struct context {
 	uint64 ra;
 	uint64 sp;
 	uint64 s[10];
+	uint64 tp;
 	uint64 prmd;
 	uint64 era;
 };

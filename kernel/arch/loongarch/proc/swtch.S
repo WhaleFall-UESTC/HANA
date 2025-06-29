@@ -12,6 +12,7 @@ swtch:
     st.d $s7, $a0, 72
     st.d $s8, $a0, 80
     st.d $fp, $a0, 88
+    st.d $tp, $a0, 96
 
     ld.d $ra, $a1, 0
     ld.d $sp, $a1, 8
@@ -25,5 +26,6 @@ swtch:
     ld.d $s7, $a1, 72
     ld.d $s8, $a1, 80
     ld.d $fp, $a1, 88
+    ld.d $tp, $a1, 96
         
     jirl $zero, $ra, 0
