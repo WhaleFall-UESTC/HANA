@@ -12,6 +12,7 @@
 #include <proc/proc.h>
 #include <syscall.h>
 #include <debug.h>
+#include <errno.h>
 
 const struct file_system *filesys[] = {&devfs_fs, &ext4_fs};
 

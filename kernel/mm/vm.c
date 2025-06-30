@@ -220,13 +220,14 @@ void
 store_page_fault_handler()
 {
     log("store fault");
+    // kernel_trap_error();
     // struct proc* p = myproc();
     uint64 badv = trap_get_badv();
     uint64 va = PGROUNDDOWN(badv);
 
     // pte_t *pte = walk(UPGTBL(p->pagetable), va, WALK_NOALLOC);
     pte_t *pte = walk(kernel_pagetable, va, WALK_NOALLOC);
-    EXIT_IF(pte == NULL, "addr %lx pte not found", badv);
+    EXIT_IF(pte == NULL, "addr %lx pte not found, epc: %lx", badv, r_sepc());
 
     // if (!CHECK_PTE(pte, PTE_V | PTE_U | PTE_COW)) {
     if ((*pte == 0) || ((*pte & PTE_V) == 0) || ((*pte & PTE_COW) == 0)) {

@@ -189,13 +189,18 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
         // else if (phdr.p_flags & (PF_R)) perms |= PTE_RONLY;
         // else perms |= PTE_RWX;
         
-        char* mem = buddy_alloc(phdr.p_memsz);
+        uint64 load_start = PGROUNDDOWN(phdr.p_vaddr);
+        uint64 load_end = PGROUNDUP(phdr.p_vaddr + phdr.p_memsz - 1);
+        uint64 load_off = phdr.p_vaddr - load_start;
+        char* mem = buddy_alloc(load_end - load_start);
         mappages(pgtbl, phdr.p_vaddr, KERNEL_VA2PA(mem), phdr.p_memsz, perms);
 
-        sz = max_uint64(sz, phdr.p_vaddr + phdr.p_memsz);
+        sz = max_uint64(sz, load_end);
+
+        // log("map vaddr %lx, load its start at %p", phdr.p_vaddr, mem + load_off);
 
         kernel_lseek(file, phdr.p_offset, SEEK_SET);
-        kernel_read(file, mem, phdr.p_filesz);
+        kernel_read(file, mem + load_off, phdr.p_filesz);
     }
 
     kernel_close(file);
@@ -350,6 +355,8 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
         memmove(&ustack_p[PGSIZE - (stack_top - sp)], auxv, sizeof(auxv));
     }
 
+    sp -= 8;
+
     if (uenvp) {
         sp -= 8;
         for (int i = envc - 1; i >= 0; i--) {
@@ -368,10 +375,12 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
             *((uint64*)(&ustack_p[PGSIZE - (stack_top - sp)])) = p_argv_str + argv_str_off[i];
         }
         p_argv = sp;
+        log("p_argv: %lx, argv_p[0]: %lx", p_argv, *(uint64*)(ustack_p + PGSIZE - (stack_top - p_argv)));
     }
 
     sp -= 8;
     *((uint64*)(&ustack_p[PGSIZE - (stack_top - sp)])) = (uint64) argc;
+    log("argc at %lx", sp);
 
     p->trapframe->a1 = p_argv;
     p->trapframe->a2 = p_envp;
