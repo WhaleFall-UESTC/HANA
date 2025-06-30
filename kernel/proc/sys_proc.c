@@ -255,9 +255,11 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
     // user stack physical page
     char* ustack_p = (char*) KERNEL_PA2VA(PTE2PA(*pte));
 
-    // filename null
-    sp -= 8;
-    ustack_p[PGSIZE - 1] = 0;
+    // leave some space
+    uint64 leave_space = 128;
+    sp -= leave_space;
+    memset(&ustack_p[PGSIZE - leave_space], 0, leave_space);
+    // ustack_p[PGSIZE - 1] = 0;
 
     // prepare argv, envp in user stack
     uint64 p_envp = 0, p_argv = 0;

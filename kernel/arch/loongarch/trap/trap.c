@@ -166,7 +166,7 @@ dive_to_user()
     p->trapframe->kernel_sp = p->stack + KSTACK_SIZE;
     p->trapframe->kernel_hartid = r_cpuid();
     p->trapframe->kernel_trap = (uint64) user_trap;
-    p->trapframe->tp = p->tls;
+    // p->trapframe->tp = p->tls;
 
     uint64 trapframe = TRAPFRAME + ((uint64)p->trapframe - PGROUNDDOWN(p->trapframe));
     uint64 pgdl = (uint64) UPGTBL(p->pagetable);

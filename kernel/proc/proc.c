@@ -33,7 +33,6 @@ alloc_proc()
     
     p->pid = alloc_pid();
     p->stack = KSTACK(p->pid);
-
     p->tgid = 0;
     p->tls = 0;
     p->cleartid = 0;

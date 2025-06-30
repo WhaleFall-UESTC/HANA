@@ -14,10 +14,12 @@ int main(void) {
     mount("/dev/sda", "/", "ext4", 0, 0);
     // execve("/la_init", 0, 0);
 
-    const char busybox[] = "/glibc/busybox";
+    chdir("/glibc");
 
-    char arg0[32] = "/glibc/busybox";
-    char arg1[32] = "/glibc/basic_testcode.sh";
+    const char busybox[] = "busybox";
+
+    char arg0[32] = "busybox";
+    char arg1[32] = "basic_testcode.sh";
     
     puts(arg0);
     puts(arg1);
