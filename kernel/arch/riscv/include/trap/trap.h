@@ -50,13 +50,44 @@ struct trapframe {
 #define context_set_stack(proc, _sp) proc->context.sp = (_sp);
 
 /* trap/trap.c */
+
+/**
+ * trap 初始化，注册异常处理函数
+ */
 void            trap_init();
+
+/**
+ * 设置公共的异常处理入口 kernelvec
+ */
 void            trap_init_hart();
+
+/**
+ * 内核异常处理函数
+ */
 void            kernel_trap();
+
+/**
+ * 注册异常处理函数
+ * @param interrupt 类型，是异常还是中断
+ * @param code 异常号/中断号
+ * @param function 异常处理函数指针
+ */
 void            register_trap_handler(int interrupt, int code, void* function);
+
+/**
+ * 进入用户态的入口
+ */
 void            dive_to_user();
+
+/**
+ * 内核态异常报错
+ */
 void            kernel_trap_error();
 
+/**
+ * 打印异常原因与相关寄存器
+ * @param scause 异常原因号
+ */
 void            log_scause(uint64 scause);
 
 

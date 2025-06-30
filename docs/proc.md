@@ -241,7 +241,7 @@ HANA 的调度机制是由 `scheduler`，`sched`，`yield` 共同完成
 
 proc_init 调用 alloc_proc 得到一个分配好的进程结构体，设置好了其 pid, trapframe 的内核空间， 内核栈，fdt 表，并将 context 初始化，设置 context 的 ra 为 dive_to_user，sp 为 p->stack（内核栈）。如此，这个进程一旦被 swtch 调度，返回后就会来到 dive_to_user 函数，准备进入用户态
 
-随后，proc_init 调用 uvminit 初始化了其内核空间，将准备好的 initcode 映射到了虚拟地址为 0 的位置，并且还映射了用户栈，TRAPMPOLINE 代码（用户态与内核态切换的代码）。riscv 还需要将 trapframe 也 map 上，因为 TRAMPOLINE 需要在没有从用户态页表切换到内核态页表的情况下读取 trapframe，而 loongarch 可以利用 PGDL 与 PGDH 的机制避开这一点。
+随后，proc_init 调用 uvminit 初始化了其内核空间，将准备好的 initcode 映射到了虚拟地址为 0 的位置，并且还映射了用户栈，trapframe。riscv 还需要将 TRAMPOLINE（用户态与内核态切换的代码）也 map 上，因为当异常发生时需要在没有从用户态页表切换到内核态页表的情况下执行 userret，而 loongarch 可以利用在字节地址映射窗口来避开这一点。
 
 在完成用户空间的准备之后，init 进程的 trapframe 的例外返回地址（riscv 是 sepc，loongarch 是 era）设置为 0，即 initcode 代码段开始之处；stack 设置为用户栈的栈顶。最后将状态设置为 RUNNABLE 加入 proc_list
 
