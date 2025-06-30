@@ -22,7 +22,7 @@
 
   整个启动过程，内核做了以下事情：
 
-  1. uboot 将控制权交给内核，从 entrypoint 到 ```c main()``` 函数
+  1. `U-Boot` 完成硬件初始化和加载内核后，将控制权转交给内核入口点（entrypoint），然后从入口点开始执行代码，最终跳转到 ```c main()``` 函数
 
   2. ```c main()``` 函数承担了各个模块的初始化操作：
     - 串口初始化，启用打印输出功能；
@@ -81,7 +81,7 @@
 
 #slide[
   
-  #cols(columns: (1fr, 3fr, 8fr), gutter: 2em)[][
+  #cols(columns: (1fr, 4fr, 8fr), gutter: 2em)[][
       *HANAOS* 的_用户空间_布局设计如右图
   ][
     #figure(
@@ -104,7 +104,7 @@
   
   - 对于 RISC-V，子系统调用 PLIC 控制器驱动来控制中断；
   
-  - 对于龙芯来说，其具有更复杂的中断路由，子系统支持使用 pch-pic 控制器的传统中断和使用 pch-msi 控制器的 msi 中断，二者都通过 eiointc 被通用子系HA统使用。
+  - 对于龙芯来说，其具有更复杂的中断路由，子系统支持使用 pch-pic 控制器的传统中断和使用 pch-msi 控制器的 msi 中断，二者都通过 eiointc 被通用子系统使用。
 ]
 
 
@@ -188,6 +188,4 @@ int blockdev_close(struct ext4_blockdev *bdev);
 int blockdev_lock(struct ext4_blockdev *bdev);
 int blockdev_unlock(struct ext4_blockdev *bdev);
   ```
-
-  故实现第三方文件系统库的适配是比较容易的。
 ]
