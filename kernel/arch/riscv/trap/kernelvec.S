@@ -1,4 +1,12 @@
-	    #
+/**
+ * This code is from xv6 (MIT License)
+ * Original source: https://github.com/mit-pdos/xv6-riscv/tree/riscv/kernel/kernelvec.S
+ * Copyright (c) 2006-2024 Frans Kaashoek, Robert Morris, Russ Cox,
+ *                      Massachusetts Institute of Technology
+ * For full license text, see LICENSE-MIT-sos file in this repository
+ */
+
+	#
         # interrupts and exceptions while in supervisor
         # mode come here.
         #
