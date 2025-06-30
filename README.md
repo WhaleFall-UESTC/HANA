@@ -34,14 +34,14 @@ HANA是一个基于 xv6 开发的宏内核操作系统，支持 RISC-V 和 Loong
 │   ├── drivers                 驱动代码
 │   ├── fs                      文件系统
 │   ├── include
-│   ├── io
+│   ├── io                      IO 栈
 │   ├── irq                     中断
 │   ├── lib                     klib
 │   ├── locking                 锁
 │   ├── mm                      内存管理
 │   ├── net                     网络栈
 │   ├── proc                    进程管理
-│   ├── sys 
+│   ├── sys                     
 │   └── test
 └── user                        用户代码                      
 ```
