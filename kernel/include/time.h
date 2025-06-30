@@ -4,7 +4,7 @@
 #include <common.h>
 #include <proc/proc.h>
 
-#define TICK_HZ 1
+#define TICK_HZ 100
 
 #ifdef __loongarch64
 #define CLOCK_FREQUNCY  100000000UL
