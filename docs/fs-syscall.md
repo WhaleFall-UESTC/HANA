@@ -139,7 +139,7 @@ HANAOS 使用`call_interface`宏对接口是否注册进行检查，并调用：
 	})
 ```
 
-例如，`sys_openat`中对`open`接口进行调用：
+例如，`sys_openat`中对`openat`接口进行调用：
 
 ```c
 ret = call_interface(file->f_op, openat, int, file, full_path, flags, mode);

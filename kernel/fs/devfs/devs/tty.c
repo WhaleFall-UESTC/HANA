@@ -3,6 +3,10 @@
 #include <fs/fcntl.h>
 #include <mm/mm.h>
 
+/**
+ * Flush the TTY output buffer to the character device
+ * @param tty: The TTY structure to flush
+ */
 static inline void tty_flush(struct tty* tty) {
     size_t pos;
 
