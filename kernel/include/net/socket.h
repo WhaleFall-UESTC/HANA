@@ -49,13 +49,41 @@ struct socket {
     struct netdev *netdev; // Network device associated with this socket
 };
 
+/**
+ * Create a new socket
+ * @param domain: Address family (only AF_INET supported)
+ * @param type: Socket type (only SOCK_DGRAM supported)
+ * @param protocol: Protocol (0 for default, or specific protocol)
+ * @return Pointer to new socket structure, error pointer on failure
+ */
 struct socket* socket_socket(int domain, int type, int protocol);
+
+/**
+ * Register socket protocol operations
+ * @param ops: Pointer to sockops structure to register
+ */
 void socket_register_proto(struct sockops *ops);
+
+/**
+ * Destroy a socket and free resources
+ * @param sock: Socket to destroy
+ */
 void socket_destroy(struct socket *sock);
 
 extern struct file_operations socket_fops;
 
+/**
+ * Initialize a socket file
+ * @param file: File structure to initialize
+ * @return 0 on success, negative error code on failure
+ */
 int socket_init(struct file* file);
+
+/**
+ * Finalize and close a socket file
+ * @param file: File structure to finalize
+ * @return 0 on success, negative error code on failure
+ */
 int socket_final(struct file* file);
 
 #endif // __SOCKET_H__

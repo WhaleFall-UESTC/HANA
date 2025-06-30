@@ -38,8 +38,6 @@ struct file_operations
 	int (*close)(struct file *);
 	int (*getdents64)(struct file *, struct dirent *, size_t);
 	int (*truncate)(struct file*, off_t length);
-	// int (*flush) (struct file *, fl_owner_t id);
-	// int (*fsync) (struct file *, off_t, off_t, int datasync);
 };
 
 #define NR_OPEN 1024
@@ -134,6 +132,11 @@ void file_get(struct file *file);
  */
 int file_put(struct file *file);
 
+/**
+ * Get the reference count of a struct file.
+ * @param file The struct file to get the reference count.
+ * @return: The reference count of the struct file.
+ */
 int file_refcnt(struct file *file);
 
 #endif // __FILE_H__

@@ -10,13 +10,13 @@
 static irq_handler_t irq_handlers[MAX_NR_IRQ];
 static void* irq_privates[MAX_NR_IRQ];
 
-int irq_register(unsigned int irq, irq_handler_t handler, void* dev) {
+int irq_register(unsigned int irq, irq_handler_t handler, void* data) {
     if(irq >= MAX_NR_IRQ || irq_handlers[irq] != NULL) {
         return -1;
     }
     
     irq_handlers[irq] = handler;
-    irq_privates[irq] = dev;
+    irq_privates[irq] = data;
 
     __irq_enable_default(irq);
 

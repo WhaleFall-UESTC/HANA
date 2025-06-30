@@ -4,10 +4,15 @@
 #include <irq/interrupt.h>
 
 /* arch/<arch>/drivers/uart.c */
+// uart 初始化设置
 void            uart_init(void);
+// 向 uart 无中断地写入字符，返回实际输出的字符
 int             uart_putc_sync(int c);
+// 将字符写入缓冲区，并告知 uart 发送，若 buffer 满会 slepp
 void            uart_putc(int c);
+// 从 uart 读取字符
 int             uart_getc();
+// uart 设备中断处理
 int             uart_isr();
 
 typedef int (*putchar_t)(int);

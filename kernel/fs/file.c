@@ -37,6 +37,10 @@ void iofd_init() {
     atomic_init(&f_stderr.f_ref, 0);
 }
 
+/**
+ * Find the next available file descriptor in the files_struct.
+ * @param fdt: The files_struct to search for available file descriptors.
+ */
 static inline void find_avail_fd(struct files_struct *fdt)
 {
     if(!fdt->nr_avail_fd) {

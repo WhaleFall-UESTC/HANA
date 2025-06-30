@@ -1,3 +1,11 @@
+/**
+ * This code is partly from xv6 (MIT License)
+ * Original source: https://github.com/mit-pdos/xv6-riscv/tree/riscv/kernel/vm.c
+ * Copyright (c) 2006-2024 Frans Kaashoek, Robert Morris, Russ Cox,
+ *                      Massachusetts Institute of Technology
+ * For full license text, see LICENSE-MIT-sos file in this repository
+ */
+
 #include <common.h>
 #include <drivers/virtio-mmio.h>
 #include <mm/memlayout.h>
@@ -15,6 +23,7 @@ extern char end[];
 extern char trampoline[];
 extern char *init_stack_top;
 
+// kernel pagetable
 pagetable_t kernel_pagetable;
 
 void

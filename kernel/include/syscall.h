@@ -115,6 +115,7 @@ typedef uint64 (*syscall_func_t)(void);
     SYSCALL_KERNEL_DEFINE(x, name, ret_type, __VA_ARGS__)                            \
     static inline ret_type __do_sys##name(__MAP(x, __SC_DECL, __VA_ARGS__))
 
+// 系统调用分发函数
 void syscall();
 
 /* mmap flags */

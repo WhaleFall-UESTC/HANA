@@ -28,6 +28,11 @@ const struct file_system *filesys_find(const char *fstype)
 	return NULL;
 }
 
+/**
+ * Get the length of a directory entry name.
+ * @param str: Pointer to the directory entry name string.
+ * @return: Length of the name up to the first '/' or null terminator.
+ */
 static inline int dirent_name_len(const char* str) {
 	int ret = 0;
 	while(*str != '\0' && *str != '/') {

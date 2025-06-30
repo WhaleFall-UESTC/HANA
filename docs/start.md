@@ -78,7 +78,7 @@ void start() {
     w_csr_dmw2(0);
     w_csr_dmw3(0);
 
-    // current mode PLV0 & disable global interrupt
+    // set current mode PLV0 & disable global interrupt
     uint64 crmd = (CSR_CRMD_PLV0 & ~CSR_CRMD_IE);
     // Enable address mapping
     crmd |= CSR_CRMD_PG;
@@ -109,4 +109,6 @@ void start() {
 
 ## main
 
-main 承担了各个模块的初始化操作：串口初始化，启用打印输出功能；物理内存分配器，与虚拟内存管理的初始化；中断异常处理初始化； init 进程初始化；块设备初始化；虚拟文件系统初始化。最后调用 scheduler 启动 init 进程
+main 承担了各个模块的初始化操作：串口初始化，启用打印输出功能；物理内存分配器，与虚拟内存管理的初始化；中断异常处理初始化； init 进程初始化；块设备初始化；虚拟文件系统初始化。最后调用 scheduler 调度 RUNNABLE 状态的 init 进程，开启下一个加阶段的运行
+
+新关于各个模块初始化的详细过程，以及 init 被调度之后又作了什么事情，请参照相关文档的详细说明

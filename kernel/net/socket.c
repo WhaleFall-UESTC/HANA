@@ -16,6 +16,11 @@
 
 DECLARE_LIST_HEAD(sockops_list);
 
+/**
+ * Look up socket protocol operations
+ * @param protocol: Protocol number (e.g., IPPROTO_UDP)
+ * @return Pointer to sockops structure or NULL if not found
+ */
 static struct sockops *lookup_proto(int protocol)
 {
 	struct sockops *ops;
@@ -72,6 +77,14 @@ void socket_destroy(struct socket *sock)
     kfree(sock);
 }
 
+/**
+ * Read data from a socket
+ * @param file: File structure representing the socket
+ * @param buffer: Buffer to store read data
+ * @param size: Number of bytes to read
+ * @param offset: Pointer to current offset (updated after reading)
+ * @return Number of bytes read, or negative error code
+ */
 static ssize_t socket_read(struct file *file, char *buffer, size_t size, off_t *offset) {
     struct socket *sock = (struct socket *)file->f_private;
     int recvlen;
@@ -93,6 +106,14 @@ static ssize_t socket_read(struct file *file, char *buffer, size_t size, off_t *
     return recvlen;
 }
 
+/**
+ * Write data to a socket
+ * @param file: File structure representing the socket
+ * @param buffer: Buffer containing data to write
+ * @param size: Number of bytes to write
+ * @param offset: Pointer to current offset (updated after writing)
+ * @return Number of bytes written, or negative error code
+ */
 static ssize_t socket_write(struct file *file, const char *buffer, size_t size, off_t *offset) {
     struct socket *sock = (struct socket *)file->f_private;
     int sendlen;

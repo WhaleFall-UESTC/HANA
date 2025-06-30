@@ -168,8 +168,18 @@ struct packet {
 	uint8 data[0];
 };
 
+/**
+ * Allocate a new packet
+ * @return Pointer to allocated packet, NULL on failure
+ */
 struct packet *packet_alloc(void);
+
+/**
+ * Free a packet
+ * @param pkt: Packet to free
+ */
 void packet_free(struct packet *pkt);
+
 #define PACKET_SIZE     2048
 #define PACKET_CAPACITY (PACKET_SIZE - sizeof(struct packet))
 

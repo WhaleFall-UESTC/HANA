@@ -43,11 +43,6 @@ uint16 csum_finalize(uint32 *csum)
 	return ~((uint16)*csum);
 }
 
-void packet_init(void)
-{
-	
-}
-
 struct packet *packet_alloc(void)
 {
 	struct packet *pkt = (struct packet *)kalloc(PACKET_SIZE);
