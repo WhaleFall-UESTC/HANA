@@ -38,21 +38,30 @@ void device_init(struct device* device, devid_t devid, uint32 intr, const char *
 
 /**
  * register a device in list
+ * @param device: pointer to device struct
+ * @param handler: interrupt handler function
  */
 void device_register(struct device *device, irq_handler_t handler);
 
 /**
  * get a device struct by its name
+ * @param name: device name
+ * @param type: device type, use DEVICE_TYPE_ANY to match any type
  */
 struct device *device_get_by_name(const char *name, int type);
 
 /**
  * get a device struct by its device id
+ * @param id: device id
+ * @param type: device type, use DEVICE_TYPE_ANY to match any type
+ * @return: pointer to device struct, or NULL if not found
  */
 struct device *device_get_by_id(devid_t id, int type);
 
 /**
  * get default or first device struct of a specific type
+ * @param type: device type, use DEVICE_TYPE_ANY to match any type
+ * @return: pointer to device struct, or NULL if not found
  */
 struct device *device_get_default(int type);
 
@@ -93,6 +102,9 @@ extern spinlock_t devlst_lock;
 #define device_list_for_each_entry_safe(devptr, nextptr) \
     list_for_each_entry(devptr, nextptr, &device_list_head, dev_entry)
 
+/**
+ * Iterate over the device list with a locked iterator.
+ */
 #define device_list_for_each_entry_locked(devptr) \
     for(device_list_iter_init_locked(devptr); \
         (devptr) != NULL; device_list_iter_next_locked(devptr))

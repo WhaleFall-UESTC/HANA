@@ -23,6 +23,11 @@ static struct ip_mac_mapping mappings[MAX_MAPPINGS] = {
 };
 int nmap = 1;
 
+/**
+ * Get the MAC address for a given IP address.
+ * @param ip The IP address to look up.
+ * @return The MAC address associated with the IP, or NULL if not found.
+ */
 static uint8 *get_mapping(uint32 ip)
 {
 	int i;
@@ -32,6 +37,11 @@ static uint8 *get_mapping(uint32 ip)
 	return NULL;
 }
 
+/**
+ * Insert or update the mapping of an IP address to a MAC address.
+ * @param ip The IP address to map.
+ * @param mac The MAC address to associate with the IP address.
+ */
 static void upsert_mapping(uint32 ip, uint8 *mac)
 {
 	int i;
@@ -48,13 +58,15 @@ static void upsert_mapping(uint32 ip, uint8 *mac)
 	memcpy(mappings[i].mac, mac, 6);
 }
 
-int ip_cmd_show_arptable(int argc, char **argv)
+/**
+ * Show current ARP table entries (command handler)
+ */
+void ip_cmd_show_arptable()
 {
 	int i;
 	log("IP <--> MAC");
 	for (i = 0; i < nmap; i++)
 		log("%s: %s", ip_ntoa(mappings[i].ip), mac_ntoa(mappings[i].mac));
-	return 0;
 }
 
 void ip_recv(struct netif *netif, struct packet *pkt)
@@ -83,6 +95,12 @@ cleanup:
 	packet_free(pkt);
 }
 
+/**
+ * Determine next hop for an IP address
+ * @param netif: Network interface structure
+ * @param dst_ip: Destination IP address
+ * @return Next hop IP address
+ */
 uint32 ip_route(struct netif *netif, uint32 dst_ip)
 {
 	if ((dst_ip & netif->subnet_mask) ==
@@ -91,6 +109,12 @@ uint32 ip_route(struct netif *netif, uint32 dst_ip)
 	return netif->gateway_ip;
 }
 
+/**
+ * Get MAC address for an IP from ARP table
+ * @param netif: Network interface structure
+ * @param nexthop: IP address to map
+ * @return Pointer to MAC address if found, NULL otherwise
+ */
 uint8 *ip_get_mac(struct netif *netif, uint32 nexthop)
 {
 	return get_mapping(nexthop);

@@ -103,6 +103,11 @@ void virtio_check_capabilities(virtio_pci_header *header, struct virtio_cap *cap
 	mb();
 }
 
+/**
+ * Initialize a virtio device based on its type.
+ * @param pci_dev PCI device struct for the virtio device.
+ * @return 0 on success, negative value on failure.
+ */
 static int virtio_dev_init(pci_device_t* pci_dev)
 {
 	if (pci_dev->vendor_id != VIRTIO_PCI_VENDORID)
@@ -163,6 +168,10 @@ static int virtio_dev_init(pci_device_t* pci_dev)
 #ifdef VIRTIO_PCI_ENABLE_MSI_X
 static uint32 virtio_msi_x_vec = PCI_MSIX_VEC_BASE;
 
+/**
+ * Allocate a vector for virtio msi-x interrupts.
+ * @return The allocated vector number, or 0 if exhausted.
+ */
 static uint32 virtio_msi_x_alloc_vec(void) {
 	if (virtio_msi_x_vec >= PCI_MSIX_VEC_BASE + PCI_MSIX_VEC_RANGE) {
 		error("virtio msi-x vector exhausted");
@@ -208,6 +217,9 @@ uint32 virtio_init_irq_intx(pci_device_t *pci_dev) {
 }
 #endif
 
+/**
+ * Initialize all virtio devices present in the system.
+ */
 void virtio_device_init(void)
 {
 	pci_device_t *device;

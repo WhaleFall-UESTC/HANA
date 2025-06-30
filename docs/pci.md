@@ -61,7 +61,7 @@ typedef struct pci_device
 
 ## BAR 空间的配置和映射
 
-PCI 中的 BAR 寄存器（ Base Address Register ）指向的空间通常分为 I/O 空间与 MEM 空间两种类型。在 QEMU 的龙芯编程中，这俩中空间都是通过地址映射进行访问，二者的映射基址和范围如下：
+PCI 中的 BAR 寄存器（ Base Address Register ）指向的空间通常分为 I/O 空间与 MEM 空间两种类型。在 QEMU 的龙芯编程中，这两种空间都是通过地址映射进行访问，二者的映射基址和范围如下：
 
 ```c
 #define PCI_IO_BASE 0x18000000UL
@@ -87,7 +87,7 @@ BAR 寄存器的头信息和两种布局如下：
 
 3. MEM 基地址存储器:
 
-    Bit2-1: MEM 基地址寄存器-译码器宽度单元,00-32 位,10-64 位
+    Bit2-1: MEM 基地址寄存器-译码器宽度单元，0x00 对应 32 位，0x02 对应 64 位
 
     Bit3: 预提取属性
 
@@ -134,7 +134,7 @@ static struct slot_pin_info slot_info[][4] = {
 
 ## PCI MSI-X 中断
 
-PCI 设备初始化时，`pci_detect_msix`函数遍历设备的 PCI capability 链表并找出 MSI-X capability 的位置，将相应的信息填入`pci_device_t`的 MSI-X 相关字段，然后`pci_map_msix_table`函数从 BAR 空间中找出计算出`msix_table`的地址。
+PCI 设备初始化时，`pci_detect_msix`函数遍历设备的 PCI capability 链表并找出 MSI-X capability 的位置，将相应的信息填入`pci_device_t`的 MSI-X 相关字段，然后`pci_map_msix_table`函数从 BAR 空间中取出并计算出`msix_table`的地址。
 
 设备要使用 MSI-X 中断时，首先调用`pci_enable_msix`函数，将 MSI-X 中断使能并禁用传统中断，然后调用`pci_msix_add_vector`函数将新的 MSI-X vector 加入到 MSI-X table 中。
 

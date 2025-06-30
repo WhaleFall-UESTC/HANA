@@ -93,23 +93,48 @@ struct virtqueue_used
 #define VIRTIO_DEFAULT_QUEUE_SIZE 256
 #define VIRTIO_DEFAULT_ALIGN 4096
 
+/**
+ * Calculate the size of the virtqueue descriptors
+ * @param qsz The size of the queue
+ * @return The size of the virtqueue descriptors in bytes
+ */
 static inline unsigned int virtq_desc_size(unsigned int qsz) {
     return sizeof(struct virtqueue_desc) * qsz;
 }
 
+/**
+ * Calculate the size of the virtqueue available ring
+ * @param qsz The size of the queue
+ * @return The size of the virtqueue available ring in bytes
+ */
 static inline unsigned int virtq_avail_size(unsigned int qsz) {
     return sizeof(struct virtqueue_avail) + sizeof(uint16) * qsz;
 }
 
+/**
+ * Calculate the size of the virtqueue used ring
+ * @param qsz The size of the queue
+ * @return The size of the virtqueue used ring in bytes
+ */
 static inline unsigned int virtq_used_size(unsigned int qsz) {
     return sizeof(struct virtqueue_used) + sizeof(struct virtqueue_used_elem) * qsz;
 }
 
+/**
+ * Calculate the padding between avail and used ring for the virtqueue
+ * @param qsz The size of the queue
+ * @return The size of the padding in bytes
+ */
 static inline unsigned int virtq_pad(unsigned int qsz) {
     unsigned int szbefore = virtq_desc_size(qsz) + virtq_avail_size(qsz);
     return ALIGN(szbefore, VIRTIO_DEFAULT_ALIGN) - szbefore;
 }
 
+/**
+ * Calculate the total size of the virtqueue
+ * @param qsz The size of the queue
+ * @return The total size of the virtqueue in bytes
+ */
 static inline unsigned int virtq_size(unsigned int qsz)
 {
     return ALIGN(virtq_desc_size(qsz) + virtq_avail_size(qsz), VIRTIO_DEFAULT_ALIGN)
@@ -229,9 +254,32 @@ struct virtio_net_hdr {
 
 #define VIRTIO_NET_HDRLEN 10
 
+/**
+ * Create a virtqueue for the given virtq_info.
+ * This function allocates memory for the virtqueue and initializes its fields.
+ * @param virtq_info Pointer to the virtq_info structure containing queue size and other parameters.
+ */
 void virtq_create(struct virtq_info *virtq_info);
+
+/**
+ * Allocate a descriptor in the virtqueue.
+ * @param virtq_info Pointer to the virtq_info structure.
+ * @param addr Pointer to the address to be associated with the descriptor.
+ * @return The index of the allocated descriptor.
+ */
 uint32 virtq_alloc_desc(struct virtq_info *virtq_info, void *addr);
+
+/**
+ * Free a descriptor in the virtqueue.
+ * @param virtq_info Pointer to the virtq_info structure.
+ * @param desc The index of the descriptor to be freed.
+ */
 void virtq_free_desc(struct virtq_info *virtq_info, uint32 desc);
+
+/**
+ * Show the current state of the virtqueue.
+ * @param virtq_info Pointer to the virtq_info structure.
+ */
 void virtq_show(struct virtq_info *virtq_info);
 
 #define VIRTIO_INDP_CAPS                                              \

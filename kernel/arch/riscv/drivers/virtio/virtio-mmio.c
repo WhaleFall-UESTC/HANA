@@ -129,6 +129,12 @@ void virtio_check_capabilities(virtio_regs *regs, struct virtio_cap *caps, uint3
 	mb();
 }
 
+/**
+ * Initialize a virtio device based on its type.
+ * @param virt Physical address of the virtio device registers.
+ * @param intid Interrupt ID for the device.
+ * @return 0 on success, negative value on failure.
+ */
 static int virtio_dev_init(uint64 virt, uint32 intid)
 {
 	volatile virtio_regs *regs = (virtio_regs *)virt;
@@ -184,6 +190,9 @@ static int virtio_dev_init(uint64 virt, uint32 intid)
 	return 0;
 }
 
+/**
+ * Initialize all virtio devices present in the system.
+ */
 void virtio_device_init(void)
 {
 	for (int i = 0; i < VIRTIO_MMIO_DEV_NUM; i ++)

@@ -6,12 +6,6 @@
 #include <io/blk.h>
 #include <fs/stat.h>
 
-// struct path
-// {
-//     int p_len;
-//     char p_name[0];
-// };
-
 #define MAX_PATH_LEN 1024
 #define MAX_FILENAME_LEN 256
 typedef const char *path_t;
@@ -38,39 +32,10 @@ struct inode
     struct mountpoint *i_mp; // mountpoint
 };
 
-// struct dentry;
-
 /**
  * TODO: Let the interfaces accept inode and dentry as a parameter rather than path
  * This may lead to a lot of changes in lwext4
  */
-
-// struct inode_operations
-// {
-// int (*readlink) (struct dentry *, char __user *,int);
-// int (*rename)(struct inode *, path_t,
-//               struct inode *, path_t, unsigned int);
-// int (*setattr)(path_t, struct iattr *);
-// ssize_t (*listxattr)(path_t, char *, size_t);
-// };
-
-// struct inode_operations {
-// int (*permission) (struct inode *, int);
-
-// 	int (*readlink) (struct dentry *, char __user *,int);
-
-// 	int (*link) (struct dentry *,struct inode *,struct dentry *);
-// 	int (*unlink) (struct inode *,struct dentry *);
-// 	int (*symlink) (struct inode *,struct dentry *,const char *);
-// 	int (*mkdir) (struct inode *,struct dentry *,umode_t);
-// 	int (*rmdir) (struct inode *,struct dentry *);
-// int (*mknod) (struct inode *,struct dentry *,umode_t,devid_t);
-// 	int (*rename) (struct inode *, struct dentry *,
-// 			struct inode *, struct dentry *, unsigned int);
-//     int (*setattr) (struct dentry *, struct iattr *);
-//     int (*getattr) (const path_t, struct kstat *, uint32, unsigned int);
-//     ssize_t (*listxattr) (struct dentry *, char *, size_t);
-// };
 
 struct file;
 struct mountpoint;
@@ -79,7 +44,6 @@ struct fs_operations
 {
     int (*mount)(struct blkdev *, struct mountpoint *, const char *);
     int (*umount)(struct mountpoint *);
-    // int (*statfs)(const char *mount_point, struct statfs *);
     /**
      * get fs specific inode and file
      * it init ops ptr and private data, but DO NOT alloc inode and file
@@ -100,9 +64,17 @@ struct file_system
     const struct fs_operations *fs_op;
 };
 
+/**
+ * Initialize the virtual file system
+ * This function should be called before any file system operations
+ * @return: 0 on success, -1 on error
+ */
 extern int vfilesys_init();
 
 /**
+ * Check if a string starts with a given prefix
+ * @str: the string to check
+ * @prefix: the prefix to check against
  * @return first unmatched position
  */
 static inline int str_match_prefix(const char *str, const char *prefix)
@@ -128,7 +100,21 @@ static inline int str_match_prefix(const char *str, const char *prefix)
  * @return: length of full path on success, -1 on error
  */
 int fullpath_connect(const char *path, char *full_path);
+
+/**
+ * Get absolute path from relative path
+ * @path: relative path to convert
+ * @full_path: buffer to store absolute path, should be initialized by cwd
+ * @dirfd: directory file descriptor, used to resolve relative path
+ * @return: 0 on success, -1 on error
+ */
 int get_absolute_path(const char *path, char *full_path, fd_t dirfd);
+
+/**
+ * Find a file system by its type
+ * @param fstype: file system type string
+ * @return: pointer to the file_system struct if found, NULL otherwise
+ */
 const struct file_system *filesys_find(const char *fstype);
 
 #endif // __FS_H__

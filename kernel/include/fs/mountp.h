@@ -17,8 +17,23 @@ struct mountpoint
     void* private;
 };
 
+/**
+ * Find a mountpoint by its path.
+ * @param path: The path to search for.
+ * @return: Pointer to the mountpoint if found, NULL otherwise.
+ */
 struct mountpoint* mountpoint_find(const char *path);
+
+/**
+ * Add a mountpoint to the list.
+ * @param mp: Pointer to the mountpoint to add.
+ */
 void mountpoint_add(struct mountpoint *mp);
+
+/**
+ * Remove a mountpoint from the list.
+ * @param mountpoint: The path of the mountpoint to remove.
+ */
 void mountpoint_remove(const char *mountpoint);
 
 extern struct list_head mp_listhead;
@@ -48,6 +63,9 @@ extern spinlock_t mplst_lock;
         __ret; \
     })
 
+/**
+ * Iterate over each mountpoint in the list with a locked iterator.
+ */
 #define mp_list_for_each_entry_locked(mpptr) \
     for(mp_list_iter_init_locked(mpptr); \
         (mpptr) != NULL; mp_list_iter_next_locked(mpptr))
