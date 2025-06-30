@@ -11,7 +11,7 @@
 extern char end[], trampoline[];
 extern void tlb_refill();
 
-// store kernel pagetable physical address
+// kernel pagetable physical address
 pagetable_t kernel_pagetable;
 
 void

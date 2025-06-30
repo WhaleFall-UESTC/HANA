@@ -15,6 +15,7 @@ extern char end[];
 extern char trampoline[];
 extern char *init_stack_top;
 
+// kernel pagetable
 pagetable_t kernel_pagetable;
 
 void
