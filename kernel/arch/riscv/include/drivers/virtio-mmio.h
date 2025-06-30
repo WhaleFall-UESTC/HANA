@@ -54,11 +54,38 @@ typedef volatile struct __attribute__((aligned(4)))
 /*
  * virtqueue routines
  */
+
+/**
+ * Add a virtqueue to a virtio device.
+ * @param regs Pointer to virtio MMIO registers.
+ * @param queue_sel Queue selector (queue index).
+ * @param queue_size Size of the virtqueue.
+ * @return Pointer to the created virtq_info structure, or NULL on failure.
+ */
 struct virtq_info* virtq_add_to_device(volatile virtio_regs *regs, uint32 queue_sel, uint32 queue_size);
 
+/**
+ * Check and negotiate virtio device capabilities.
+ * @param regs Pointer to virtio MMIO registers.
+ * @param caps Array of virtio_cap structures describing capabilities.
+ * @param n Number of capabilities in the array.
+ */
 void virtio_check_capabilities(virtio_regs *regs, struct virtio_cap *caps, uint32 n);
 
+/**
+ * Initialize a virtio block device.
+ * @param regs Pointer to virtio MMIO registers.
+ * @param intid Interrupt ID for the device.
+ * @return 0 on success, negative value on failure.
+ */
 int virtio_blk_init(volatile virtio_regs *regs, uint32 intid);
+
+/**
+ * Initialize a virtio network device.
+ * @param regs Pointer to virtio MMIO registers.
+ * @param intid Interrupt ID for the device.
+ * @return 0 on success, negative value on failure.
+ */
 int virtio_net_init(virtio_regs *regs, uint32 intid);
 
 #define VIRTIO_MMIO_DEV_NUM 8

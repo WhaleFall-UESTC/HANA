@@ -33,14 +33,51 @@ typedef volatile struct __attribute__((packed)) {
 /*
  * virtqueue routines
  */
+/**
+ * Add a virtqueue to a virtio device.
+ * @param header Pointer to virtio PCI registers.
+ * @param queue_sel Queue selector (queue index).
+ * @return Pointer to the created virtq_info structure, or NULL on failure.
+ */
 struct virtq_info *virtq_add_to_device(volatile virtio_pci_header *header, uint32 queue_sel);
+
+/**
+ * Check and negotiate virtio device capabilities.
+ * @param header Pointer to virtio PCI registers.
+ * @param caps Array of virtio_cap structures describing capabilities.
+ * @param n Number of capabilities in the array.
+ */
 void virtio_check_capabilities(virtio_pci_header *header, struct virtio_cap *caps, uint32 n);
+
+/**
+ * Initialize a virtio block device.
+ * @param header Pointer to virtio PCI registers.
+ * @param pci_dev PCI device struct for the device.
+ * @return 0 on success, negative value on failure.
+ */
 int virtio_blk_init(volatile virtio_pci_header *header, pci_device_t *pci_dev);
+/**
+ * Initialize a virtio network device.
+ * @param header Pointer to virtio PCI registers.
+ * @param intid PCI device struct for the device.
+ * @return 0 on success, negative value on failure.
+ */
 int virtio_net_init(virtio_pci_header *header, pci_device_t *pci_dev);
 
 #ifdef VIRTIO_PCI_ENABLE_MSI_X
+/**
+ * Initialize the virtio device with MSI-X interrupts.
+ * @param header Pointer to the virtio PCI header.
+ * @param pci_dev Pointer to the PCI device structure.
+ * @return The allocated interrupt ID, or 0 on failure.
+ */
 uint32 virtio_init_irq_msix(volatile virtio_pci_header *header, pci_device_t *pci_dev);
 #else
+/**
+ * Initialize the virtio device with INTx interrupts.
+ * @param pci_dev Pointer to the PCI device structure.
+ * @return The allocated interrupt ID.
+ */
 uint32 virtio_init_irq_intx(pci_device_t *pci_dev);
 #endif
 

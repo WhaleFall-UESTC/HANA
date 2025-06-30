@@ -2,7 +2,7 @@
 #define __INIT_H__
 
 /**
- * Virtio init
+ * Initialize all virtio devices present in the system.
  */
 void virtio_device_init(void);
 

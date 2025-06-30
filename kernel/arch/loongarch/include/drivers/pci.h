@@ -161,33 +161,158 @@ typedef struct pci_device
     msix_table_entry_t *msix_table;     /* MSI-X 表指针 */
 } pci_device_t;
 
+/**
+ * 获取PCI设备的I/O基地址
+ * @param device PCI设备指针
+ * @return I/O基地址
+ */
 unsigned int pci_device_get_io_addr(pci_device_t *device);
+
+/**
+ * 获取PCI设备的内存基地址
+ * @param device PCI设备指针
+ * @return 内存基地址
+ */
 unsigned int pci_device_get_mem_addr(pci_device_t *device);
+
+/**
+ * 获取PCI设备内存BAR的长度
+ * @param device PCI设备指针
+ * @return 内存长度
+ */
 unsigned int pci_device_get_mem_len(pci_device_t *device);
+
+/**
+ * 获取PCI设备的中断线号
+ * @param device PCI设备指针
+ * @return 中断线号
+ */
 unsigned int pci_device_get_irq_line(pci_device_t *device);
+
+/**
+ * 获取PCI设备的中断引脚号
+ * @param device PCI设备指针
+ * @return 中断引脚号
+ */
 unsigned int pci_device_get_irq_pin(pci_device_t *device);
+
+/**
+ * 设置PCI设备的中断线号
+ * @param device PCI设备指针
+ * @param irq 中断线号
+ */
 void pci_device_set_irq_line(pci_device_t *device, unsigned int irq);
+
+/**
+ * 获取PCI设备的中断控制器号
+ * @param device PCI设备指针
+ * @return 中断控制器号
+ */
 unsigned int pci_device_get_intc(pci_device_t* device);
+
+/**
+ * 启用PCI设备的总线主控功能
+ * @param device PCI设备指针
+ */
 void pci_enable_bus_mastering(pci_device_t *device);
+
+/**
+ * 通过类代码和子类代码获取PCI设备
+ * @param class 主类代码
+ * @param sub_class 子类代码
+ * @return 匹配的PCI设备指针，未找到返回NULL
+ */
 pci_device_t *pci_get_device_by_class_code(unsigned int class, unsigned int sub_class);
+
+/**
+ * 获取下一个正在使用的PCI设备
+ * @param pdevid 设备ID指针，输入上一个设备ID，输出下一个设备ID
+ * @return PCI设备指针，未找到返回NULL
+ */
 pci_device_t *pci_get_next_device(devid_t* pdevid);
 
+/**
+ * 根据供应商ID和设备ID查找PCI设备
+ * @param vendor 供应商ID
+ * @param device 设备ID
+ * @return 匹配的PCI设备指针，未找到返回NULL
+ */
 pci_device_t *pci_locate_device(unsigned short vendor, unsigned short device);
+
+/**
+ * 根据类代码和子类代码查找PCI设备
+ * @param class 主类代码
+ * @param _subclass 子类代码
+ * @return 匹配的PCI设备指针，未找到返回NULL
+ */
 pci_device_t *pci_locate_class(unsigned short class, unsigned short _subclass);
 
+/**
+ * 打印PCI设备BAR信息
+ * @param bar PCI BAR结构体指针
+ */
 void pci_device_bar_dump(pci_device_bar_t *bar);
+
+/**
+ * 打印PCI设备配置信息
+ * @param device PCI设备指针
+ */
 void pci_device_dump(pci_device_t *device);
 
+/**
+ * 从PCI设备配置空间读取寄存器
+ * @param device PCI设备指针
+ * @param reg 寄存器偏移
+ * @return 读取的值
+ */
 unsigned int pci_device_read(pci_device_t *device, unsigned int reg);
+
+/**
+ * 向PCI设备配置空间写入寄存器
+ * @param device PCI设备指针
+ * @param reg 寄存器偏移
+ * @param value 写入的值
+ */
 void pci_device_write(pci_device_t *device, unsigned int reg, unsigned int value);
+
+/**
+ * 通过总线号、设备号、功能号获取PCI设备
+ * @param bus 总线号
+ * @param dev 设备号
+ * @param function 功能号
+ * @return 匹配的PCI设备指针，未找到返回NULL
+ */
 pci_device_t *pci_get_device_by_bus(unsigned int bus,
                                     unsigned int dev,
                                     unsigned int function);
 
+/**
+ * 向PCI设备的MSI-X表添加向量
+ * @param device PCI设备指针
+ * @param vector 向量号
+ * @param msg_addr 消息地址
+ * @param msg_data 消息数据
+ * @return 0成功，-1失败
+ */
 int pci_msix_add_vector(pci_device_t *device, uint32 vector, uint64 msg_addr, uint32 msg_data);
+
+/**
+ * 启用PCI设备的MSI-X功能
+ * @param device PCI设备指针
+ * @return 0成功，-1失败
+ */
 int pci_enable_msix(pci_device_t *device);
+
+/**
+ * 禁用PCI设备的MSI-X功能
+ * @param device PCI设备指针
+ * @return 0成功，-1失败
+ */
 int pci_disable_msix(pci_device_t *device);
 
+/**
+ * 初始化PCI子系统，扫描所有PCI设备
+ */
 void pci_init(void);
 
 #define pci_for_using_device(device_ptr) \
