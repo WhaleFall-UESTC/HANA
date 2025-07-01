@@ -40,8 +40,10 @@ heap_push(struct slab* x) {
         j <<= 1;
     j >>= 1;
     struct slab* now = slab_rt;
-    while (j != 1)
+    while (j != 1) {
         now = (j & slab_node_cnt == 0 ? now->ls : now->rs);
+        j >>= 1;
+    }
     (1 & slab_node_cnt ? now->ls : now->rs) = x;
     x->fa = now;
     while (x->fa != NULLPTR) {
@@ -52,9 +54,32 @@ heap_push(struct slab* x) {
 }
 
 static inline struct slab*
-head_pop() {
+heap_pop() {
     struct slab* ret = slab_rt;
-    
+    uint16 j = 1;
+    while (j <= slab_node_cnt)
+        j <<= 1;
+    j >>= 1;
+    struct slab* now = slab_rt;
+    while (j) {
+        now = (j & slab_node_cnt == 0 ? now->ls : now->rs);
+        j >>= 1;
+    }
+    heap_set_son(now, ret->ls, 0);
+    heap_set_son(now, ret->rs, 1);
+    ret->ls = ret->rs = now->fa = NULLPTR;
+    (now->fa->rs == now ? now->fa->rs : now->fa->ls) = NULLPTR;
+    slab_node_cnt -= 1;
+    while (1) {
+        if (now->ls == NULLPTR)
+            break;
+        struct slab* nxt = now->ls;
+        if (now->rs != NULLPTR && now->ls->mxlen < now->rs->mxlen)
+            nxt = now->rs;
+        if (nxt->mxlen > now->mxlen)
+            heap_up_node(nxt);
+        else break;
+    }
 }
 
 static inline struct slab*
