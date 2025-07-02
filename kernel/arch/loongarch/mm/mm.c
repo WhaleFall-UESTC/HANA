@@ -11,7 +11,7 @@
 extern char end[], trampoline[];
 extern void tlb_refill();
 
-// store kernel pagetable physical address
+// kernel pagetable physical address
 pagetable_t kernel_pagetable;
 
 void
@@ -20,13 +20,14 @@ kinit()
     kmem_init((uint64)end, RAMTOP);
 }
 
+
 void 
 tlbinit()
 {
-    w_csr_stlbps(PGSHIFT);
+    w_csr_stlbps(PGSHIFT);  //TLB 页大小为 PGSIZE
     w_csr_tlbrehi(PGSHIFT);
     w_csr_asid(0);
-    w_csr_tlbrentry((uint64)tlb_refill);
+    w_csr_tlbrentry((uint64)tlb_refill);    // 注册 TLB 充填异常处理函数
     invtlb();
 }
 

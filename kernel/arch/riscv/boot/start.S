@@ -1,5 +1,4 @@
-# qemu -kernel will load kernel at 0x80000000
-# and causes each CPU to jump there
+# OpenSBI will causes each CPU to jump at 0x80200000
 .section .text._start
 .global _start
 _start:

@@ -35,9 +35,27 @@
         if(!IS_MSI_IRQ(irq)) ls7a_intc_complete(irq); \
     } while(0)
 
+/**
+ * LoongArch interrupt controller initialization
+ */
 void ls7a_intc_init(void);
+
+/**
+ * Complete an interrupt
+ * @param irq Interrupt number
+ */
 void ls7a_intc_complete(uint64 irq);
+
+/**
+ * Enable an interrupt
+ * @param irq Interrupt number
+ */
 void ls7a_enable_irq(int irq);
+
+/**
+ * Disable an interrupt
+ * @param irq Interrupt number
+ */
 void ls7a_disable_irq(int irq);
 
 #endif // __INTC_H__

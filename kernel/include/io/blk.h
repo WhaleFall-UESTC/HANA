@@ -89,6 +89,11 @@ struct blkdev_ops
     irqret_t (*irq_handle)(struct blkdev *);
 };
 
+/**
+ * initialize a block request
+ * @request: pointer to blkreq struct
+ * @dev: pointer to blkdev struct, can be NULL if not used
+ */
 static inline void blkreq_init(struct blkreq *request, struct blkdev *dev)
 {
     assert(request != NULL);
@@ -104,6 +109,15 @@ static inline void blkreq_init(struct blkreq *request, struct blkdev *dev)
     request->endio = NULL;
 }
 
+/**
+ * allocate a block request
+ * @param blkdev: pointer to blkdev struct
+ * @param sector_sta: starting sector of the request
+ * @param buffer: pointer to the buffer for the request
+ * @param size: size of the request in bytes, must be a multiple of sector size
+ * @param write: 1 for write request, 0 for read request
+ * @return: pointer to allocated blkreq struct, or NULL on failure
+ */
 static inline struct blkreq* blkreq_alloc(struct blkdev* blkdev, sector_t sector_sta, void* buffer, uint64 size, int write)
 {
 #define BLKREQ_READ 0
@@ -128,6 +142,11 @@ static inline struct blkreq* blkreq_alloc(struct blkdev* blkdev, sector_t sector
     return req;
 }
 
+/**
+ * free a block request
+ * @param blkdev: pointer to blkdev struct
+ * @param req: pointer to blkreq struct to be freed
+ */
 static inline void blkreq_free(struct blkdev* blkdev, struct blkreq* req)
 {
     assert(req != NULL);
@@ -136,24 +155,41 @@ static inline void blkreq_free(struct blkdev* blkdev, struct blkreq* req)
 
 /**
  * alloc a block device and do initialization
+ * @param devid: device id
+ * @param size: size of the block device in bytes
+ * @param sector_size: size of a sector in bytes
+ * @param intr: interrupt vector number, 0 for no interrupt
+ * @param name: device name, must be unique
+ * @param ops: pointer to blkdev_ops struct, can be NULL if not used
+ * @return: pointer to allocated blkdev struct, or NULL on failure
  */
 struct blkdev *blkdev_alloc(devid_t devid, unsigned long size, uint64 sector_size,
                             int intr, const char *name, const struct blkdev_ops *ops);
 
 /**
  * initialize a block device
+ * @param devid: device id
+ * @param size: size of the block device in bytes
+ * @param sector_size: size of a sector in bytes
+ * @param intr: interrupt vector number, 0 for no interrupt
+ * @param name: device name, must be unique
+ * @param ops: pointer to blkdev_ops struct, can be NULL if not used
  */
 void blkdev_init(struct blkdev *dev, devid_t devid, unsigned long size, uint64 sector_size,
                  int intr, const char *name, const struct blkdev_ops *ops);
 
 /**
  * general setup for block device irq response
+ * @param intid: interrupt vector number
+ * @param private: private data, a pointer to blkdev struct
+ * @return: IRQ_HANDLED if handled, IRQ_SKIP if not handled, IRQ_ERR on error
  */
 irqret_t blkdev_general_isr(uint32 intid, void *private);
 
 /**
  * register block device in list
  * blkdevs differ by devid/name
+ * @param blkdev: pointer to blkdev struct
  */
 static inline void blkdev_register(struct blkdev *blkdev)
 {
@@ -164,6 +200,8 @@ static inline void blkdev_register(struct blkdev *blkdev)
 
 /**
  * get a blkdev struct by its device name
+ * @param name: device name
+ * @return: pointer to blkdev struct, or NULL if not found
  */
 static inline struct blkdev *blkdev_get_by_name(const char *name) {
     return (struct blkdev *)device_get_by_name(name, DEVICE_TYPE_BLOCK);
@@ -171,6 +209,8 @@ static inline struct blkdev *blkdev_get_by_name(const char *name) {
 
 /**
  * get a blkdev struct by its device id
+ * @param id: device id
+ * @return: pointer to blkdev struct, or NULL if not found
  */
 static inline struct blkdev *blkdev_get_by_id(devid_t id) {
     return (struct blkdev *)device_get_by_id(id, DEVICE_TYPE_BLOCK);
@@ -178,6 +218,7 @@ static inline struct blkdev *blkdev_get_by_id(devid_t id) {
 
 /**
  * get default or first blkdev struct of block device
+ * @return: pointer to blkdev struct, or NULL if not found
  */
 static inline struct blkdev *blkdev_get_default_dev() {
     return (struct blkdev *)device_get_default(DEVICE_TYPE_BLOCK);
@@ -185,28 +226,35 @@ static inline struct blkdev *blkdev_get_default_dev() {
 
 /**
  * submit a request to block device
+ * @param dev: pointer to blkdev struct
+ * @param request: pointer to blkreq struct
  */
 void blkdev_submit_req(struct blkdev *dev, struct blkreq *request);
 
 /**
  * submit a request to block device and wait until it finish
+ * @param dev: pointer to blkdev struct
+ * @param request: pointer to blkreq struct
  */
 void blkdev_submit_req_wait(struct blkdev *dev, struct blkreq *request);
 
 /**
  * end lift cycle for a blkreq, MUST be called by driver
  * when the request is done
+ * @param request: pointer to blkreq struct
  */
 void blkdev_general_endio(struct blkreq *request);
 
 /**
  * wait until all requests in request list done
+ * @param dev: pointer to blkdev struct
  * @return: nr of unsuccessful requests
  */
 int blkdev_wait_all(struct blkdev *dev);
 
 /**
  * remove and free all requests in given blkdev that are done
+ * @param dev: pointer to blkdev struct
  */
 void blkdev_free_all(struct blkdev *dev);
 

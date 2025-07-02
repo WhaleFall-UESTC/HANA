@@ -11,8 +11,20 @@
 #include <mm/memlayout.h>
 #include <mm/mm.h>
 
+/**
+ * Scan all PCI buses, devices, and functions to discover and initialize PCI devices
+ */
 static void pci_scan_buses(void);
+
+/**
+ * Scan all PCI buses, devices, and functions to discover and initialize PCI devices
+ */
 static unsigned int pic_get_device_connected(void);
+
+/**
+ * Allocate a PCI device structure from the device table
+ * @return Pointer to allocated PCI device structure, or NULL if no space available
+ */
 static pci_device_t* pci_alloc_device(void);
 
 pci_device_t pci_device_table[PCI_MAX_DEVICE_NR];
@@ -21,24 +33,40 @@ uint64 pci_iospace_free_base = PCI_IOSPACE_STA;
 uint64 pci_memspace_free_base = PCI_MEM_BASE;
 
 /**
- * base_cfg_addr: 设备类型对应的基地址
- * bus: 总线号
- * device: 设备号
- * function: 功能号
- * reg_id: 命令的偏移
- * read_data: 存放读入内容的内存地址
-*/
+ * Read configuration space of a PCI device
+ * @param base_cfg_addr Base configuration address
+ * @param bus Bus number
+ * @param device Device number
+ * @param function Function number
+ * @param reg_id Register offset
+ * @param read_data Pointer to store read data
+ */
 static inline void pci_read_config(unsigned long base_cfg_addr, unsigned int bus, unsigned int device, unsigned int function, unsigned int reg_id, unsigned int * read_data)
 {
 	*read_data = ADDRVAL(32, phys_to_virt(base_cfg_addr | (bus << 20) | (device << 15) | (function << 12) | (reg_id & 0xFFC)));
 }
 
+/**
+ * Read configuration space of a PCI device
+ * @param base_cfg_addr Base configuration address
+ * @param bus Bus number
+ * @param device Device number
+ * @param function Function number
+ * @param reg_id Register offset
+ * @param read_data Pointer to store read data
+ */
 static inline void pci_write_config(unsigned long base_cfg_addr, unsigned int bus, unsigned int device, unsigned int function, unsigned int reg_id, unsigned int write_data)
 {
 	ADDRVAL(32, phys_to_virt(base_cfg_addr | (bus << 20) | (device << 15) | (function << 12) | (reg_id & 0xFFC))) = write_data;
 }
 
-/* 初始化pci设备的bar地址 */
+/**
+ * Initialize a PCI device BAR (Base Address Register)
+ * @param bar BAR structure to initialize
+ * @param addr_reg_val Value from BAR address register
+ * @param len_reg_val Value from BAR length register
+ * @return Allocated base address for the BAR
+ */
 static uint32 pci_device_bar_init(pci_device_bar_t *bar, unsigned int addr_reg_val, unsigned int len_reg_val)
 {
 	uint32 retval;
@@ -210,7 +238,11 @@ void pci_device_bar_dump(pci_device_bar_t *bar)
 	debug("pci_device_bar_dump: len: %lx", bar->length);
 }
 
-/* MSI-X能力检测函数 */
+/**
+ * Detect MSI-X capability in a PCI device
+ * @param device PCI device to check
+ * @return 1 if MSI-X capability found and initialized, 0 otherwise
+ */
 static int pci_detect_msix(pci_device_t *device)
 {
 	// 如果已经检测过或没有能力列表，直接返回
@@ -256,7 +288,11 @@ static int pci_detect_msix(pci_device_t *device)
 	return 0;
 }
 
-/* 映射MSI-X表到内存 */
+/**
+ * Map MSI-X table to virtual memory
+ * @param device PCI device with MSI-X capability
+ * @return 0 on success, -1 on error
+ */
 static int pci_map_msix_table(pci_device_t *device)
 {
     // 确保设备支持MSI-X且有可用的表
@@ -304,7 +340,11 @@ static pci_device_t* pci_alloc_device()
 	return NULL;
 }
 
-/*释放一个pci设备信息结构体*/
+/**
+ * Free a PCI device structure
+ * @param device PCI device structure to free
+ * @return 0 on success, -1 if device not found
+ */
 static int pci_free_device(pci_device_t *device)
 {
 	int i;
@@ -332,7 +372,18 @@ void pci_device_write(pci_device_t *device, unsigned int reg, unsigned int value
 	pci_write_config(PCI_CONFIG_BASE, device->bus, device->dev, device->function, reg, value);
 }
 
-/*初始化pci设备信息*/
+/**
+ * Initialize a PCI device structure with configuration values
+ * @param device PCI device structure to initialize
+ * @param bus Bus number
+ * @param dev Device number
+ * @param function Function number
+ * @param vendor_id Vendor ID
+ * @param device_id Device ID
+ * @param class_code Class code
+ * @param revision_id Revision ID
+ * @param multi_function Multi-function flag
+ */
 static void pci_device_init(
 	pci_device_t *device,
 	unsigned char bus,
@@ -401,6 +452,12 @@ void pci_device_dump(pci_device_t *device)
 	debug("");
 }
 
+/**
+ * Scan a specific PCI device/function and initialize it
+ * @param bus Bus number
+ * @param device Device number
+ * @param function Function number
+ */
 static void pci_scan_device(unsigned char bus, unsigned char device, unsigned char function)
 {
 	/* 读取总线设备的设备id */
@@ -588,6 +645,9 @@ int pci_disable_msix(pci_device_t *device)
     return 0;
 }
 
+/**
+ * Scan all PCI buses and discover devices
+ */
 static void pci_scan_buses()
 {
 	unsigned int bus;

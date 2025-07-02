@@ -21,10 +21,13 @@
 
 #include <testdefs.h>
 
+// 每一个核的初始栈
 char init_stack[KSTACK_SIZE * NCPU] __attribute__((aligned(PGSIZE)));
 char *init_stack_top = &init_stack[KSTACK_SIZE];
 
+// cpu 结构体数组，根据 cpuid 访问对应的结构体
 struct cpu cpus[NCPU];
+// 管理内核 end 到 RAMTOP 所有物理页
 struct page* pages;
 
 #ifdef __loongarch64

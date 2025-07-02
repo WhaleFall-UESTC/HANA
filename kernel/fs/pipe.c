@@ -44,6 +44,14 @@ void pipe_free(struct pipe* pipe) {
 	}
 }
 
+/**
+ * Read data from a pipe.
+ * @param file: The file structure containing the pipe.
+ * @param buffer: The buffer to read data into.
+ * @param size: The number of bytes to read.
+ * @param offset: The current offset in the file.
+ * @return: The number of bytes read, or -1 on error.
+ */
 static ssize_t pipe_read(struct file* file, char * buffer, size_t size, off_t * offset) {
 	struct pipe* pipe = (struct pipe*)file->f_private;
 	uint32 rcnt = 0;
@@ -61,6 +69,14 @@ static ssize_t pipe_read(struct file* file, char * buffer, size_t size, off_t * 
 	return rcnt;
 }
 
+/**
+ * Write data to a pipe.
+ * @param file: The file structure containing the pipe.
+ * @param buffer: The buffer containing data to write.
+ * @param size: The number of bytes to write.
+ * @param offset: The current offset in the file.
+ * @return: The number of bytes written, or -1 on error.
+ */
 static ssize_t pipe_write(struct file* file, const char * buffer, size_t size, off_t * offset) {
 	struct pipe* pipe = (struct pipe*)file->f_private;
 	uint32 rcnt = 0;
@@ -78,6 +94,12 @@ static ssize_t pipe_write(struct file* file, const char * buffer, size_t size, o
 	return rcnt;
 }
 
+
+/**
+ * Close a pipe file.
+ * @param file: The file structure containing the pipe.
+ * @return: 0 on success, -1 on error.
+ */
 static int pipe_close(struct file *file) {
 	struct pipe* pipe = (struct pipe*)file->f_private;
 

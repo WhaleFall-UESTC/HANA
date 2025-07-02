@@ -1,3 +1,11 @@
+/**
+ * This code is partly from xv6 (MIT License)
+ * Original source: https://github.com/mit-pdos/xv6-riscv/tree/riscv/kernel/vm.c
+ * Copyright (c) 2006-2024 Frans Kaashoek, Robert Morris, Russ Cox,
+ *                      Massachusetts Institute of Technology
+ * For full license text, see LICENSE-MIT-sos file in this repository
+ */
+
 #include <common.h>
 #include <arch.h>
 #include <mm/buddy.h>
@@ -58,13 +66,15 @@ uvmcopy(pagetable_t cpgtbl, pagetable_t ppgtbl, uint64 sz)
     // copy .text & .data & stack & heap
     for (uint64 va = 0; va < sz; va += PGSIZE) {
         pte_t *ppte = walk(ppgtbl, va, WALK_NOALLOC);
-        Assert(*ppte && (*ppte & PTE_V), "Invalid pte: %lx", *ppte);
+        // Assert(*ppte && (*ppte & PTE_V), "Invalid pte: %lx", *ppte);
         
         uint64 pa = PTE2PA(*ppte);
-        uint64 flags = PTE_FLAGS(*ppte);
-        flags = ((*ppte & PTE_W) ? ((flags & ~PTE_W) | PTE_COW) : flags);
+        if (pa) {
+            uint64 flags = PTE_FLAGS(*ppte);
+            flags = ((*ppte & PTE_W) ? ((flags & ~PTE_W) | PTE_COW) : flags);
 
-        mappages(cpgtbl, va, pa, PGSIZE, flags);
+            mappages(cpgtbl, va, pa, PGSIZE, flags);
+        }
     }
 }
 

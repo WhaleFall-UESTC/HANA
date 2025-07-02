@@ -9,7 +9,6 @@
 #include <debug.h>
 #include <mm/mm.h>
 #include <drivers/virtio-mmio.h>
-// #include <locking/spinsem.h>
 #include <locking/spinlock.h>
 #include <irq/interrupt.h>
 #include <proc/proc.h>
@@ -22,6 +21,10 @@
 
 static uint32 virtio_blk_devid = DEVID_VIRTIO_BLK_BASE;
 
+/**
+ * Alloc a new devid for virtio blkdev
+ * @return new devid
+ */
 static uint32 virtio_blk_get_devid(void)
 {
     if(virtio_blk_devid > DEVID_VIRTIO_BLK_BASE + DEVID_VIRTIO_BLK_RANGE)
@@ -62,6 +65,11 @@ struct virtio_blk
     struct blkdev blkdev;
 };
 
+/**
+ * Handle a used descriptor in the virtio block device queue.
+ * @param dev Pointer to the virtio_blk device structure.
+ * @param usedidx Index of the used descriptor.
+ */
 static void virtio_blk_handle_used(struct virtio_blk *dev, uint32 usedidx)
 {
     struct virtq_info* virtq_info = dev->virtq_info;
@@ -112,6 +120,11 @@ bad_desc:
     return;
 }
 
+/**
+ * Interrupt service routine for virtio block device.
+ * @param blkdev Pointer to the block device structure.
+ * @return IRQ_HANDLED or IRQ_ERR.
+ */
 static irqret_t virtio_blk_isr(struct blkdev *blkdev)
 {
     int i;
@@ -136,6 +149,11 @@ static irqret_t virtio_blk_isr(struct blkdev *blkdev)
     return IRQ_HANDLED;
 }
 
+/**
+ * Send a block request to the virtio block device.
+ * @param blk Pointer to the virtio_blk device structure.
+ * @param hdr Pointer to the virtio_blk_req request structure.
+ */
 static void virtio_blk_send(struct virtio_blk *blk, struct virtio_blk_req *hdr)
 {
     volatile struct virtqueue *virtq = &blk->virtq_info->virtq;
@@ -147,6 +165,10 @@ static void virtio_blk_send(struct virtio_blk *blk, struct virtio_blk_req *hdr)
     WRITE32(blk->regs->QueueNotify, blk->virtq_info->queue_num);
 }
 
+/**
+ * Print status information for the virtio block device.
+ * @param dev Pointer to the block device structure.
+ */
 static void virtio_blk_status(struct blkdev *dev)
 {
     struct virtio_blk *blkdev = get_vblkdev(dev);
@@ -167,6 +189,11 @@ static void virtio_blk_status(struct blkdev *dev)
     virtq_show(blkdev->virtq_info);
 }
 
+/**
+ * Allocate a block request for the virtio block device.
+ * @param dev Pointer to the block device structure.
+ * @return Pointer to the allocated blkreq structure.
+ */
 static struct blkreq *virtio_blk_alloc(struct blkdev *dev)
 {
     KALLOC(struct virtio_blk_req, vblkreq);
@@ -174,12 +201,22 @@ static struct blkreq *virtio_blk_alloc(struct blkdev *dev)
     return &vblkreq->blkreq;
 }
 
+/**
+ * Free a block request for the virtio block device.
+ * @param dev Pointer to the block device structure.
+ * @param req Pointer to the blkreq structure to free.
+ */
 static void virtio_blk_free(struct blkdev *dev, struct blkreq *req)
 {
     struct virtio_blk_req *vblkreq = get_vblkreq(req);
     kfree(vblkreq);
 }
 
+/**
+ * Submit a block request to the virtio block device.
+ * @param dev Pointer to the block device structure.
+ * @param req Pointer to the blkreq structure to submit.
+ */
 static void virtio_blk_submit(struct blkdev *dev, struct blkreq *req)
 {
     struct virtio_blk *blk = get_vblkdev(dev);

@@ -32,8 +32,24 @@ struct zone {
 
 
 /* mm/buddy.c */
+/**
+ * buddy system 的初始化函数
+ * @param start 可分配空间的起始地址
+ * @param end   可分配空间的结束地址
+ */
 void            buddy_init(uint64 start, uint64 end);
+
+/**
+ * buddy system 的分配函数
+ * @param sz 要分配的大小（字节）
+ * @return buddy system 分配空间的指针
+ */
 void*           buddy_alloc(uint64 sz);
+
+/**
+ * buddy system 的释放函数
+ * @param sz 要分配的 buddy 块以及其 order
+ */
 void            buddy_free(void* addr, int order);
 
 #endif // __BUDDY_H__

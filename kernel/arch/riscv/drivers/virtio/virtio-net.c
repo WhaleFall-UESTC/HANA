@@ -19,6 +19,10 @@
 
 static uint32 virtio_net_devid = DEVID_VIRTIO_NET_BASE;
 
+/**
+ * Alloc a new devid for virtio netdev
+ * @return new devid
+ */
 static uint32 virtio_net_get_devid(void)
 {
     if(virtio_net_devid > DEVID_VIRTIO_NET_BASE + DEVID_VIRTIO_NET_RANGE)
@@ -76,6 +80,11 @@ struct virtio_net {
 #define get_vnetdev(dev) container_of(dev, struct virtio_net, netdev)
 #define get_vnetif(iface) container_of(iface, struct virtio_net, nif)
 
+/**
+ * Add multiple receive packets to the virtqueue.
+ * @param n Number of packets to add.
+ * @param info Pointer to the virtq_info structure for the queue.
+ */
 static void add_packets_to_virtqueue(int n, struct virtq_info *info)
 {
     struct virtqueue *virtq = &info->virtq;
@@ -101,6 +110,11 @@ static void add_packets_to_virtqueue(int n, struct virtq_info *info)
 	virtq->avail->idx += n;
 }
 
+/**
+ * Send a network packet using the virtio network device.
+ * @param dev Pointer to the netdev structure.
+ * @param pkt Pointer to the packet to send.
+ */
 static void virtio_net_send(struct netdev *dev, struct packet *pkt)
 {
     struct virtio_net *netdev = get_vnetdev(dev);
@@ -136,6 +150,10 @@ static void virtio_net_send(struct netdev *dev, struct packet *pkt)
 	WRITE32(netdev->regs->QueueNotify, netdev->tx_info->queue_num);
 }
 
+/**
+ * Print status information for the virtio network device.
+ * @param dev Pointer to the netdev structure.
+ */
 static void virtio_net_status(struct netdev *dev)
 {
     struct virtio_net *netdev = get_vnetdev(dev);
@@ -158,6 +176,11 @@ static void virtio_net_status(struct netdev *dev)
 	WRITE32(netdev->regs->QueueSel, netdev->rx_info->queue_num);
 }
 
+/**
+ * Handle a used receive descriptor in the virtio network device.
+ * @param dev Pointer to the virtio_net device structure.
+ * @param idx Index of the used descriptor.
+ */
 static void virtio_handle_rxused(struct virtio_net *dev, uint32 idx)
 {
     struct virtq_info *rx_info = dev->rx_info;
@@ -189,6 +212,11 @@ static void virtio_handle_rxused(struct virtio_net *dev, uint32 idx)
 	rx->avail->idx = wrap(rx->avail->idx + 2, rx_info->queue_size);
 }
 
+/**
+ * Handle a used transmit descriptor in the virtio network device.
+ * @param dev Pointer to the virtio_net device structure.
+ * @param idx Index of the used descriptor.
+ */
 static void virtio_handle_txused(struct virtio_net *dev, uint32 idx)
 {
 	uint32 d1 = dev->tx_info->virtq.used->ring[idx].id;
@@ -201,6 +229,11 @@ static void virtio_handle_txused(struct virtio_net *dev, uint32 idx)
 	packet_free(pkt);
 }
 
+/**
+ * Interrupt service routine for virtio network device.
+ * @param netdev Pointer to the netdev structure.
+ * @return IRQ_HANDLED or IRQ_ERR.
+ */
 static irqret_t virtio_net_isr(struct netdev *netdev)
 {
     struct virtio_net *dev = get_vnetdev(netdev);

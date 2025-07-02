@@ -31,11 +31,44 @@
 #define __irq_get() plic_claim_irq(DEFAULT_HART)
 #define __irq_put(irq) plic_complete_irq(DEFAULT_HART, irq)
 
+/**
+ * PLIC interrupt enable an interrupt
+ * @param hart Hart ID
+ * @param irq Interrupt number
+ * @param priority Priority of the interrupt
+ */
 void plic_enable_irq(int hart, int irq, int priority);
+
+/**
+ * Disable a PLIC interrupt
+ * @param hart Hart ID
+ * @param irq Interrupt number
+ */
 void plic_disable_irq(int hart, int irq);
+
+/**
+ * Claim a PLIC interrupt
+ * @param hart Hart ID
+ * @return The claimed interrupt number, or 0 if no interrupt is available
+ */
 int plic_claim_irq(int hart);
+
+/**
+ * Complete a PLIC interrupt
+ * @param hart Hart ID
+ * @param irq Interrupt number
+ */
 void plic_complete_irq(int hart, int irq);
+
+/**
+ * Initialize the PLIC (Platform-Level Interrupt Controller)
+ */
 void plic_init();
+
+/**
+ * Initialize the PLIC for a specific hart
+ * @param hart Hart ID
+ */
 void plic_init_hart(int hart);
 
 #endif // __INTC_H__

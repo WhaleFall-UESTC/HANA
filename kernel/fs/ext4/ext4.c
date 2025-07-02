@@ -17,6 +17,13 @@
 #define MAX_EXT4_BLOCKDEV_NAME 64
 #define EXT4_BUF_SIZE 512
 
+/**
+ * Mount an ext4 filesystem
+ * @param blkdev: Block device containing the filesystem
+ * @param mp: Mount point structure to be initialized
+ * @param data: Mount options (currently unused)
+ * @return 0 on success, -1 on error
+ */
 static int ext4_fs_mount(struct blkdev * blkdev, struct mountpoint *mp, const char *data)
 {
 	char buffer[MAX_EXT4_BLOCKDEV_NAME + 1];
@@ -82,6 +89,11 @@ static int ext4_fs_mount(struct blkdev * blkdev, struct mountpoint *mp, const ch
 	return 0;
 }
 
+/**
+ * Unmount an ext4 filesystem
+ * @param mp: Mount point structure
+ * @return 0 on success, -1 on error
+ */
 static int ext4_fs_umount(struct mountpoint* mp) {
 	int ret;
 	struct ext4_fs_dev* fs_dev = (struct ext4_fs_dev*)mp->private;
@@ -113,6 +125,13 @@ static int ext4_fs_umount(struct mountpoint* mp) {
 	return 0;
 }
 
+/**
+ * Initialize the file structure for an inode in ext4
+ * @param mp: Mount point structure
+ * @param inode: Inode structure
+ * @param file: File structure to be initialized
+ * @return 0 on success, -1 on error
+ */
 static int ext4_fs_ifget(struct mountpoint *mp, struct inode *inode, struct file *file)
 {
 	if (file->f_flags & O_DIRECTORY) {
@@ -152,6 +171,13 @@ static int ext4_fs_ifget(struct mountpoint *mp, struct inode *inode, struct file
 //   return ret;
 // }
 
+/**
+ * Set the file position for an open file
+ * @param file: File structure
+ * @param offset: Offset to set
+ * @param whence: Reference position (SEEK_SET, SEEK_CUR, SEEK_END)
+ * @return New file offset on success, -1 on error
+ */
 static off_t ext4_llseek(struct file* file, off_t offset, int whence) {
 	struct ext4_file *ext4_file = (struct ext4_file *)file->f_private;
 	int ret;
@@ -165,6 +191,14 @@ static off_t ext4_llseek(struct file* file, off_t offset, int whence) {
 	return ext4_file->fpos;
 }
 
+/**
+ * Read data from an open file
+ * @param file: File structure
+ * @param buffer: Buffer to store read data
+ * @param size: Number of bytes to read
+ * @param offset: Pointer to current offset (updated after reading)
+ * @return Number of bytes read on success, -1 on error
+ */
 static ssize_t ext4_read(struct file* file, char * buffer, size_t size, off_t * offset) {
 	struct ext4_file *ext4_file = (struct ext4_file *)file->f_private;
 	int ret;
@@ -186,6 +220,14 @@ static ssize_t ext4_read(struct file* file, char * buffer, size_t size, off_t * 
 	return rcnt;
 }
 
+/**
+ * Write data to an open file
+ * @param file: File structure
+ * @param buffer: Buffer containing data to write
+ * @param size: Number of bytes to write
+ * @param offset: Pointer to current offset (updated after writing)
+ * @return Number of bytes written on success, -1 on error
+ */
 static ssize_t ext4_write(struct file* file, const char * buffer, size_t size, off_t * offset) {
 	struct ext4_file *ext4_file = (struct ext4_file *)file->f_private;
 	int ret;
@@ -207,6 +249,14 @@ static ssize_t ext4_write(struct file* file, const char * buffer, size_t size, o
 	return wcnt;
 }
 
+/**
+ * Open a file or directory
+ * @param file: File structure to be initialized
+ * @param path: Path of the file to open
+ * @param flags: Open flags (e.g., O_RDONLY, O_WRONLY, O_CREAT, O_DIRECTORY)
+ * @param mode: File mode for creation (if O_CREAT is set)
+ * @return 0 on success, -1 on error
+ */
 static int ext4_openat(struct file* file, path_t path, int flags, umode_t mode) {
 	struct ext4_file *ext4_file;
 	struct ext4_dir *dir;
@@ -244,6 +294,11 @@ static int ext4_openat(struct file* file, path_t path, int flags, umode_t mode) 
 	return ret;
 }
 
+/**
+ * Close an open file or directory
+ * @param file: File structure
+ * @return 0 on success, -1 on error
+ */
 static int ext4_close(struct file* file) {
 	struct ext4_file *ext4_file;
 	struct ext4_dir *dir;
@@ -271,21 +326,44 @@ static int ext4_close(struct file* file) {
 	return ret;
 }
 
+/**
+ * Create a symbolic link
+ * @param path: Path of the symbolic link to create
+ * @param softlink_path: Path the symbolic link points to
+ * @return 0 on success, -1 on error
+ */
 static int ext4_symlink(path_t path, path_t softlink_path) {
 	int ret = ext4_fsymlink(path, softlink_path);
 	return ret;
 }
 
+/**
+ * Create a hard link
+ * @param path: Path of the existing file
+ * @param hardlink_path: Path of the new hard link
+ * @return 0 on success, -1 on error
+ */
 static int ext4_link(path_t path, path_t hardlink_path) {
 	int ret = ext4_flink(path, hardlink_path);
 	return ret;
 }
 
+/**
+ * Remove a file
+ * @param path: Path of the file to remove
+ * @return 0 on success, -1 on error
+ */
 static int ext4_unlink(path_t path) {
 	int ret = ext4_fremove(path);
 	return ret;
 }
 
+/**
+ * Truncate a file to a specified length
+ * @param file: File structure of the open file
+ * @param length: New length of the file
+ * @return 0 on success, -1 on error
+ */
 static int ext4_truncate(struct file* file, off_t length) {
 	struct ext4_file *ext4_file = (struct ext4_file *)file->f_private;
 	int ret;
@@ -305,6 +383,12 @@ static int ext4_truncate(struct file* file, off_t length) {
 // 	return ret;
 // }
 
+/**
+ * Get file attributes
+ * @param path: Path of the file
+ * @param stat: Structure to store file attributes
+ * @return 0 on success, -1 on error
+ */
 static int ext4_getattr(path_t path, struct stat * stat) {
 	int ret;
 	uint32 ino;
@@ -341,6 +425,13 @@ static int ext4_getattr(path_t path, struct stat * stat) {
 	return 0;
 }
 
+/**
+ * Read directory entries
+ * @param file: Directory file structure
+ * @param buf: Buffer to store directory entries
+ * @param len: Length of the buffer
+ * @return Number of bytes read on success, -1 on error
+ */
 static int ext4_getdents64(struct file* file, struct dirent* buf, size_t len) {
 	struct ext4_dir *dir;
 	int ret = 0;
@@ -378,6 +469,12 @@ static int ext4_getdents64(struct file* file, struct dirent* buf, size_t len) {
 	return ret;
 }
 
+/**
+ * Create a new directory
+ * @param path: Path of the directory to create
+ * @param mode: File mode (permissions) for the new directory
+ * @return 0 on success, -1 on error
+ */
 static int ext4_mkdir(path_t path, umode_t mode) {
 	int ret = ext4_dir_mk(path);
 	if(ret != EOK){
@@ -395,6 +492,11 @@ static int ext4_mkdir(path_t path, umode_t mode) {
 	return ret;
 }
 
+/**
+ * Remove a directory
+ * @param path: Path of the directory to remove
+ * @return 0 on success, -1 on error
+ */
 static int ext4_rmdir(path_t path) {
 	int ret = ext4_dir_rm(path);
 	if(ret != EOK){
@@ -404,6 +506,12 @@ static int ext4_rmdir(path_t path) {
 	return ret;
 }
 
+/**
+ * Rename a file or directory
+ * @param path: Old path of the file/directory
+ * @param new_path: New path of the file/directory
+ * @return 0 on success, -1 on error
+ */
 static int ext4_rename(path_t path, path_t new_path) {
 	int ret = ext4_frename(path, new_path);
 	if(ret != EOK){

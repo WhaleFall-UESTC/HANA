@@ -7,6 +7,7 @@ struct sbiret {
 };
 typedef struct sbiret sbiret_t;
 
+// sbi 调用原型函数
 sbiret_t sbi_ecall(int ext_id, int func_id, uint64 arg0, uint64 arg1, uint64 arg2, uint64 arg3, uint64 arg4, uint64 arg5);
 
 

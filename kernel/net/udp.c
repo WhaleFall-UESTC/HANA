@@ -11,13 +11,6 @@
 #include <lib/errno.h>
 #include <irq/interrupt.h>
 
-#include <klib.h>
-#define copy_from_user(to, from, len) \
-	({ \
-		memcpy(to, from, len); \
-		0; \
-	})
-
 struct udp_wait_entry {
 	struct hlist_head list;
 	struct socket *sock;
@@ -29,11 +22,21 @@ struct udp_wait_entry {
 #define UDP_HLIST_SIZE 128
 struct hlist_head udp_hlist[UDP_HLIST_SIZE];
 
+/**
+ * Hash a port number for wait table lookup
+ * @param port: Port number in host byte order
+ * @return Hash value
+ */
 static inline uint32 udp_hash(uint16 port)
 {
 	return port % UDP_HLIST_SIZE;
 }
 
+/**
+ * Look up a UDP wait entry by port number
+ * @param port: Port number in host byte order
+ * @return Pointer to wait entry or NULL if not found
+ */
 static struct udp_wait_entry *lookup_entry(uint16 port)
 {
 	struct udp_wait_entry *entry;
@@ -55,6 +58,11 @@ static struct udp_wait_entry *lookup_entry(uint16 port)
  * receipt of a packet. Presumably, you have already sent out the packet which
  * will trigger this receipt. If interrupts are enabled, the packet could be
  * received and handled BEFORE we have entered our sleep.
+ * 
+ * Wait for a packet on a specific port
+ * @param port: Port number to wait on
+ * @return Received packet or NULL on error
+ * @note Must be called with interrupts disabled
  */
 struct packet *udp_wait(uint16 port)
 {
@@ -131,6 +139,11 @@ int udp_reserve(void)
 	return ip_reserve() + sizeof(struct udphdr);
 }
 
+/**
+ * Bind a socket to an address (internal implementation)
+ * @param sock: Socket to bind
+ * @param addr: Address structure containing port/IP information
+ */
 void udp_do_bind(struct socket *sock, const struct sockaddr_in *addr)
 {
 	struct udp_wait_entry *entry;
@@ -151,6 +164,11 @@ void udp_do_bind(struct socket *sock, const struct sockaddr_in *addr)
 	sock->flags.sk_bound = 1;
 }
 
+/**
+ * Find and bind to an unused ephemeral port
+ * @param sock: Socket to bind
+ * @return true if successful, false otherwise
+ */
 static bool udp_bind_to_ephemeral(struct socket *sock)
 {
 #define EPH_BEGIN 20000
@@ -179,6 +197,13 @@ static bool udp_bind_to_ephemeral(struct socket *sock)
 	return false;
 }
 
+/**
+ * Bind a UDP socket to a local address (API implementation)
+ * @param sock: Socket to bind
+ * @param address: Address structure
+ * @param address_len: Length of address structure
+ * @return 0 on success, negative error code on failure
+ */
 int udp_bind(struct socket *sock, const struct sockaddr *address,
              socklen_t address_len)
 {
@@ -205,6 +230,13 @@ int udp_bind(struct socket *sock, const struct sockaddr *address,
 	return 0;
 }
 
+/**
+ * Connect a UDP socket to a remote address
+ * @param sock: Socket to connect
+ * @param address: Address structure
+ * @param address_len: Length of address structure
+ * @return 0 on success, negative error code on failure
+ */
 int udp_connect(struct socket *sock, const struct sockaddr *address,
                 socklen_t address_len)
 {
@@ -226,6 +258,14 @@ int udp_connect(struct socket *sock, const struct sockaddr *address,
 	return 0;
 }
 
+/**
+ * Send data over a UDP socket
+ * @param sock: Socket to send on
+ * @param data: Pointer to data buffer
+ * @param len: Number of bytes to send
+ * @param flags: Flags (currently unused)
+ * @return Number of bytes sent on success, negative error code on failure
+ */
 int udp_sys_send(struct socket *sock, const void *data, size_t len, int flags)
 {
 	int rv, space;
@@ -273,6 +313,11 @@ error:
 	return rv;
 }
 
+/**
+ * Get next packet from socket receive queue
+ * @param socket: Socket to check
+ * @return Next packet in receive queue or NULL if empty
+ */
 struct packet *socket_recvq_get(struct socket *socket)
 {
 	struct packet *pkt;
@@ -283,6 +328,14 @@ struct packet *socket_recvq_get(struct socket *socket)
 	return NULL;
 }
 
+/**
+ * Receive data from a UDP socket
+ * @param sock: Socket to receive from
+ * @param data: Pointer to receive buffer
+ * @param len: Maximum number of bytes to receive
+ * @param flags: Flags (currently unused)
+ * @return Number of bytes received on success, negative error code on failure
+ */
 int udp_sys_recv(struct socket *sock, void *data, size_t len, int flags)
 {
 	struct packet *pkt;
@@ -321,6 +374,11 @@ int udp_sys_recv(struct socket *sock, void *data, size_t len, int flags)
 	return pktlen;
 }
 
+/**
+ * Close a UDP socket
+ * @param sock: Socket to close
+ * @return 0 on success, negative error code on failure
+ */
 int udp_sys_close(struct socket *sock)
 {
     struct udp_wait_entry *entry;

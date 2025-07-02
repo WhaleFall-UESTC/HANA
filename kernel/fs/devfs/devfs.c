@@ -19,6 +19,11 @@ static uint32 cur_ino = 0;
 
 struct devfs_device stdin, stdout, stderr;
 
+/**
+ * Get a device by its name
+ * @param name: The name of the device to search for.
+ * @return: A pointer to the device if found, NULL otherwise.
+ */
 static struct devfs_device *devfs_get_by_name(const char *name)
 {
     struct devfs_device *device;
@@ -39,6 +44,7 @@ static struct devfs_device *devfs_get_by_name(const char *name)
 
 /**
  * Check if path is valid devfs path
+ * @param path: The path to check.
  * @return 0 if path is directly "/dev", -1 if error, otherwise name position in path
  */
 static inline int get_name_pos_from_path(const char *path)
@@ -143,6 +149,13 @@ void devfs_add_device(struct devfs_device *device)
     spinlock_release(&devfs_list_lk);
 }
 
+/**
+ * Initialize the file structure for a devfs inode
+ * @param mp: The mountpoint structure
+ * @param inode: The inode to be initialized
+ * @param file: The file structure to be set up
+ * @return 0 on success
+ */
 static int devfs_fs_ifget(struct mountpoint *mp, struct inode *inode, struct file *file)
 {
     file->f_op = &devfs_file_fops;
@@ -151,6 +164,13 @@ static int devfs_fs_ifget(struct mountpoint *mp, struct inode *inode, struct fil
     return 0;
 }
 
+/**
+ * Change the current offset in the file
+ * @param file: The file structure
+ * @param offset: The offset to add
+ * @param whence: The reference point for the offset (SEEK_SET, SEEK_CUR, SEEK_END)
+ * @return The new offset, or -1 on error
+ */
 static off_t devfs_llseek(struct file *file, off_t offset, int whence)
 {
     struct devfs_device *device = (struct devfs_device *)file->f_private;
@@ -174,6 +194,14 @@ static off_t devfs_llseek(struct file *file, off_t offset, int whence)
     return -1;
 }
 
+/**
+ * Read data from a device
+ * @param file: The file structure
+ * @param buffer: The buffer to store the read data
+ * @param size: The number of bytes to read
+ * @param offset: A pointer to the current offset (updated on success)
+ * @return The number of bytes read, or -1 on error
+ */
 static ssize_t devfs_read(struct file *file, char *buffer, size_t size, off_t *offset)
 {
     struct devfs_device *device = (struct devfs_device *)file->f_private;
@@ -197,6 +225,14 @@ static ssize_t devfs_read(struct file *file, char *buffer, size_t size, off_t *o
     return -1;
 }
 
+/**
+ * Write data to a device
+ * @param file: The file structure
+ * @param buffer: The buffer containing the data to write
+ * @param size: The number of bytes to write
+ * @param offset: A pointer to the current offset (updated on success)
+ * @return The number of bytes written, or -1 on error
+ */
 static ssize_t devfs_write(struct file *file, const char *buffer, size_t size, off_t *offset)
 {
     struct devfs_device *device = (struct devfs_device *)file->f_private;
@@ -220,6 +256,14 @@ static ssize_t devfs_write(struct file *file, const char *buffer, size_t size, o
     return -1;
 }
 
+/**
+ * Open a device file
+ * @param file: The file structure to initialize
+ * @param path: The path to the device file
+ * @param flags: The open flags (e.g., O_RDONLY, O_WRONLY)
+ * @param mode: The file mode (permissions and type)
+ * @return 0 on success, -1 on error
+ */
 static int devfs_openat(struct file *file, path_t path, int flags, umode_t mode)
 {
     struct devfs_device *device;
@@ -273,6 +317,11 @@ static int devfs_openat(struct file *file, path_t path, int flags, umode_t mode)
     return 0;
 }
 
+/**
+ * Close a device file
+ * @param file: The file to close
+ * @return 0 on success
+ */
 static int devfs_close(struct file *file)
 {
     struct devfs_device *device = (struct devfs_device *)file->f_private;
@@ -286,6 +335,12 @@ static int devfs_close(struct file *file)
     return 0;
 }
 
+/**
+ * Get the attributes (metadata) of a file or directory
+ * @param path: The path to the file or directory
+ * @param stat: The stat structure to fill
+ * @return 0 on success, -1 on error
+ */
 static int devfs_getattr(path_t path, struct stat *stat)
 {
     struct devfs_device *device;
@@ -380,6 +435,13 @@ static int devfs_getattr(path_t path, struct stat *stat)
     return 0;
 }
 
+/**
+ * Read directory entries
+ * @param file: The directory file
+ * @param buf: The buffer to store the directory entries
+ * @param len: The size of the buffer
+ * @return The number of bytes read, or -1 on error
+ */
 static int devfs_getdents64(struct file *file, struct dirent *buf, size_t len)
 {
     struct devfs_device *device = (struct devfs_device *)file->f_private;
