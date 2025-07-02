@@ -112,3 +112,53 @@ slab_init() {
     for (int i = 1; i < MIN_NODE_CNT; i++)
         heap_push(new_slab());
 }
+
+static inline void
+AVL_delete(struct slab* x, uint8 idx) {
+    // TODO
+}
+
+static inline void*
+AVL_slab_alloc(struct slab* x, uint8 idx, uint8 nr_objs) {
+    void* ret;
+    // TODO
+    if (nr_objs == x->objs_info[idx].len) {
+        ret = &x->objects[idx];
+        AVL_delete(x, idx);
+    } else {
+        
+    }
+}
+
+void*
+slab_alloc(uint64 sz) {
+    assert(0 < sz && sz <= OBJECT_SIZE * NR_OBJS);
+    uint8 nr_objs = ROUNDUP(sz, OBJECT_SIZE) >> OBJECT_SHIFT;
+    if (nr_objs <= slab_rt->mxlen) {
+        struct slab* ret = heap_pop();
+        void* ret_addr;
+        static int idx_stack[NR_OBJS], tp;
+        idx_stack[tp = 0] = ret->rt;
+        struct object_entry* now = &ret->objs_info[ret->rt];
+        tp += 1;
+        // TODO
+        while (1) {
+            if (now->ls != NULLPTR && ret->objs_info[ret->ls].mxlen >= nr_objs) {
+                idx_stack[tp++] = now->ls;
+                now = &ret->objs_info[ret->ls];
+            } else if (now->rs != NULLPTR && ret->objs_info[ret->rs].mxlen >= nr_objs) {
+                idx_stack[tp++] = now->rs;
+                now = &ret->objs_info[ret->rs];
+            } else break;
+        }
+        // TODO
+        // ret->mxlen = (ret->rt != NULLPTR) ? ret->objs_info[ret->rt].mxlen: 0;
+        heap_push(ret);
+        return ret_addr;
+    } else {
+        struct slab* ret = new_slab();
+        AVL_slab_alloc(ret, ret->rt, nr_objs);
+        heap_push(ret);
+        return ret->objects;   
+    }
+}
