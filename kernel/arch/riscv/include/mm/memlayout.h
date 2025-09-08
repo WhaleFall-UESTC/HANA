@@ -1,35 +1,52 @@
 #ifndef __MEMLAYOUT_H__
 #define __MEMLAYOUT_H__
 
-#include <platform.h>
+/* ======= RISC-V Linux Kernel SV39 ======= */
 
-/* kernel va and pa will be the same */
-#define KERNELBASE  0x80200000L
+#define USER_SPACE_START    0x0000000000000000UL
+#define USER_SPACE_END      0x0000003fffffffffUL
+#define USER_SPACE_SIZE     0x0000004000000000UL // 256 GB
 
-// qemu-system-riscv64 virt has limit
-#define PHYSTOP     0x88000000L
+// PS: USER_SPACE_SIZE is half of Sv39 Virtual Address Space Size
+// Virtual address must be sign-extended, which means VA[63:39] must be equals to VA[38]
 
-#define IN_RAM(addr) (((uint64)(addr)) >= KERNELBASE && ((uint64)(addr)) < PHYSTOP)
+#define NON_CANONICAL_START 0x0000004000000000UL
+#define NON_CANONICAL_END   0xffffffbfffffffffUL
 
-#define TEST_SPACE  (MAXVA - PGSIZE)
-#define TRAMPOLINE  (MAXVA - 2*PGSIZE)
-#define TRAPFRAME   (TRAMPOLINE - PGSIZE)
 
-#define MMAP_BASE       0x800000000UL
-#define MMAP_INIT_SIZE  0x40000000UL
-#define MMAP_EXPAND     0x40000000UL
+/* ======= Kernel Space ======= */
 
-#define KSTACK(n)   (TRAPFRAME - ((KSTACK_SIZE + PGSIZE) * (n)))
+/* fixmap area */
+#define FIXMAP_START    0xffffffc6fea00000UL
+#define FIXMAP_END      0xffffffc6feffffffUL
+#define FIXMAP_SIZE     0x0000000000600000UL // 6 MB
 
-#define KERNEL_VA2PA(va) ((uint64)va)
-#define KERNEL_PA2VA(pa) ((uint64)pa)
+/* PCI I/O remap */
+#define PCI_IO_START    0xffffffc6ff000000UL
+#define PCI_IO_END      0xffffffc6ffffffffUL
+#define PCI_IO_SIZE     0x0000000001000000UL // 16 MB
 
-#define UART0   VIRT_UART0
+/* virtual memory map (sparsemem vmemmap) */
+#define VMEMMAP_START   0xffffffc700000000UL
+#define VMEMMAP_END     0xffffffc7ffffffffUL
+#define VMEMMAP_SIZE    0x0000000100000000UL // 4 GB
 
-#define VIRTIO0 VIRT_VIRTIO
+/* vmalloc / ioremap area */
+#define VMALLOC_START   0xffffffc800000000UL
+#define VMALLOC_END     0xffffffd7ffffffffUL
+#define VMALLOC_SIZE    0x0000001000000000UL // 64 GB
 
-#define CLINT   VIRT_CLINT
+/* direct mapping of all physical memory */
+#define DIRECTMAP_START 0xffffffd800000000UL
+#define DIRECTMAP_END   0xfffffff6ffffffffUL
 
-#define PLIC    VIRT_PLIC
+/* kasan */
+#define KASAN_START     0xfffffff700000000UL
+#define KASAN_END       0xfffffffeffffffffUL
+
+/* kernel */
+#define KERNEL_START    0xffffffff80000000UL
+#define KERNEL_END      0xffffffffffffffffUL
+
 
 #endif // __MEMLAYOUT_H__
