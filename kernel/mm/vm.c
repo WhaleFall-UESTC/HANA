@@ -9,7 +9,6 @@
 #include <common.h>
 #include <arch.h>
 #include <mm/buddy.h>
-#include <mm/slab.h>
 #include <mm/mm.h>
 #include <mm/memlayout.h>
 #include <proc/proc.h>
@@ -29,8 +28,8 @@ kmem_init(uint64 va_start, uint64 va_end)
     // debug("Initialize npages %#lx, a single page takes %d bytes", npages, (int)sizeof(struct page));
     buddy_init(s, e);  
     out("Initialize buddy system");
-    slab_init();
-    out("Initialize slab");
+    // slab_init();
+    // out("Initialize slab");
 }
 
 

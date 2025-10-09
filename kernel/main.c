@@ -40,20 +40,11 @@ main()
     uart_init();
     out("Initialize uart0");
 
-#ifdef __loongarch64
-    debug("CRMD: %lx", r_csr_crmd());
-    debug("DMW0: %lx", r_csr_dmw0());
-    debug("FREQ: %uMHz", r_cpucfg(0x4) / 1000000);
-    PASS("loongarch64 start!!!");
-#endif
-
     kinit();
     kvminit();
     out("Initialize vm");
     kvminithart();
     out("Enable paging");
-
-    // test_arch();
 
     trap_init();
     trap_init_hart();
@@ -62,8 +53,6 @@ main()
     out("Initialize interrupt");
     proc_init();
     out("Initialize first proc");
-    
-    // ecall();
 
 #ifdef __loongarch64
 #include <drivers/pci.h>
@@ -76,18 +65,9 @@ main()
     vfilesys_init();
     out("Initialize vfs");
 
-    // out("Enter tests");
-    // test_proc_init((uint64) test);
-
-#ifdef __loongarch64
-    intr_on();
-    timer_enable();
-    debug("tcfg: %lx ecfg: %lx crmd:%lx", r_csr_tcfg(), r_csr_ecfg(), r_csr_crmd());
-#endif 
-
     out("call scheduler");
     scheduler();
 
-    out("main return successfully");
+    error("main: should not reach here");
     return 0;
 }

@@ -43,13 +43,6 @@ scheduler()
     intr_on();
 
     for (;;) {
-        timer_intr_off();
-        // Avoid deadlock by ensuring that devices can interrupt.
-        if (!intr_get()) {
-            intr_on();
-            intr_off();
-        }
-        
         for (p = proc_list; p; p = p->next) {
             // lock process
             if (p->state == SLEEPING && p->sleeping_due != -1) {
@@ -62,18 +55,21 @@ scheduler()
                 // switch to this process
                 p->state = RUNNING;
                 c->proc = p;
-                timer_intr_on();
-#ifdef ARCH_LOONGARCH   
-                set_asid(p->pid);
-#endif
-                // log("switch to process %s", p->name);
                 swtch(&c->context, &p->context);
-
-                timer_intr_off();
-                // prev running process is done
+                //  prev running process is done
                 // it should have changed its state brfore swtch back
                 c->proc = 0;
             }
+        }
+
+        // if all processes are sleeping, wait for interrupt
+        struct proc *check_ptr;
+        for (check_ptr = proc_list; check_ptr; check_ptr = check_ptr->next) {
+            if (check_ptr->state != SLEEPING)
+                break;
+        }
+        if (check_ptr == NULL) {
+            intr_on();
         }
     }
 }

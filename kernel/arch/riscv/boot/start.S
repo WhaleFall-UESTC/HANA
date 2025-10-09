@@ -3,6 +3,7 @@
 .global _start
 _start:
 #ifdef BIOS_SBI
+    # keep each CPU's hartid in its tp
     addi tp, a0, 0
 
     # set initial stack
