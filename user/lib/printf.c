@@ -3,7 +3,7 @@
 #define __U_ULIB_H__
 
 #include <stdarg.h>
-#include <ulib.h>
+#include "../include/ulib.h"
 
 #define ZEROPAD 1   // defalut blank pad
 #define BIN     2
@@ -260,16 +260,16 @@ printf(const char* fmt, ...)
     return i;
 }
 
-int fprintf(int fd, const char *fmt, ...)
-{
-    int i;
-    char buf[BUFMAX];
-    va_list args;
-    va_start(args, fmt);
-    write(fd, buf, i = vsnprintf(buf, BUFMAX, fmt, args));
-    va_end(args);
-    return i;
-}
+// int fprintf(int fd, const char *fmt, ...)
+// {
+//     int i;
+//     char buf[BUFMAX];
+//     va_list args;
+//     va_start(args, fmt);
+//     write(fd, buf, i = vsnprintf(buf, BUFMAX, fmt, args));
+//     va_end(args);
+//     return i;
+// }
 
 int 
 puts(char* buf)

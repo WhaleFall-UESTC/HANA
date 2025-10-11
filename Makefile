@@ -95,7 +95,7 @@ OBJS = $(addprefix $(BUILD_DIR)/, $(SRC_C:.c=.o) $(SRC_S:.S=.o))
 
 USRS := $(INIT_SRC)/$(ICCOM).S
 
-USRC := $(shell find $(USER_SRC)/lib -type f -name '*.c' 
+USRC := $(shell find $(USER_SRC)/lib -type f -name '*.c')
 # 			-not -path '$(USER_SRC)/init/*') 
 USRC += $(INIT_SRC)/initcode.c
 

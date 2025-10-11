@@ -1,4 +1,5 @@
-#include <ulib.h>
+#include "../include/ulib.h"
+// #include "../include/syscall.h"
 
 typedef unsigned uint;
 
@@ -19,7 +20,7 @@ typedef union header Header;
 static Header base;
 static Header *freep;
 
-void free(void *ap)
+void _free(void *ap)
 {
     Header *bp, *p;
 
@@ -61,12 +62,12 @@ morecore(uint nu)
     p = old_brk;
     hp = (Header *)p;
     hp->s.size = nu;
-    free((void *)(hp + 1));
+    _free((void *)(hp + 1));
     return freep;
 }
 
 void *
-malloc(uint nbytes)
+malloc(long unsigned int nbytes)
 {
     Header *p, *prevp;
     uint nunits;

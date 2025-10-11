@@ -348,7 +348,7 @@ static inline int
 intr_get()
 {
   uint64 x = r_sstatus();
-  return (x & SSTATUS_SIE) != 0;
+  return ((x & SSTATUS_SIE) != 0 ? 1 : 0);
 }
 
 static inline uint64

@@ -43,17 +43,23 @@ $(BUILD_DIR):
 $(IMG_NAME): $(BINS) | $(BUILD_DIR)
 	qemu-img create -f raw $(IMG_NAME) 2G
 	mkfs.$(FS) $(IMG_NAME)
+	@LODEV=$$(sudo losetup -f --show $(IMG_NAME)); \
+	sudo mkdir -p /tmp/hana_mount; \
+	sudo mount $$LODEV /tmp/hana_mount; \
 	for bin in $(BINS); do \
-		mcopy -i $(IMG_NAME) $$bin ::$$(basename $$bin); \
-	done
+		sudo cp $$bin /tmp/hana_mount/$$(basename $$bin); \
+	done; \
 	if [ -d "$(DATA_DIR)" ]; then \
-		mmd -i $(IMG_NAME) ::data; \
+		sudo mkdir -p /tmp/hana_mount/data; \
 		for f in $(DATA_DIR)/*; do \
 			if [ -e "$$f" ]; then \
-				mcopy -i $(IMG_NAME) -s $$f ::data/; \
+				sudo cp -r $$f /tmp/hana_mount/data/; \
 			fi \
 		done \
-	fi
+	fi; \
+	sudo umount /tmp/hana_mount; \
+	sudo rmdir /tmp/hana_mount; \
+	sudo losetup -d $$LODEV
 
 $(OUT_IMG): $(IMG_NAME)
 	mv $< $@

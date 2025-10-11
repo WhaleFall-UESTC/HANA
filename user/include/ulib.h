@@ -2,7 +2,7 @@
 #define __LIB_H__
 
 #include <stdarg.h>
-#include <syscall.h>
+#include "syscall.h"
 
 typedef unsigned long size_t;
 
@@ -28,9 +28,9 @@ int             vsprintf(char* out, const char* fmt, va_list ap);
 int             snprintf(char *out, size_t n, const char *fmt, ...) ;
 int             sprintf(char *out, const char *fmt, ...);
 int             printf(const char* fmt, ...);
-int             fprintf(int fd, const char *fmt, ...);
+// int             fprintf(int fd, const char *fmt, ...);
 int             puts(char *buf);
-void*           malloc(unsigned int nbytes);
+void*           malloc(long unsigned int nbytes);
 void            free(void *);
 
 /* lib/sleep.c */
