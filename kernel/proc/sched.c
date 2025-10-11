@@ -98,6 +98,18 @@ sched()
     mycpu()->intena = intena;
 }
 
+// void sched()
+// {
+//     struct proc *p = myproc();
+//     struct cpu *c = mycpu();
+//     int int_status = intr_get();
+//     swtch(&p->context, &c->context);
+
+//     if (int_status)
+//         intr_on();
+//     else 
+//         intr_off();
+// }
 
 // Give up the CPU for one scheduling round.
 void

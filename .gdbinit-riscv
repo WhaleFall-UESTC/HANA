@@ -6,8 +6,9 @@ set disassemble-next-line auto
 set riscv use-compressed-breakpoints yes
 
 layout split
-b _start
-b main
+
+b ext4_bdif_bread
+b blkdev_submit_req_wait
 
 set logging off
 set logging file rv.log

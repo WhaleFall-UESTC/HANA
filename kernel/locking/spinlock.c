@@ -44,6 +44,7 @@ spinlock_acquire(struct spinlock* lk)
 {
     // disable intr, avoid deadlock
     irq_pushoff();
+    // intr_off();
     Assert(!spinlock_holding(lk), "cpu%d has hold lock %s", CPUID(lk->cpu), lk->name);
 
     while(__sync_lock_test_and_set(&lk->locked, LOCKED) != UNLOCKED)
@@ -68,4 +69,5 @@ spinlock_release(struct spinlock* lk)
     __sync_lock_release(&lk->locked);
 
     irq_popoff();
+    // intr_on();
 }

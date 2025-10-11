@@ -127,7 +127,12 @@ sleep(void* chan)
     p->chan = chan;
     p->state = SLEEPING;
 
+    int int_status = intr_get();
+
     sched();
+
+    if (int_status) intr_on();
+    else intr_off(); 
 
     p->chan = NULL;
 }

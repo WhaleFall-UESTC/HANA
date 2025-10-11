@@ -2,9 +2,10 @@
 #include "../include/ulib.h"
 
 int main() {
+    printf("mount\n");
     mount("/dev/sda", "/", "ext4", 0, 0);
     printf("mounted\n");
-    execve("ls", null, null);
+    // execve("ls", null, null);
 
     while(1);
 }
