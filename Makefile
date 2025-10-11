@@ -1,8 +1,11 @@
 ARCH ?= riscv
 BUILD_DIR := build/$(ARCH)
+# TOOLS_DIR := tools
 # FS := rootfs.img
 SMP := 1
 MEM := 128M
+
+MOUNT_PATH := /mnt/mydisk
 
 ifeq ($(ARCH), riscv)
 KERNEL := kernel-rv
@@ -18,6 +21,7 @@ QEMUOPTS := -machine virt -kernel $(KERNEL) -m $(MEM) -nographic -smp $(SMP) -bi
 RISCV_CFLAGS = -mcmodel=medany -march=rv64imafd -mabi=lp64
 # RISCV_CFLAGS += -DARCH_RISCV
 RISCV_CFLAGS += -DBIOS_SBI
+RISCV_CFLAGS += -fno-omit-frame-pointer -DBACKTRACE_USE_FP
 ICCOM := rv
 OBJTAR := elf64-littleriscv
 
@@ -70,7 +74,9 @@ CFLAGS += -DDEBUG
 
 U_CFLAGS = CFLAGS
 
-CFLAGS += -I $(KERNEL_SRC)/include -I $(ARCH_SRC)/include -I $(KERNEL_SRC)/test/include
+CFLAGS += -I $(KERNEL_SRC)/include \
+		  -I $(ARCH_SRC)/include \
+		  -I $(KERNEL_SRC)/test/include 
 
 ASFLAGS = $(CFLAGS) -D__ASSEMBLY__
 LDFLAGS = -nostdlib -T $(ARCH_SRC)/kernel.ld
@@ -89,8 +95,8 @@ OBJS = $(addprefix $(BUILD_DIR)/, $(SRC_C:.c=.o) $(SRC_S:.S=.o))
 
 USRS := $(INIT_SRC)/$(ICCOM).S
 
-USRC := $(shell find $(USER_SRC) -type f -name '*.c' \
-			-not -path '$(USER_SRC)/init/*') 
+USRC := $(shell find $(USER_SRC)/lib -type f -name '*.c' 
+# 			-not -path '$(USER_SRC)/init/*') 
 USRC += $(INIT_SRC)/initcode.c
 
 UOBJS = $(addprefix $(BUILD_DIR)/, $(USRC:.c=.o) $(USRS:.S=.o))
@@ -137,11 +143,34 @@ $(FS):
 
 $(DISK): $(FS)
 	qemu-img create -f raw $(DISK) 2G
+	mkfs.ext4 $(DISK)
 	@echo "[DISK] Created disk image: $(DISK)"
 
 $(KERNELDUMP): $(KERNEL)
 	$(OBJDUMP) -S -l -D $(KERNEL) > $(KERNELDUMP)
 	@echo "[OBJDUMP] Dump kernel: $(KERNELDUMP)"
+
+mount: $(DISK)
+	@set -e; \
+	if mountpoint -q $(MOUNT_PATH); then \
+		echo "[OK] $(MOUNT_PATH) already mounted"; \
+		cd $(MOUNT_PATH); \
+	else \
+		echo "[INFO] mounting $(DISK) -> $(MOUNT_PATH)"; \
+		sudo mkdir -p $(MOUNT_PATH); \
+		sudo mount -o loop,uid=$(shell id -u),gid=$(shell id -g),umask=000 $(DISK) $(MOUNT_PATH) && echo "[OK] mounted"; \
+		cd $(MOUNT_PATH); \
+	fi	
+
+umount:
+	@if mountpoint -q $(MOUNT_PATH); then \
+		sudo umount $(MOUNT_PATH)  && echo "[OK] $(MOUNT_PATH) unmounted"; \
+	else \
+		echo "[WARN] $(MOUNT_PATH) not mounted"; \
+	fi
+	@if [ -n "$(LODEV)" ]; then \
+		sudo losetup -d $(LODEV) && echo "[OK] loop device freed"; \
+	fi
 
 distclean: clean
 	rm -f $(KERNEL) $(KERNELDUMP) $(DISK) $(FS)
@@ -158,4 +187,4 @@ gdb: build_all .gdbinit-$(ARCH)
 	$(QEMU) $(QEMUOPTS) -S -gdb tcp::9877
 
 
-.PHONY: all clean distclean build run gdb disk temp
+.PHONY: all clean distclean build run gdb disk temp mount umount

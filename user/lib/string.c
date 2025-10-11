@@ -1,6 +1,26 @@
-#include <common.h>
-#include <mm/mm.h>
-#include <debug.h>
+#include <stddef.h>
+
+typedef unsigned uint;
+
+int atoi(const char *s) {
+    int n = 0, neg = 0;
+
+    while (*s == ' ' || *s == '\t' || *s == '\n' || *s == '\r' || *s == '\f' || *s == '\v')
+        s++;
+
+    if (*s == '-') {
+        neg = 1;
+        s++;
+    } else if (*s == '+')
+        s++;
+
+    while (*s >= '0' && *s <= '9') {
+        n = n * 10 + (*s - '0');
+        s++;
+    }
+
+    return neg ? -n : n;
+}
 
 size_t 
 strlen(const char *s)
@@ -68,12 +88,28 @@ strcmp(const char *s1, const char *s2)
     return (s2[i] == '\0') ? 0 : -s2[i];
 }
 
+char *strchr(const char *s, int c)
+{
+    while (*s != '\0')
+    {
+        if (*s == c)
+        {
+            return (char *)s;
+        }
+        s++;
+    }
+    if (c == '\0')
+    {
+        return (char *)s;
+    }
+    return 0;
+}
 
 void*
 memset(void *dst, int c, size_t n)
 {
     char *cdst = (char *) dst;
-        int i;
+    size_t i;
     for (i = 0; i < n; i++) {
         cdst[i] = c;
     }

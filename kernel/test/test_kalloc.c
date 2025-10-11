@@ -1,7 +1,6 @@
 #include <common.h>
 #include <klib.h>
 #include <mm/buddy.h>
-#include <mm/slab.h>
 #include <mm/mm.h>
 #include <debug.h>
 
@@ -92,7 +91,7 @@ void test_kalloc()
 {
     void *tmp_1pg = kalloc(PGSIZE);
     void *tmp_4pg = kalloc(PGSIZE << 2);
-    void *tmp_8obj = kalloc(OBJECT_SIZE << 3);
+    void *tmp_8obj = kalloc(PGSIZE << 3);
 
     kfree(tmp_1pg);
     kfree(tmp_4pg);
@@ -114,14 +113,6 @@ void test_kalloc()
     kfree(tmp);
 
     PASS("pass buddy alloc");
-
-    for (int i = 1; i <= NR_OBJS; i++)
-    {
-        // log("slab free %d objs", i);
-        void *tmp = kalloc(i * OBJECT_SIZE);
-        kfree(tmp);
-    }
-    PASS("pass slab alloc");
 
     test_kalloc_kfree();
 

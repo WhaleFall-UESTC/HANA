@@ -23,6 +23,7 @@
 #define SYS_execve 221
 #define SYS_wait4 260
 #define SYS_exit 93
+#define SYS_kill 37
 #define SYS_getppid 173
 #define SYS_getpid 172
 
@@ -244,7 +245,7 @@ static inline pid_t wait4(pid_t pid, int *status, int options, struct rusage *ru
     return (pid_t) internal_syscall(SYS_wait4, (uint64) pid, (uint64) status, (uint64) options, (uint64) rusage, 0, 0);
 }
 
-static inline void _exit(int status) {
+static inline void exit(int status) {
     internal_syscall(SYS_exit, (uint64) status, 0, 0, 0, 0, 0);
 }
 

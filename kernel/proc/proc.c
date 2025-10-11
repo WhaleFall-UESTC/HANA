@@ -37,14 +37,10 @@ alloc_pid()
 struct proc*
 alloc_proc()
 {
-    KALLOC(struct proc, p);
+    KCALLOC(struct proc, p, 1);
     
     p->pid = alloc_pid();
     p->stack = KSTACK(p->pid);
-    p->tgid = 0;
-    p->tls = 0;
-    p->cleartid = 0;
-    p->sigchld = 0;
     
     map_stack(kernel_pagetable, p->stack);
 

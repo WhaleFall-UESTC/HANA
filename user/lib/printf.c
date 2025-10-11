@@ -3,8 +3,7 @@
 #define __U_ULIB_H__
 
 #include <stdarg.h>
-#include "../include/ulib.h"
-#include "../include/syscall.h"
+#include <ulib.h>
 
 #define ZEROPAD 1   // defalut blank pad
 #define BIN     2
@@ -114,7 +113,7 @@ number(char *str, long num, int size, int precision, int type)
 int
 vsnprintf(char *out, size_t n, const char* fmt, va_list ap)
 {
-    int cnt = 0;
+    unsigned cnt = 0;
     char *str;
 
     for (str = out; *fmt && cnt < n; cnt++, fmt++) 
@@ -191,6 +190,7 @@ vsnprintf(char *out, size_t n, const char* fmt, va_list ap)
 
             case 'x': 
                 flags |= SMALL;
+                /* fall through */
             case 'X': 
                 flags |= HEX;
                 str = number(str, va_arg(ap, unsigned long), field_width, precision, flags);
@@ -198,6 +198,7 @@ vsnprintf(char *out, size_t n, const char* fmt, va_list ap)
 
             case 'd':
                 flags |= SIGN;
+                /* fall through */
             case 'u':
                 str = number(str, va_arg(ap, unsigned long), field_width, precision, flags);
                 break;
@@ -255,6 +256,17 @@ printf(const char* fmt, ...)
     va_list args;
     va_start(args, fmt);
     write(STDOUT_FILENO, buf, i = vsnprintf(buf, BUFMAX, fmt, args));
+    va_end(args);
+    return i;
+}
+
+int fprintf(int fd, const char *fmt, ...)
+{
+    int i;
+    char buf[BUFMAX];
+    va_list args;
+    va_start(args, fmt);
+    write(fd, buf, i = vsnprintf(buf, BUFMAX, fmt, args));
     va_end(args);
     return i;
 }

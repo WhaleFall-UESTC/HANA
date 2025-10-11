@@ -61,6 +61,7 @@ main()
     udp_init();
     uart_device_init();
     virtio_device_init();
+    out("initialize io devices");
 
     vfilesys_init();
     out("Initialize vfs");
