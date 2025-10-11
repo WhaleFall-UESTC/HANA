@@ -7,8 +7,8 @@ set riscv use-compressed-breakpoints yes
 
 layout split
 
-b ext4_bdif_bread
-b blkdev_submit_req_wait
+b __do_sys_execve
+b kernel_open
 
 set logging off
 set logging file rv.log
