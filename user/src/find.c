@@ -1,5 +1,5 @@
 #include <ulib.h>
-#include <fs.h>
+// #include <fs.h>
 
 #define BUFSIZ 128
 
