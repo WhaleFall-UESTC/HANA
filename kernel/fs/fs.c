@@ -67,9 +67,9 @@ int fullpath_connect(const char *path, char *full_path)
 			if (i_f > 0)
 				i_f--;
 		}
-		else if (path[i_path] == '.' && (i_path + 1 == path_len || (i_path + 1 < path_len && path[i_path + 1] == '/')))
+		else if (path[i_path] == '.' && (i_path + 1 < path_len && path[i_path + 1] == '/'))
 		{
-			// "./" or ".\0"
+			// "./"
 			i_path++;
 		}
 		else

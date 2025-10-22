@@ -13,10 +13,10 @@ DISK := disk.img
 FS := sdcard-rv.img
 TOOLPREFIX := riscv64-unknown-elf-
 QEMU := qemu-system-riscv64
-QEMUOPTS := -machine virt -kernel $(KERNEL) -m $(MEM) -nographic -smp $(SMP) -bios default -drive file=$(FS),if=none,format=raw,id=x0 \
+QEMUOPTS := -machine virt -kernel $(KERNEL) -m $(MEM) -nographic -smp $(SMP) -bios default -drive file=$(DISK),if=none,format=raw,id=x0 \
         	-device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 -no-reboot -device virtio-net-device,netdev=net -netdev user,id=net \
         	-rtc base=utc \
-        	-drive file=$(DISK),if=none,format=raw,id=x1 -device virtio-blk-device,drive=x1,bus=virtio-mmio-bus.1 \
+#         	-drive file=$(FS),if=none,format=raw,id=x1 -device virtio-blk-device,drive=x1,bus=virtio-mmio-bus.1 \
 			# -d trace:virtio*
 RISCV_CFLAGS = -mcmodel=medany -march=rv64imafd -mabi=lp64
 # RISCV_CFLAGS += -DARCH_RISCV
@@ -142,9 +142,7 @@ $(FS):
 	@echo "[DISK] Created root filesystem image: $(FS)"
 
 $(DISK): $(FS)
-	qemu-img create -f raw $(DISK) 2G
-	mkfs.ext4 $(DISK)
-	@echo "[DISK] Created disk image: $(DISK)"
+	$(MAKE) -C user
 
 $(KERNELDUMP): $(KERNEL)
 	$(OBJDUMP) -S -l -D $(KERNEL) > $(KERNELDUMP)

@@ -128,6 +128,7 @@ struct stat {
 #define O_EXCL 0200
 #define O_TRUNC 01000
 #define O_APPEND 02000
+#define O_DIRECTORY	00200000
 
 struct timeval {
 	time_t		tv_sec;		/* seconds */

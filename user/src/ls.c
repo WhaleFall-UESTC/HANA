@@ -28,7 +28,7 @@ void ls(char *path)
     struct dirent de;
     struct stat st;
 
-    if ((fd = openat(AT_FDCWD, path, O_RDONLY, 0)) < 0)
+    if ((fd = openat(AT_FDCWD, path, O_RDONLY | O_DIRECTORY, 0)) < 0)
     {
         printf("ls: cannot open %s\n", path);
         return;

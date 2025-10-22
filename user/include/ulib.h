@@ -34,10 +34,10 @@ void*           malloc(long unsigned int nbytes);
 void            free(void *);
 
 /* lib/sleep.c */
-struct timespec {
-    time_t tv_sec; /* seconds */
-    long tv_nsec;  /* and nanoseconds */
-};
+// struct timespec {
+//     time_t tv_sec; /* seconds */
+//     long tv_nsec;  /* and nanoseconds */
+// };
 int sleep(unsigned int seconds);
 
 #endif // __LIB_H__
