@@ -36,7 +36,7 @@ static inline void update_time() {
 
 void timer_interrupt_handler()
 {
-    log("receive timer interrupt");
+    // log("receive timer interrupt");
     update_time();
     tick_counter += 1;
     struct proc* p = myproc();

@@ -1,5 +1,5 @@
 #include <ulib.h>
-// #include <fs.h>
+#include <stddef.h>
 
 // get filename from path
 char *
@@ -23,10 +23,13 @@ fmtname(char *path)
 
 void ls(char *path)
 {
-    char buf[512], *p;
+    char buf[128]={0}, *p;
+    char filename[32]={0};
     int fd;
     struct dirent de;
     struct stat st;
+
+    printf("ls %s\n", path);
 
     if ((fd = openat(AT_FDCWD, path, O_RDONLY | O_DIRECTORY, 0)) < 0)
     {
@@ -55,15 +58,31 @@ void ls(char *path)
         {
             strcpy(buf, path);
             p = buf + strlen(buf);
-            *p++ = '/';
+            if (*(p-1) != '/') {
+                *p++ = '/';
+                *p = '\0';
+            }
 
-            while (read(fd, &de, sizeof(de)) == sizeof(de))
+            while (read(fd, &de, SIZE_PEEK) == SIZE_PEEK)
             {
                 if (de.d_ino == 0)
                     continue;
 
-                memmove(p, de.d_name, strlen(de.d_name));
-                p[strlen(de.d_name)] = '\0';
+                printf("Got dirent: ino=%lu, off=%ld, reclen=%u, type=%u\n",
+                       de.d_ino, de.d_off, de.d_reclen, de.d_type);
+
+                unsigned long filename_bytes = de.d_reclen - SIZE_PEEK;
+                filename_bytes = (filename_bytes < 32) ? filename_bytes : 32;
+                memset(filename, 0, 32);
+                if (read(fd, filename, filename_bytes) != filename_bytes) {
+                    printf("ls: read filename failed\n");
+                    break;
+                }
+                printf("Filename: %s\n", filename);
+
+                memmove(p, filename, strlen(filename));
+                p[strlen(filename)] = '\0';
+                printf("Processing %s\n", buf);
 
                 int child_fd = openat(AT_FDCWD, buf, O_RDONLY, 0);
                 if (child_fd < 0)

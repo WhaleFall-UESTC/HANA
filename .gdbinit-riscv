@@ -8,7 +8,7 @@ set riscv use-compressed-breakpoints yes
 layout split
 
 b __do_sys_execve
-b kernel_open
+b __do_sys_read
 
 set logging off
 set logging file rv.log

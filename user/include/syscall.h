@@ -61,6 +61,8 @@ struct dirent
 	char d_name[];
 };
 
+#define SIZE_PEEK 19 // d_ino(8) + d_off(8) + d_reclen(2) + d_type(1)
+
 struct stat {
 	unsigned long	st_dev;
 	unsigned long	st_ino;
