@@ -62,9 +62,8 @@ void ls(char *path)
                     printf("ls: getdents64\n");
                     break;
                 }
-                if (nread == 0)
-                    break; // 目录读完了
 
+                printf("read %s path for %ld bytes\n", path, nread);
                 for (long pos = 0; pos < nread;)
                 {
                     struct dirent *d = (struct dirent*)(buf + pos);
@@ -90,6 +89,9 @@ void ls(char *path)
 
                     pos += d->d_reclen; // 关键：跳到下一个条目
                 }
+
+                if (nread != 512)
+                    break; // 目录读完了
             }
         }
     }
