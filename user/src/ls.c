@@ -23,10 +23,8 @@ fmtname(char *path)
 
 void ls(char *path)
 {
-    char buf[128]={0}, *p;
-    char filename[32]={0};
+    char buf[512]={0};
     int fd;
-    struct dirent de;
     struct stat st;
 
     printf("ls %s\n", path);
@@ -56,55 +54,42 @@ void ls(char *path)
         }
         else
         {
-            strcpy(buf, path);
-            p = buf + strlen(buf);
-            if (*(p-1) != '/') {
-                *p++ = '/';
-                *p = '\0';
-            }
-
-            while (read(fd, &de, SIZE_PEEK) == SIZE_PEEK)
+            for (;;)
             {
-                if (de.d_ino == 0)
-                    continue;
-
-                printf("Got dirent: ino=%lu, off=%ld, reclen=%u, type=%u\n",
-                       de.d_ino, de.d_off, de.d_reclen, de.d_type);
-
-                unsigned long filename_bytes = de.d_reclen - SIZE_PEEK;
-                filename_bytes = (filename_bytes < 32) ? filename_bytes : 32;
-                memset(filename, 0, 32);
-                if (read(fd, filename, filename_bytes) != filename_bytes) {
-                    printf("ls: read filename failed\n");
+                long nread = getdents64(fd, (struct dirent *)buf, 512);
+                if (nread == -1)
+                {
+                    printf("ls: getdents64\n");
                     break;
                 }
-                printf("Filename: %s\n", filename);
+                if (nread == 0)
+                    break; // 目录读完了
 
-                memmove(p, filename, strlen(filename));
-                p[strlen(filename)] = '\0';
-                printf("Processing %s\n", buf);
-
-                int child_fd = openat(AT_FDCWD, buf, O_RDONLY, 0);
-                if (child_fd < 0)
+                for (long pos = 0; pos < nread;)
                 {
-                    printf("ls: cannot open %s\n", buf);
-                    continue;
+                    struct dirent *d = (struct dirent*)(buf + pos);
+
+                    printf("%s", d->d_name);
+
+                    /* 根据 d_type 显示类型（可选） */
+                    switch (d->d_type)
+                    {
+                    case 4:
+                        puts("  [dir]");
+                        break; // DT_DIR
+                    case 8:
+                        puts("  [file]");
+                        break; // DT_REG
+                    case 10:
+                        puts("  [link]");
+                        break; // DT_LNK
+                    default:
+                        puts("");
+                        break;
+                    }
+
+                    pos += d->d_reclen; // 关键：跳到下一个条目
                 }
-
-                struct stat child_st;
-                if (fstat(child_fd, &child_st) < 0)
-                {
-                    printf("ls: cannot stat %s\n", buf);
-                    close(child_fd);
-                    continue;
-                }
-
-                printf("%s %lu %ld\n",
-                       fmtname(buf),
-                       (unsigned long)child_st.st_ino,
-                       child_st.st_size);
-
-                close(child_fd);
             }
         }
     }
