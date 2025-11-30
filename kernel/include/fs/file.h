@@ -4,6 +4,7 @@
 #include <common.h>
 #include <fs/fs.h>
 #include <fs/dirent.h>
+#include <fs/path.h>
 #include <klib.h>
 #include <locking/atomic.h>
 
@@ -16,7 +17,7 @@ struct file
 	const struct file_operations *f_op;
 	struct inode *f_inode;
 
-	char f_path[MAX_PATH_LEN];
+	struct path f_path;
 
 	off_t fpos;
 

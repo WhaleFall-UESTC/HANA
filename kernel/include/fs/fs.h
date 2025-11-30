@@ -5,37 +5,11 @@
 #include <locking/spinlock.h>
 #include <io/blk.h>
 #include <fs/stat.h>
+#include <fs/inode.h>
 
 #define MAX_PATH_LEN 1024
 #define MAX_FILENAME_LEN 256
 typedef const char *path_t;
-
-struct inode_operations;
-struct mountpoint;
-
-struct inode
-{
-    umode_t i_mode; // file mode
-    off_t i_size;   // file size
-
-    // const struct inode_operations *i_op; // inode operations
-
-    uint32 i_ino;              // inode number
-
-    spinlock_t i_lock;   // inode lock
-    uint32 i_refcount; // reference count
-
-    time_t i_atime; // last access time
-    time_t i_mtime; // last modification time
-    time_t i_ctime; // last status change time
-
-    struct mountpoint *i_mp; // mountpoint
-};
-
-/**
- * TODO: Let the interfaces accept inode and dentry as a parameter rather than path
- * This may lead to a lot of changes in lwext4
- */
 
 struct file;
 struct mountpoint;

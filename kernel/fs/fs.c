@@ -7,6 +7,7 @@
 #include <fs/mountp.h>
 #include <fs/ext4/ext4.h>
 #include <fs/devfs/devfs.h>
+#include <fs/path.h>
 #include <fs/kernel.h>
 #include <io/blk.h>
 #include <proc/proc.h>
@@ -42,88 +43,88 @@ static inline int dirent_name_len(const char* str) {
 	return ret;
 }
 
-int fullpath_connect(const char *path, char *full_path)
-{
-	int path_len = strlen(path);
-	int i_path = 0, i_f = strlen(full_path);
+// int fullpath_connect(const char *path, char *full_path)
+// {
+// 	int path_len = strlen(path);
+// 	int i_path = 0, i_f = strlen(full_path);
 
-	if (path[0] == '/')
-		return -1;
+// 	if (path[0] == '/')
+// 		return -1;
 
-	if (full_path[i_f - 1] != '/')
-		full_path[i_f ++] = '/';
+// 	if (full_path[i_f - 1] != '/')
+// 		full_path[i_f ++] = '/';
 
-	while (i_path < path_len && i_f < MAX_PATH_LEN)
-	{
-		while (path[i_path] == '/' && i_path < path_len)
-			i_path++;
-		if (path[i_path] == '.' && (i_path + 2 == path_len || (i_path + 2 < path_len && path[i_path + 2] == '/')) && path[i_path + 1] == '.')
-		{
-			// "../" or "..\0"
-			i_path += 2;
-			i_f --;
-			while (i_f > 0 && full_path[i_f - 1] != '/')
-				i_f--;
-			if (i_f > 0)
-				i_f--;
-		}
-		else if (path[i_path] == '.' && (i_path + 1 < path_len && path[i_path + 1] == '/'))
-		{
-			// "./"
-			i_path++;
-		}
-		else
-		{
-			// normal path
-			while (path[i_path] != '/' && i_path < path_len && i_f < MAX_PATH_LEN)
-			{
-				full_path[i_f++] = path[i_path++];
-			}
-		}
-	}
+// 	while (i_path < path_len && i_f < MAX_PATH_LEN)
+// 	{
+// 		while (path[i_path] == '/' && i_path < path_len)
+// 			i_path++;
+// 		if (path[i_path] == '.' && (i_path + 2 == path_len || (i_path + 2 < path_len && path[i_path + 2] == '/')) && path[i_path + 1] == '.')
+// 		{
+// 			// "../" or "..\0"
+// 			i_path += 2;
+// 			i_f --;
+// 			while (i_f > 0 && full_path[i_f - 1] != '/')
+// 				i_f--;
+// 			if (i_f > 0)
+// 				i_f--;
+// 		}
+// 		else if (path[i_path] == '.' && (i_path + 1 < path_len && path[i_path + 1] == '/'))
+// 		{
+// 			// "./"
+// 			i_path++;
+// 		}
+// 		else
+// 		{
+// 			// normal path
+// 			while (path[i_path] != '/' && i_path < path_len && i_f < MAX_PATH_LEN)
+// 			{
+// 				full_path[i_f++] = path[i_path++];
+// 			}
+// 		}
+// 	}
 
-	if (i_path < path_len)
-	{
-		error("path too long");
-		return -1;
-	}
+// 	if (i_path < path_len)
+// 	{
+// 		error("path too long");
+// 		return -1;
+// 	}
 
-	full_path[i_f] = '\0';
-	return i_f;
-}
+// 	full_path[i_f] = '\0';
+// 	return i_f;
+// }
 
-int get_absolute_path(const char *path, char *full_path, fd_t dirfd)
-{
-	struct files_struct *fdt = myproc()->fdt;
-	struct file *file;
+// int get_absolute_path(const char *path, char *full_path, fd_t dirfd)
+// {
+// 	struct files_struct *fdt = myproc()->fdt;
+// 	struct file *file;
 
-	if (path == NULL || full_path == NULL)
-	{
-		error("path or full_path is NULL");
-		return -1;
-	}
+// 	if (path == NULL || full_path == NULL)
+// 	{
+// 		error("path or full_path is NULL");
+// 		return -1;
+// 	}
 
-	if (path[0] == '/')
-	{
-		strcpy(full_path, path);
-	}
-	else
-	{
-		// convert relative path to full path
-		if (dirfd == AT_FDCWD)
-			strcpy(full_path, myproc()->cwd);
-		else
-		{
-			file = fd_get(fdt, dirfd);
-			strcpy(full_path, file->f_path);
-		}
-		int ret = fullpath_connect(path, full_path);
-		if (ret < 0)
-			return -1;
-	}
+// 	if (path[0] == '/')
+// 	{
+// 		strcpy(full_path, path);
+// 	}
+// 	else
+// 	{
+// 		// convert relative path to full path
+// 		if (dirfd == AT_FDCWD)
+// 			strcpy(full_path, myproc()->cwd);
+// 		else
+// 		{
+// 			file = fd_get(fdt, dirfd);
+// 			strcpy(full_path, file->f_path);
+// 		}
+// 		int ret = fullpath_connect(path, full_path);
+// 		if (ret < 0)
+// 			return -1;
+// 	}
 
-	return 0;
-}
+// 	return 0;
+// }
 
 int vfilesys_init() {
 	KCALLOC(struct mountpoint, mp, 1);
@@ -137,7 +138,12 @@ int vfilesys_init() {
 
 SYSCALL_DEFINE2(getcwd, char *, char *, buf, size_t, size)
 {
-	const char *cwd = myproc()->cwd;
+	char cwd[MAX_PATH_LEN];
+	struct proc * current = myproc();
+	if(path_str_fill(&current->cwd, cwd, &current->root) < 0) {
+		error("get cwd from path failed");
+		return NULL;
+	}
 
 	if (buf == NULL || strlen(cwd) > size)
 		return NULL;
@@ -147,6 +153,28 @@ SYSCALL_DEFINE2(getcwd, char *, char *, buf, size_t, size)
 		return NULL;
 	}
 	return buf;
+}
+
+SYSCALL_DEFINE1(chdir, int, const char *, path)
+{
+	char buf[MAX_PATH_LEN];
+	char **p_cwd = &myproc()->cwd;
+
+	if(copy_from_user_str(buf, path, MAX_PATH_LEN) < 0) {
+		error("copy from userspace error");
+		return -1;
+	}
+
+	kfree(*p_cwd);
+	*p_cwd = strdup(buf);
+
+	if (*p_cwd == NULL)
+	{
+		error("strdup error");
+		return -1;
+	}
+
+	return 0;
 }
 
 SYSCALL_DEFINE1(dup, fd_t, fd_t, fd)
@@ -181,28 +209,6 @@ SYSCALL_DEFINE3(dup3, fd_t, fd_t, old, fd_t, new, int, flags)
 	}
 
 	return ret;
-}
-
-SYSCALL_DEFINE1(chdir, int, const char *, path)
-{
-	char buf[MAX_PATH_LEN];
-	char **p_cwd = &myproc()->cwd;
-
-	if(copy_from_user_str(buf, path, MAX_PATH_LEN) < 0) {
-		error("copy from userspace error");
-		return -1;
-	}
-
-	kfree(*p_cwd);
-	*p_cwd = strdup(buf);
-
-	if (*p_cwd == NULL)
-	{
-		error("strdup error");
-		return -1;
-	}
-
-	return 0;
 }
 
 /**

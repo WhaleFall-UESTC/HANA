@@ -5,6 +5,7 @@
 #include <trap/trap.h>
 #include <irq/interrupt.h>
 #include <mm/mm.h>
+#include <fs/path.h>
 
 struct proc {
     int pid;                        // 进程 id
@@ -23,7 +24,8 @@ struct proc {
     struct context context;         // 进程的上下文
 
     struct files_struct* fdt;       // 进程持有的文件
-    char* cwd;                      // 当前目录
+    struct path cwd;              // 当前目录
+    struct path root;             // 进程运行的根目录
 
     int killed;                     // 进程是否被 kill 的标志
     void* chan;                     // 进程正在 sleep 的时间
