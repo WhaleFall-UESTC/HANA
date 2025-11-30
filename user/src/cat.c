@@ -1,6 +1,6 @@
 #include <ulib.h>
 
-char buf[512];
+char buf[64];
 
 void cat(int fd)
 {

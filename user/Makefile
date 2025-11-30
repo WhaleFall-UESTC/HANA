@@ -68,3 +68,28 @@ disk: $(OUT_IMG)
 
 clean:
 	rm -rf $(BUILD_DIR) $(IMG_NAME) $(OUT_IMG)
+
+
+
+
+# bad apple format
+
+ASCII_SRC  := data/bad-apple-ascii
+ASCII_GBK  := $(ASCII_SRC)/GBK
+SRC_TXT    := $(wildcard $(ASCII_SRC)/*.txt)
+GBK_TXT    := $(patsubst $(ASCII_SRC)/%.txt,$(ASCII_GBK)/%.txt,$(SRC_TXT))
+
+badapple-gbk: $(GBK_TXT)
+	@echo "Bad Apple GBK 帧全部生成完毕！共 $(words $(GBK_TXT)) 帧"
+	@du -sh $(ASCII_GBK)
+
+$(ASCII_GBK)/%.txt: $(ASCII_SRC)/%.txt | $(ASCII_GBK)
+	@printf "GBK ← %s\n" $<
+	@iconv -c -f UTF-8 -t GBK $< -o $@
+
+$(ASCII_GBK):
+	@mkdir -p $@
+
+badapple-force:
+	rm -rf $(ASCII_GBK)
+	$(MAKE) badapple-gbk

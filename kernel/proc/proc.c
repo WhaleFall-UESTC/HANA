@@ -183,6 +183,7 @@ do_exit(int status)
     p->status = status;
     p->state = ZOMBIE;
 
+    intr_off();
     // swtch to scheduler, should never return
     sched();
     panic("proc %s should be exited", p->name);
