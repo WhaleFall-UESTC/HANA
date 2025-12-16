@@ -27,7 +27,7 @@ void ls(char *path)
     int fd;
     struct stat st;
 
-    printf("ls %s\n", path);
+    // printf("ls %s\n", path);
 
     if ((fd = openat(AT_FDCWD, path, O_RDONLY | O_DIRECTORY, 0)) < 0)
     {
@@ -63,10 +63,16 @@ void ls(char *path)
                     break;
                 }
 
-                printf("read %s path for %ld bytes\n", path, nread);
+                // printf("read %s path for %ld bytes\n", path, nread);
                 for (long pos = 0; pos < nread;)
                 {
                     struct dirent *d = (struct dirent*)(buf + pos);
+
+                    if (strcmp(d->d_name, ".") == 0 || strcmp(d->d_name, "..") == 0 || strcmp(d->d_name, "lost+found") == 0)
+                    {
+                        pos += d->d_reclen; // 关键：跳到下一个条目
+                        continue;
+                    }
 
                     printf("%s", d->d_name);
 
@@ -74,13 +80,13 @@ void ls(char *path)
                     switch (d->d_type)
                     {
                     case 4:
-                        puts("  [dir]");
+                        puts("\t  [dir]");
                         break; // DT_DIR
                     case 8:
-                        puts("  [file]");
+                        puts("\t  [file]");
                         break; // DT_REG
                     case 10:
-                        puts("  [link]");
+                        puts("\t  [link]");
                         break; // DT_LNK
                     default:
                         puts("");
