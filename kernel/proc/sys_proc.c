@@ -10,12 +10,15 @@
 #include <mm/buddy.h>
 #include <mm/mm.h>
 #include <mm/memlayout.h>
+#include <mm/vma.h>
 #include <fs/file.h>
 #include <fs/fcntl.h>
 #include <fs/kernel.h>
 #include <syscall.h>
 #include <elf.h>
 #include <errno.h>
+
+extern char trampoline[];
 
 SYSCALL_DEFINE5(clone, int, unsigned long, flags, void*, stack, void*, ptid, void*, tls, void*, ctid)
 {
@@ -41,6 +44,7 @@ SYSCALL_DEFINE5(clone, int, unsigned long, flags, void*, stack, void*, ptid, voi
         // initialize child pagetable
         pagetable_t cpgtbl = alloc_pagetable();
         // Copy memory from parent (COW)
+        // TODO: just ignore PTE_W
         uvmcopy(cpgtbl, UPGTBL(proc->pagetable), proc->sz);
     }
 
@@ -148,6 +152,11 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
     Elf64_Phdr phdr = {};
     pgtbl = uvmmake((uint64) p->trapframe);
 
+    KALLOC(struct vm_area, vma);
+    int vma_pt = 0;
+    p->vma_list = vma;
+    p->vma_list->next = NULL;
+
     for (int i = 0, off = elf.e_phoff; i < elf.e_phnum; i++, off += sizeof(Elf64_Phdr))
     {
         kernel_lseek(file, off, SEEK_SET);
@@ -186,8 +195,15 @@ SYSCALL_DEFINE3(execve, int, const char*, upath, const char**, uargv, const char
         uint64 load_off = phdr.p_vaddr - load_start;
         char* mem = buddy_alloc(load_end - load_start);
         mappages(pgtbl, phdr.p_vaddr, KERNEL_VA2PA(mem), phdr.p_memsz, perms);
-
         sz = max_uint64(sz, load_end);
+
+        vma[vma_pt].start = load_start;
+        vma[vma_pt].end = load_end;
+        vma[vma_pt].prot = perms;
+
+        vma[vma_pt].next = p->vma_list;
+        p->vma_list = &vma[vma_pt];
+        vma_pt++;
 
         // log("map vaddr %lx, load its start at %p", phdr.p_vaddr, mem + load_off);
 
@@ -427,11 +443,11 @@ SYSCALL_DEFINE3(wait4, int, int, pid, int*, status, int, options)
                     
                     // its parent is waiting for it
                     p->waited = 1;
-                    int pid = p->pid;
+                    int child_pid = p->pid;
 
                     freeproc(p);
 
-                    return pid;
+                    return child_pid;
                 }
             }
         }
@@ -446,6 +462,45 @@ SYSCALL_DEFINE3(wait4, int, int, pid, int*, status, int, options)
             sleep(curproc);
         }
     }
+}
+
+SYSCALL_DEFINE0(fork, int) 
+{
+    struct proc* parent = myproc();
+    struct proc* child = alloc_proc();
+    assert(child);
+
+    // prepare userspace vm
+    pagetable_t cpgtbl = alloc_pagetable();
+    // Copy memory from parent
+    uvmcopy_alloc(cpgtbl, UPGTBL(parent->pagetable), parent->vma_list);
+    // map TRAPFRAME and TRAMPOLINE
+    mappages(cpgtbl, TRAPFRAME, (uint64)parent->trapframe, PGSIZE, PTE_U | PTE_RW);
+    mappages(cpgtbl, TRAMPOLINE, KERNEL_VA2PA(trampoline), PGSIZE, PTE_RX);
+    child->pagetable = upgtbl_init(cpgtbl);
+
+    child->sz = parent->sz;
+    child->heap_start = parent->heap_start;
+
+    *(child->trapframe) = *(parent->trapframe);
+    // set child process return 0
+    child->trapframe->a0 = 0;
+
+    // initialize child fs
+    child->cwd = strdup(parent->cwd);
+    child->fdt = fdt_dup(parent->fdt);
+
+    child->tgid = child->pid;
+
+    child->parent = parent;
+    child->state = RUNNABLE;
+
+    // add child to proc_list
+    child->next = proc_list;
+    proc_list->prev = child;
+    proc_list = child;
+
+    return child->pid;
 }
 
 

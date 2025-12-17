@@ -265,8 +265,8 @@ page_unmap_handler()
     flush_tlb_one(va);
 }
 
-void free_pgtbl(pagetable_t pgtbl, uint64 sz) {
+void free_pgtbl(pagetable_t pgtbl, struct vm_area* vma) {
     uvmunmap(pgtbl, TRAPFRAME, 1, UVMUNMAP_FREE);
     uvmunmap(pgtbl, TRAMPOLINE, 1, UVMUNMAP_NOFREE);
-    uvmfree(pgtbl, sz);
+    uvmfree_vma(pgtbl, vma);
 }

@@ -11,6 +11,7 @@
 #include <mm/buddy.h>
 #include <mm/mm.h>
 #include <mm/memlayout.h>
+#include <mm/vma.h>
 #include <proc/proc.h>
 #include <debug.h>
 
@@ -74,6 +75,18 @@ uvmcopy(pagetable_t cpgtbl, pagetable_t ppgtbl, uint64 sz)
 
             mappages(cpgtbl, va, pa, PGSIZE, flags);
         }
+    }
+}
+
+void 
+uvmcopy_alloc(pagetable_t cpgtbl, pagetable_t ppgtbl, struct vm_area* vma_list) {
+    struct vm_area *vma = vma_list;
+    while (vma) {
+        int perms = vma->prot;
+        for (uint64 va = vma->start; va < vma->end; va += PGSIZE) {
+            mappages(cpgtbl, va, (uint64)kalloc(PGSIZE), PGSIZE, perms);
+        }
+        vma = vma->next;
     }
 }
 
@@ -342,3 +355,14 @@ void uvmfree(pagetable_t pgtbl, uint64 sz)
         uvmunmap(pgtbl, 0, (PGROUNDUP(sz) >> PGSHIFT), UVMUNMAP_FREE);
     freewalk(pgtbl, 0);
 }   
+
+void uvmfree_vma(pagetable_t pgtbl, struct vm_area* vma_list) 
+{   
+    pgtbl = (pagetable_t) KERNEL_PA2VA(pgtbl);
+    struct vm_area *vma = vma_list;
+    while (vma) {
+        uvmunmap(pgtbl, vma->start, ((vma->end - vma->start) >> PGSHIFT), UVMUNMAP_FREE);
+        vma = vma->next;
+    }
+    freewalk(pgtbl, 0);
+}

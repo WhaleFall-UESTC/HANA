@@ -94,6 +94,13 @@ proc_init()
     p->heap_start = 18*PGSIZE;
     p->sz = 18*PGSIZE;
 
+    KCALLOC(struct vm_area, vma, 1);
+    p->vma_list = vma;
+    p->vma_list->start = 0;
+    p->vma_list->end = p->sz;
+    p->vma_list->prot = PTE_RWX | PTE_U;
+    p->vma_list->next = p->vma_list->prev = p->vma_list;
+
     trapframe_set_era(p, 0);
     trapframe_set_stack(p, 18*PGSIZE);
 
@@ -231,7 +238,7 @@ proc_free_pagetable(struct proc* p)
 
     pagetable_t pgtbl = UPGTBL(p->pagetable);
 
-    free_pgtbl(pgtbl, p->sz);
+    free_pgtbl(pgtbl, p->vma_list);
 }
 
 

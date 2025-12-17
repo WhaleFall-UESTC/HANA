@@ -6,6 +6,8 @@
 
 extern pagetable_t kernel_pagetable;
 
+struct vm_area;
+
 /**
  * 内核分配器 slab, buddy system 初始化
  * @param va_start 可分配空间的起点
@@ -106,13 +108,14 @@ pagetable_t uvminit(uint64 trapframe, const char* init_code, int sz);
  * @param sz 用户空间代码，数据，栈和堆的顶部
  */
 void        uvmcopy(pagetable_t cpgtbl, pagetable_t ppgtbl, uint64 sz);
+void        uvmcopy_alloc(pagetable_t cpgtbl, pagetable_t ppgtbl, struct vm_area *vma_list);
 
 /**
  * 给定栈区域的起始位置的虚拟地址，自动分配物理地址，然后在页表完成映射
  * @param pgtbl 页表
  * @param stack_va 栈底虚拟地址
  */
-void        map_stack(pagetable_t pgtbl, uint64 stack_va);
+void map_stack(pagetable_t pgtbl, uint64 stack_va);
 
 /**
  * 将内核空间的内存拷贝到用户空间
@@ -172,7 +175,7 @@ void        uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_fre
  * @param pgtbl 页表
  * @param sz 决定释放的空间范围
  */
-void        free_pgtbl(pagetable_t pgtbl, uint64 sz);
+void free_pgtbl(pagetable_t pgtbl, struct vm_area *vma);
 
 /**
  * 递归地释放页表自身占据的空间
@@ -187,6 +190,8 @@ void        freewalk(pagetable_t pgtbl, int level);
  * @param sz 决定释放的空间范围
  */
 void        uvmfree(pagetable_t pgtbl, uint64 sz);
+
+void        uvmfree_vma(pagetable_t pgtbl, struct vm_area* vma_list);
 
 /**
  * munmap 系统调用的实际实现

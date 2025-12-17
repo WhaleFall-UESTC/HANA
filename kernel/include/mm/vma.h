@@ -4,6 +4,8 @@
 #include <common.h>
 #include <fs/file.h>
 
+struct proc;
+
 struct vm_area {
     uint64 start;
     uint64 end;
